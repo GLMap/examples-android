@@ -1,0 +1,10 @@
+.DS_Store
+build
+
+#Android things
+.gradle
+.idea
+local.properties
+crashlytics-build.properties
+*.iml
+.externalNativeBuild
