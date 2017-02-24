@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.Button;
+import android.widget.EditText;
 
 import com.glmapview.FieldListener;
 import com.glmapview.GLMapBBox;
@@ -45,6 +46,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -131,7 +135,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			mapView.setMapCenter(GLMapView.convertGeoToInternal(new PointD(-122.0353, 37.3257)), false);
 			mapView.setMapZoom(14, false);
 
-			final Button btn = (Button) this.findViewById(R.id.button_img_action);
+			final Button btn = (Button) this.findViewById(R.id.button_action);
 			btn.setVisibility(View.VISIBLE);
 			btn.setText("Fly");
 			btn.setOnClickListener(new OnClickListener() {
@@ -182,15 +186,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			zoomToPoint();
 			captureScreen();
 		} else if (example == SampleSelectActivity.Samples.IMAGE_SINGLE.ordinal()) {
-			final Button btn = (Button) this.findViewById(R.id.button_img_action);
+			final Button btn = (Button) this.findViewById(R.id.button_action);
 			btn.setVisibility(View.VISIBLE);
-			btn.setOnClickListener(new OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					btn.setText("Add image");
-					addImage();
-				}
-			});
+			delImage(btn);
 		} else if (example == SampleSelectActivity.Samples.IMAGE_MULTI.ordinal()) {
 			mapView.setLongClickable(true);
 
@@ -216,6 +214,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 		} else if (example == SampleSelectActivity.Samples.GEO_JSON.ordinal()) {
 			loadGeoJSON();
+		} else if (example == SampleSelectActivity.Samples.STYLE_LIFE_RELOAD.ordinal()) {
+			styleLifeReload();
 		}
 
 		mapView.setCenterTileStateChangedCallback(new Runnable() {
@@ -576,7 +576,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	}
 
     
-    void addImage()
+    void addImage(final Button btn)
     {
     	Bitmap bmp = mapView.imageManager.open("arrow-maphint.svgpb", 1, 0);
     	image = mapView.displayImage(bmp);
@@ -585,44 +585,42 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	image.setAngle((float)Math.random()*360);
 
     	image.setPosition(mapView.getMapCenter( new PointD()));
-    	
-    	final Button btn = (Button) this.findViewById(R.id.button_img_action);
+
 		btn.setText("Move image");
     	btn.setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View v) {
-				moveImage();
+				moveImage(btn);
 			}
     	});    	
     }
     
-    void moveImage()
+    void moveImage(final Button btn)
 	{
 		image.setPosition(mapView.getMapCenter(new PointD()));
-
-		final Button btn = (Button) this.findViewById(R.id.button_img_action);
 		btn.setText("Remove image");
 		btn.setOnClickListener(new OnClickListener()
 		{
 			@Override
 			public void onClick(View v)
 			{
-				delImage();
+				delImage(btn);
 			}
 		});
 	}
     
-    void delImage()
+    void delImage(final Button btn)
     {
-		image.dispose();
-		image = null;
-
-    	final Button btn = (Button) this.findViewById(R.id.button_img_action);
+		if(image != null)
+		{
+			image.dispose();
+			image = null;
+		}
 		btn.setText("Add image");
     	btn.setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View v) {
-				addImage();
+				addImage(btn);
 			}
     	});     	
     }
@@ -673,6 +671,87 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		GLMapVectorObject obj = GLMapVectorObject.createPolygon(outerRings, innerRings);
 		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
     }
+
+	private void styleLifeReload()
+	{
+		final EditText editText = (EditText) this.findViewById(R.id.edit_text);
+		editText.setVisibility(View.VISIBLE);
+		editText.setText("https://dl.dropboxusercontent.com/u/2438277/Style.check");
+
+		final Button btn = (Button) this.findViewById(R.id.button_action);
+		btn.setVisibility(View.VISIBLE);
+		btn.setText("Reload");
+		btn.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View view)
+			{
+				new AsyncTask<String, String, byte[]>()
+				{
+					@Override
+					protected byte[] doInBackground(String... strings)
+					{
+						byte rv[];
+						try
+						{
+							URLConnection connection = new URL(strings[0]).openConnection();
+							connection.connect();
+							InputStream inputStream = connection.getInputStream();
+
+							ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+							int nRead;
+							byte[] data = new byte[16384];
+							while ((nRead = inputStream.read(data, 0, data.length)) != -1)
+							{
+								buffer.write(data, 0, nRead);
+							}
+							buffer.flush();
+							rv = buffer.toByteArray();
+							buffer.close();
+							inputStream.close();
+						} catch (Exception ignore)
+						{
+							rv = null;
+						}
+						return rv;
+					}
+
+					@Override
+					protected void onPostExecute(final byte newStyleData[])
+					{
+						mapView.loadStyle(new GLMapView.ResourceLoadCallback()
+						{
+							@Override
+							public byte[] loadResource(String name)
+							{
+								byte rv[];
+								if(name.equals("Style.mapcss"))
+								{
+									rv = newStyleData;
+								}else
+								{
+									try
+									{
+										InputStream stream = getAssets().open("DefaultStyle.bundle/" + name);
+										rv = new byte[stream.available()];
+										if (stream.read(rv) < rv.length)
+										{
+											rv = null;
+										}
+										stream.close();
+									} catch (IOException ignore)
+									{
+										rv = null;
+									}
+								}
+								return rv;
+							}
+						});
+					}
+				}.execute(editText.getText().toString());
+			}
+		});
+	}
     
 	private void loadGeoJSON() 
 	{	

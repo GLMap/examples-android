@@ -14,11 +14,21 @@
         />
 
     <Button
-        android:id="@+id/button_img_action"
+        android:id="@+id/button_action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Add image"
         android:visibility="invisible" />
+
+    <EditText
+        android:id="@+id/edit_text"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:layout_marginLeft="40pt"
+        android:layout_marginStart="40pt"
+        android:inputType="text"
+        tools:visibility="visible"/>
 
     <Button
         android:id="@+id/button_dl_map"
