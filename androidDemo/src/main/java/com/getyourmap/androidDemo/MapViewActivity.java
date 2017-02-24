@@ -40,7 +40,6 @@ import com.glmapview.GLMapView;
 import com.glmapview.GLMapView.GLMapPlacement;
 import com.glmapview.GLMapView.GLUnits;
 import com.glmapview.PointD;
-import com.glmapview.ScreenCaptureCallback;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -50,7 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MapViewActivity extends Activity implements ScreenCaptureCallback, FieldListener {
+public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, FieldListener {
 	class Pin
 	{
 		public PointD pos;
@@ -102,8 +101,7 @@ public class MapViewActivity extends Activity implements ScreenCaptureCallback, 
 		localeSettings = new GLMapLocaleSettings();
 
 		mapView.setLocaleSettings(localeSettings);
-		mapView.setAssetManager(getAssets());
-		mapView.loadStyle("DefaultStyle.bundle");
+		mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
 		mapView.setUserLocationImages(
 				mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0),
 				mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0));
