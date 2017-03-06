@@ -27,7 +27,8 @@
         android:visibility="invisible"
         android:layout_marginLeft="40pt"
         android:layout_marginStart="40pt"
-        android:inputType="text"
+        android:inputType="textUri"
+        android:hint="Enter style URL"
         tools:visibility="visible"/>
 
     <Button

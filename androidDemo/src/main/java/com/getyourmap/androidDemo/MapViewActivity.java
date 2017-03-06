@@ -214,8 +214,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 		} else if (example == SampleSelectActivity.Samples.GEO_JSON.ordinal()) {
 			loadGeoJSON();
-		} else if (example == SampleSelectActivity.Samples.STYLE_LIFE_RELOAD.ordinal()) {
-			styleLifeReload();
+		} else if (example == SampleSelectActivity.Samples.STYLE_LIVE_RELOAD.ordinal()) {
+			styleLiveReload();
 		}
 
 		mapView.setCenterTileStateChangedCallback(new Runnable() {
@@ -672,11 +672,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
     }
 
-	private void styleLifeReload()
+	private void styleLiveReload()
 	{
 		final EditText editText = (EditText) this.findViewById(R.id.edit_text);
 		editText.setVisibility(View.VISIBLE);
-		editText.setText("https://dl.dropboxusercontent.com/u/2438277/Style.check");
 
 		final Button btn = (Button) this.findViewById(R.id.button_action);
 		btn.setVisibility(View.VISIBLE);
