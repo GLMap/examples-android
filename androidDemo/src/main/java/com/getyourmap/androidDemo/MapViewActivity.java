@@ -20,7 +20,6 @@ import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.glmapview.FieldListener;
 import com.glmapview.GLMapBBox;
 import com.glmapview.GLMapDownloadTask;
 import com.glmapview.GLMapImage;
@@ -52,8 +51,10 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
-public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, FieldListener {
+public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener {
+
 	class Pin
 	{
 		public PointD pos;
@@ -78,7 +79,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		mapView = (GLMapView) this.findViewById(R.id.map_view);
 
 		// Map list is updated, because download button depends on available map list and during first launch this list is empty
-		GLMapManager.updateMapList(null);
+		GLMapManager.updateMapList(this, null);
 
 		btnDownloadMap = (Button) this.findViewById(R.id.button_dl_map);
 		btnDownloadMap.setOnClickListener(new OnClickListener() {
@@ -86,22 +87,18 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void onClick(View v) {
 				if (mapToDownload != null) {
 					GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-					if (task != null) {
+					if (task != null)
+					{
 						task.cancel();
 					} else {
-						task = GLMapManager.createDownloadTask(mapToDownload);
-						task.addListener(MapViewActivity.this);
-						task.start();
+						GLMapManager.createDownloadTask(mapToDownload, MapViewActivity.this).start();
 					}
 					updateMapDownloadButtonText();
 				}
 			}
 		});
 
-		for (GLMapDownloadTask task : GLMapManager.getMapDownloadTasks()) {
-			task.addListener(this);
-		}
-
+		GLMapManager.addStateListener(this);
 		localeSettings = new GLMapLocaleSettings();
 
 		mapView.setLocaleSettings(localeSettings);
@@ -249,6 +246,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	@Override
 	protected void onDestroy()
 	{
+		GLMapManager.removeStateListener(this);
 		if(markerLayer!=null)
 		{
 			markerLayer.dispose();
@@ -266,19 +264,27 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	}
 
 	@Override
-	public boolean fieldValueChanged(Object obj, String fieldName, Object newValue)
+	public void onStartDownloading(GLMapInfo map)
 	{
-		if(fieldName.equals("finished") && newValue.equals(1))
-		{
-			mapView.reloadTiles();
-		}
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				updateMapDownloadButtonText();
-			}
-		});
-		return true;
+
+	}
+
+	@Override
+	public void onDownloadProgress(GLMapInfo map)
+	{
+		updateMapDownloadButtonText();
+	}
+
+	@Override
+	public void onFinishDownloading(GLMapInfo map)
+	{
+		mapView.reloadTiles();
+	}
+
+	@Override
+	public void onStateChanged(GLMapInfo map)
+	{
+		updateMapDownloadButtonText();
 	}
 
 	void updateMapDownloadButtonText()
@@ -295,13 +301,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			if (mapToDownload != null)
 			{
 				String text;
-				GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-				if(task != null )
+				if(mapToDownload.getState() == GLMapInfo.State.IN_PROGRESS)
 				{
-					text = String.format("Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), (int)(task.progressDownload*100));
+					text = String.format(Locale.getDefault(), "Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), (int)(mapToDownload.getDownloadProgress()*100));
 				}else
 				{
-					text = String.format("Download %s", mapToDownload.getLocalizedName(localeSettings));
+					text = String.format(Locale.getDefault(), "Download %s", mapToDownload.getLocalizedName(localeSettings));
 				}
 				btnDownloadMap.setText(text);
 			}

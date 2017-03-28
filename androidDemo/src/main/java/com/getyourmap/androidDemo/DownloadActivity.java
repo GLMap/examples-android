@@ -17,7 +17,6 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.glmapview.FieldListener;
 import com.glmapview.GLMapDownloadTask;
 import com.glmapview.GLMapInfo;
 import com.glmapview.GLMapLocaleSettings;
@@ -29,21 +28,22 @@ import java.util.List;
 import java.util.Locale;
 
 @SuppressLint("InflateParams")
-public class DownloadActivity extends ListActivity implements FieldListener
+public class DownloadActivity extends ListActivity implements GLMapManager.StateListener
 {
 	private enum ContextItems {
 		DELETE
 	}
 
-	PointD center;
-	GLMapInfo selectedMap = null;
-	GLMapLocaleSettings localeSettings;
+	private PointD center;
+	private GLMapInfo selectedMap = null;
+	private GLMapLocaleSettings localeSettings;
+	private ListView listView;
 
 	private class MapsAdapter extends BaseAdapter implements ListAdapter {
         private GLMapInfo[] maps;
         private Context context;
         
-        public MapsAdapter(GLMapInfo[] maps, Context context) 
+		MapsAdapter(GLMapInfo[] maps, Context context)
         {
         	this.maps= maps;
         	this.context = context;
@@ -62,31 +62,27 @@ public class DownloadActivity extends ListActivity implements FieldListener
             txtHeaderName = ((TextView) convertView.findViewById(android.R.id.text1));
             txtDescription = ((TextView) convertView.findViewById(android.R.id.text2));
             
-            GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
-            if(task!=null)
-            {
-                txtHeaderName.setText(map.getLocalizedName(localeSettings));
-                txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", task.progressDownload*100));
-            }else
-            {
-                txtHeaderName.setText(map.getLocalizedName(localeSettings));
-            	if(map.isCollection())
-            	{
-            		txtDescription.setText("Collection");            		
-            	} else if (map.getState() == GLMapInfo.State.DOWNLOADED)
-				{
-            		txtDescription.setText("Downloaded");
-            	} else if( map.getState() == GLMapInfo.State.NEED_UPDATE)
-				{
-					txtDescription.setText("Need update");
-				}else if( map.getState() == GLMapInfo.State.NEED_RESUME)
-				{
-					txtDescription.setText("Need resume");
-				}else
-            	{            	
-            		txtDescription.setText(NumberFormatter.FormatSize(map.getSize()));
-            	}
-            }           
+			txtHeaderName.setText(map.getLocalizedName(localeSettings));
+			if(map.isCollection())
+			{
+				txtDescription.setText("Collection");
+			} else if (map.getState() == GLMapInfo.State.DOWNLOADED)
+			{
+				txtDescription.setText("Downloaded");
+			} else if( map.getState() == GLMapInfo.State.NEED_UPDATE)
+			{
+				txtDescription.setText("Need update");
+			}else if( map.getState() == GLMapInfo.State.NEED_RESUME)
+			{
+				txtDescription.setText("Need resume");
+			}else if( map.getState() == GLMapInfo.State.IN_PROGRESS)
+			{
+				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", map.getDownloadProgress()*100));
+			}else
+			{
+				txtDescription.setText(NumberFormatter.FormatSize(map.getSize()));
+			}
+
             return convertView;
         }
 
@@ -116,46 +112,65 @@ public class DownloadActivity extends ListActivity implements FieldListener
         super.onCreate(savedInstanceState);
         setContentView(R.layout.download);
 
-		final ListView listView = (ListView) findViewById(android.R.id.list);
+		listView = (ListView) findViewById(android.R.id.list);
 		registerForContextMenu(listView);
 		List<GLMapDownloadTask> tasks = GLMapManager.getMapDownloadTasks();
-		if(tasks != null){
-			for (GLMapDownloadTask task : tasks) {
-				task.addListener(this);
-			}
-		}
-        
+		GLMapManager.addStateListener(this);
+
         Intent i = getIntent();
         center = GLMapView.convertGeoToInternal( new PointD(i.getDoubleExtra("cx", 0.0), i.getDoubleExtra("cy", 0.0)) );        
-        GLMapInfo collection = (GLMapInfo) i.getSerializableExtra("maps");
-        if(collection!=null)
+        long collectionID = i.getLongExtra("collectionID", 0) ;
+        if(collectionID!=0)
         {
-	        updateAllItems(collection.getMaps());        	        	
+			GLMapInfo collection = GLMapManager.getMapWithID(collectionID);
+			if(collection != null)
+			{
+				updateAllItems(collection.getMaps());
+			}
         }else
         {       
 	        updateAllItems(GLMapManager.getMaps());	        
-	        GLMapManager.updateMapList(new Runnable(){
-	    		            @Override
-	    		            public void run() 
-	    		            {
-	    		            	runOnUiThread(new Runnable(){
-									@Override
-									public void run() {
-										updateAllItems(GLMapManager.getMaps());
-									}
-	    		            	});
-	    		            }
-	    				});
-	        }
-        
+	        GLMapManager.updateMapList(this, new Runnable(){
+				@Override
+				public void run()
+				{
+					updateAllItems(GLMapManager.getMaps());
+				}
+	        });
+		}
     }
 
 	@Override
-	public boolean fieldValueChanged(Object obj, String fieldName, Object newValue) {
-		final ListView listView = (ListView) findViewById(android.R.id.list);
-		((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
-		return true;
+	protected void onDestroy()
+	{
+		GLMapManager.removeStateListener(this);
+		super.onDestroy();
 	}
+
+	@Override
+	public void onStartDownloading(GLMapInfo map)
+	{
+
+	}
+
+	@Override
+	public void onDownloadProgress(GLMapInfo map)
+	{
+		((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
+	}
+
+	@Override
+	public void onFinishDownloading(GLMapInfo map)
+	{
+
+	}
+
+	@Override
+	public void onStateChanged(GLMapInfo map)
+	{
+		((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
+	}
+
 
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
@@ -189,9 +204,7 @@ public class DownloadActivity extends ListActivity implements FieldListener
             return;
 
         GLMapManager.SortMaps(maps, center);
-        
        	final ListView listView = (ListView) findViewById(android.R.id.list);
-		final DownloadActivity activity = this;
         listView.setAdapter(new MapsAdapter(maps, this));
         listView.setOnItemClickListener(new OnItemClickListener() {
 			@Override
@@ -200,7 +213,7 @@ public class DownloadActivity extends ListActivity implements FieldListener
 				GLMapInfo info = (GLMapInfo) listView.getAdapter().getItem(position);
 				if (info.isCollection()) {
 					Intent intent = new Intent(DownloadActivity.this, DownloadActivity.class);
-					intent.putExtra("maps", info);
+					intent.putExtra("collectionID", info.getMapID());
 					intent.putExtra("cx", center.getX());
 					intent.putExtra("cy", center.getY());
 					DownloadActivity.this.startActivity(intent);
@@ -209,9 +222,7 @@ public class DownloadActivity extends ListActivity implements FieldListener
 					if (task != null) {
 						task.cancel();
 					} else if (info.getState() != GLMapInfo.State.DOWNLOADED) {
-						task = GLMapManager.createDownloadTask(info);
-						task.addListener(activity);
-						task.start();
+						GLMapManager.createDownloadTask(info, DownloadActivity.this).start();
 					}
 				}
 			}
