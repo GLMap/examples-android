@@ -535,15 +535,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			@Override
 			public void fillData(Object marker, long nativeMarker)
 			{
-				if(marker.getClass() == PointD.class)
+				if(marker instanceof PointD)
 				{
 					GLMapMarkerStyleCollection.setMarkerLocation(nativeMarker, (PointD) marker);
 					GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0,0), textStyle);
-				}else if(marker.getClass() == GLMapVectorObject.class)
+				}else if(marker instanceof GLMapVectorObject)
 				{
 					GLMapVectorObject obj = (GLMapVectorObject)marker;
-
-					GLMapMarkerStyleCollection.setMarkerLocation(nativeMarker, obj.point());
+					GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
 					String name = obj.valueForKey("name");
 					if(name!=null)
 					{
