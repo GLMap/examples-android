@@ -35,6 +35,7 @@ import com.glmapview.GLMapMarkerStyleCollectionDataCallback;
 import com.glmapview.GLMapRasterTileSource;
 import com.glmapview.GLMapVectorCascadeStyle;
 import com.glmapview.GLMapVectorObject;
+import com.glmapview.GLMapVectorObjectList;
 import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
 import com.glmapview.GLMapView.GLMapPlacement;
@@ -171,11 +172,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
             addMarkers();
             GLMapManager.SetAllowedTileDownload(true);
-
-            PointD point = GLMapView.convertGeoToInternal(new PointD(-2.4102, 54.5037));
-            mapView.setMapCenter(point, false);
-            mapView.setMapZoom(6, false);
-        } else if (example == SampleSelectActivity.Samples.MULTILINE.ordinal()) {
+        } else if (example == SampleSelectActivity.Samples.MARKERS_MAPCSS.ordinal()) {
+			addMarkersWithMapcss();
+			GLMapManager.SetAllowedTileDownload(true);
+		}else if (example == SampleSelectActivity.Samples.MULTILINE.ordinal()) {
 			addMultiline();
 		} else if (example == SampleSelectActivity.Samples.POLYGON.ordinal()) {
 			addPolygon();
@@ -464,51 +464,122 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	void deleteMarker(float x, float y)
 	{
-		Object markersToRemove[] =  markerLayer.objectsNearPoint(mapView, mapView.convertDisplayToInternal(new PointD(x, y)), 30);
-		if(markersToRemove!=null && markersToRemove.length==1)
+		if(markerLayer != null)
 		{
-			markerLayer.modify(null, Collections.singleton(markersToRemove[0]), null, true, new Runnable()
+			Object markersToRemove[] = markerLayer.objectsNearPoint(mapView, mapView.convertDisplayToInternal(new PointD(x, y)), 30);
+			if (markersToRemove != null && markersToRemove.length == 1)
 			{
-				@Override
-				public void run()
+				markerLayer.modify(null, Collections.singleton(markersToRemove[0]), null, true, new Runnable()
 				{
-					Log.d("MarkerLayer", "Marker deleted");
-				}
-			});
+					@Override
+					public void run()
+					{
+						Log.d("MarkerLayer", "Marker deleted");
+					}
+				});
+			}
 		}
 	}
 
 	void addMarker(float x, float y)
 	{
-		PointD newMarkers[] = new PointD[1];
-		newMarkers[0] = mapView.convertDisplayToInternal(new PointD(x, y));
+		if(markerLayer != null)
+		{
+			PointD newMarkers[] = new PointD[1];
+			newMarkers[0] = mapView.convertDisplayToInternal(new PointD(x, y));
 
-		markerLayer.modify(newMarkers, null, null, true, new Runnable()
+			markerLayer.modify(newMarkers, null, null, true, new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					Log.d("MarkerLayer", "Marker added");
+				}
+			});
+		}
+	}
+
+	static private int unionColours[] = {
+			Color.argb(255, 33, 0, 255),
+			Color.argb(255, 68, 195, 255),
+			Color.argb(255, 63, 237, 198),
+			Color.argb(255, 15, 228, 36),
+			Color.argb(255, 168, 238, 25),
+			Color.argb(255, 214, 234, 25),
+			Color.argb(255, 223, 180, 19),
+			Color.argb(255, 255, 0, 0)
+	};
+
+	void addMarkersWithMapcss()
+	{
+		final GLMapMarkerStyleCollection styleCollection = new GLMapMarkerStyleCollection();
+		for(int i=0; i<unionColours.length; i++)
+		{
+			float scale = (float)(0.2+0.1*i);
+			int index = styleCollection.addStyle(new GLMapMarkerImage("marker"+scale, mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])));
+			styleCollection.setStyleName(i, "uni"+index);
+		}
+
+		final GLMapVectorCascadeStyle style = GLMapVectorCascadeStyle.createStyle(
+				"node{icon-image:\"uni0\"; text:eval(tag(\"title\")); text-color:#2E2D2B; font-size:16; font-stroke-width:2pt; font-stroke-color:#FFFFFFEE;}" +
+				"node[count>2]{icon-image:\"uni1\"; text:eval(tag(\"count\"));}" +
+				"node[count>4]{icon-image:\"uni2\";}" +
+				"node[count>8]{icon-image:\"uni3\";}" +
+				"node[count>16]{icon-image:\"uni4\";}" +
+				"node[count>32]{icon-image:\"uni5\";}" +
+				"node[count>64]{icon-image:\"uni6\";}" +
+				"node[count>128]{icon-image:\"uni7\";}");
+
+		new AsyncTask<Void, Void, GLMapMarkerLayer>()
 		{
 			@Override
-			public void run()
+			protected GLMapMarkerLayer doInBackground(Void... voids)
 			{
-				Log.d("MarkerLayer", "Marker added");
+				GLMapMarkerLayer rv;
+				try
+				{
+					Log.w("GLMapView", "Start parsing");
+					GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+					Log.w("GLMapView", "Finish parsing");
+
+					final GLMapBBox bbox = objects.getBBox();
+					runOnUiThread(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							mapView.setMapCenter(bbox.center(), false);
+							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+						}
+					});
+
+					Log.w("GLMapView", "Start creating layer");
+					rv = new GLMapMarkerLayer(objects, style, styleCollection);
+					Log.w("GLMapView", "Finish creating layer");
+					objects.dispose();
+				} catch (Exception e)
+				{
+					rv = null;
+				}
+				return rv;
 			}
-		});
+
+			@Override
+			protected void onPostExecute(GLMapMarkerLayer layer)
+			{
+				if(layer != null)
+				{
+					markerLayer = layer;
+					mapView.displayMarkerLayer(layer);
+				}
+			}
+		}.execute();
 	}
 
 	void addMarkers()
 	{
 		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
-
 		final int unionCounts[] = {1, 2, 4, 8, 16, 32, 64, 128};
-		final int unionColours[] = {
-				Color.argb(255, 33, 0, 255),
-				Color.argb(255, 68, 195, 255),
-				Color.argb(255, 63, 237, 198),
-				Color.argb(255, 15, 228, 36),
-				Color.argb(255, 168, 238, 25),
-				Color.argb(255, 214, 234, 25),
-				Color.argb(255, 223, 180, 19),
-				Color.argb(255, 255, 0, 0)
-		};
-
 		for(int i=0; i<unionCounts.length; i++)
 		{
 			float scale = (float)(0.2+0.1*i);
@@ -529,7 +600,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						break;
 					}
 				}
-				//GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount) , new Point(0, 0), textStyle);
+				GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount) , new Point(0, 0), textStyle);
 			}
 
 			@Override
@@ -553,27 +624,48 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 
-		new AsyncTask<Void, Void, GLMapVectorObject[]>()
+		new AsyncTask<Void, Void, GLMapMarkerLayer>()
 		{
 			@Override
-			protected GLMapVectorObject[] doInBackground(Void... voids)
+			protected GLMapMarkerLayer doInBackground(Void... voids)
 			{
-				GLMapVectorObject rv[];
+				GLMapMarkerLayer rv;
 				try
 				{
-					rv = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+					Log.w("GLMapView", "Start parsing");
+					GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+					Log.w("GLMapView", "Finish parsing");
+
+					final GLMapBBox bbox = objects.getBBox();
+					runOnUiThread(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							mapView.setMapCenter(bbox.center(), false);
+							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+						}
+					});
+
+					Log.w("GLMapView", "Start creating layer");
+					rv = new GLMapMarkerLayer(objects.toArray(), style);
+					Log.w("GLMapView", "Finish creating layer");
+					objects.dispose();
 				} catch (Exception e)
 				{
-					rv = new GLMapVectorObject[0];
+					rv = null;
 				}
 				return rv;
 			}
 
 			@Override
-			protected void onPostExecute(GLMapVectorObject objects[])
+			protected void onPostExecute(GLMapMarkerLayer layer)
 			{
-				markerLayer = new GLMapMarkerLayer(objects, style);
-				mapView.displayMarkerLayer(markerLayer);
+				if(layer != null)
+				{
+					markerLayer = layer;
+					mapView.displayMarkerLayer(layer);
+				}
 			}
 
 		}.execute();
@@ -758,7 +850,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     
 	private void loadGeoJSON() 
 	{	
-		GLMapVectorObject []objects = GLMapVectorObject.createFromGeoJSON(
+		GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSON(
 				"[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
 				+ "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
 				+ "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
@@ -770,7 +862,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				+ "line{linecap: round; width: 5pt; color:blue;}"
 				+ "area{fill-color:green; width:1pt; color:red;}");
 
-		mapView.addVectorObjectsWithStyle(objects, style);
+		mapView.addVectorObjectsWithStyle(objects.toArray(), style);
 	}
     
     void captureScreen()
