@@ -18,6 +18,7 @@ public class SampleSelectActivity extends ListActivity
         MAP_EMBEDD,
         MAP_ONLINE,
 		MAP_ONLINE_RASTER,
+		MAP_TEXTURE_VIEW,
         ZOOM_BBOX,
 		MARKERS,
 		MARKERS_MAPCSS,
@@ -51,6 +52,7 @@ public class SampleSelectActivity extends ListActivity
         		"Open embedd map", 
         		"Open online map",
 				"Open online raster map",
+				"GLMapView in TextureView",
         		"Zoom to bbox",
 				"Markers",
 				"Markers using mapcss",
@@ -73,10 +75,19 @@ public class SampleSelectActivity extends ListActivity
     
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) 
-    {   
+    {
+		if(position == Samples.MAP_TEXTURE_VIEW.ordinal())
+		{
+			Intent i = new Intent(this, MapTextureViewActivity.class);
+			i.putExtra("cx", 27.0);
+			i.putExtra("cy", 53.0);
+			this.startActivity(i);
+			return;
+		}
+
     	if(position == Samples.DOWNLOAD_MAP.ordinal())
     	{
-        	Intent i = new Intent(SampleSelectActivity.this, DownloadActivity.class);
+        	Intent i = new Intent(this, DownloadActivity.class);
         	i.putExtra("cx", 27.0);
         	i.putExtra("cy", 53.0);
         	this.startActivity(i);    	
@@ -85,7 +96,7 @@ public class SampleSelectActivity extends ListActivity
     	
     	if(position == Samples.SVG_TEST.ordinal())
     	{
-        	Intent intent = new Intent(SampleSelectActivity.this, DisplayImageActivity.class);
+        	Intent intent = new Intent(this, DisplayImageActivity.class);
         	this.startActivity(intent);
         	return;
     	}
@@ -95,7 +106,7 @@ public class SampleSelectActivity extends ListActivity
         	return;
     	}    	
     	
-    	Intent intent = new Intent(SampleSelectActivity.this, MapViewActivity.class);
+    	Intent intent = new Intent(this, MapViewActivity.class);
     	Bundle b = new Bundle();
     	b.putInt("example", position);
     	intent.putExtras(b);

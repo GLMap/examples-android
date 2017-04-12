@@ -100,8 +100,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		});
 
 		GLMapManager.addStateListener(this);
-		localeSettings = new GLMapLocaleSettings();
 
+		localeSettings = new GLMapLocaleSettings();
 		mapView.setLocaleSettings(localeSettings);
 		mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
 		mapView.setUserLocationImages(
