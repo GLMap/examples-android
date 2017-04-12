@@ -521,14 +521,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}
 
 		final GLMapVectorCascadeStyle style = GLMapVectorCascadeStyle.createStyle(
-				"node{icon-image:\"uni0\"; text:eval(tag(\"title\")); text-color:#2E2D2B; font-size:16; font-stroke-width:2pt; font-stroke-color:#FFFFFFEE;}" +
-				"node[count>2]{icon-image:\"uni1\"; text:eval(tag(\"count\"));}" +
-				"node[count>4]{icon-image:\"uni2\";}" +
-				"node[count>8]{icon-image:\"uni3\";}" +
-				"node[count>16]{icon-image:\"uni4\";}" +
-				"node[count>32]{icon-image:\"uni5\";}" +
-				"node[count>64]{icon-image:\"uni6\";}" +
-				"node[count>128]{icon-image:\"uni7\";}");
+				"node{icon-image:\"uni0\"; text:eval(tag(\"name\")); text-color:#2E2D2B; font-size:16; font-stroke-width:2pt; font-stroke-color:#FFFFFFEE;}" +
+				"node[count>=2]{icon-image:\"uni1\"; text:eval(tag(\"count\"));}" +
+				"node[count>=4]{icon-image:\"uni2\";}" +
+				"node[count>=8]{icon-image:\"uni3\";}" +
+				"node[count>=16]{icon-image:\"uni4\";}" +
+				"node[count>=32]{icon-image:\"uni5\";}" +
+				"node[count>=64]{icon-image:\"uni6\";}" +
+				"node[count>=128]{icon-image:\"uni7\";}");
 
 		new AsyncTask<Void, Void, GLMapMarkerLayer>()
 		{
