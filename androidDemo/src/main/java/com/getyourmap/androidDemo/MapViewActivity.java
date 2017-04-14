@@ -95,6 +95,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						GLMapManager.createDownloadTask(mapToDownload, MapViewActivity.this).start();
 					}
 					updateMapDownloadButtonText();
+				} else {
+					Intent i = new Intent(v.getContext(), DownloadActivity.class);
+
+                    PointD pt = GLMapView.convertInternalToGeo( mapView.getMapCenter(new PointD()));
+
+					i.putExtra("cx", pt.getX());
+					i.putExtra("cy", pt.getY());
+					v.getContext().startActivity(i);
 				}
 			}
 		});
@@ -293,10 +301,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		{
 			PointD center = mapView.getMapCenter(new PointD());
 
-			if(mapToDownload==null || GLMapManager.DistanceToMap(mapToDownload, center)>0)
-			{
-				mapToDownload = GLMapManager.FindNearestMap(GLMapManager.getChildMaps(), center);
-			}
+			mapToDownload = GLMapManager.MapAtPoint(center);
 
 			if (mapToDownload != null)
 			{
@@ -309,6 +314,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					text = String.format(Locale.getDefault(), "Download %s", mapToDownload.getLocalizedName(localeSettings));
 				}
 				btnDownloadMap.setText(text);
+			} else {
+				btnDownloadMap.setText("Download maps");
 			}
 		}
 	}
