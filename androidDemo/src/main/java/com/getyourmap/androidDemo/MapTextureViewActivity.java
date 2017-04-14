@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.TextureView;
 
 import com.glmapview.GLMapView;
-import com.glmapview.PointD;
+import com.glmapview.MapPoint;
 
 public class MapTextureViewActivity extends Activity
 {
@@ -20,7 +20,7 @@ public class MapTextureViewActivity extends Activity
         mapView = new GLMapView(this, textureView);
 
         mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
-        mapView.setScaleRulerStyle(GLMapView.GLUnits.SI, GLMapView.GLMapPlacement.BottomCenter, new PointD(10, 10), 200);
+        mapView.setScaleRulerStyle(GLMapView.GLUnits.SI, GLMapView.GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
         mapView.setAttributionPosition(GLMapView.GLMapPlacement.TopCenter);
     }
 }
