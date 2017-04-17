@@ -573,7 +573,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}
 
 		final GLMapVectorCascadeStyle style = GLMapVectorCascadeStyle.createStyle(
-				"node{icon-image:\"uni0\"; text:eval(tag(\"name\")); text-color:#2E2D2B; font-size:16; font-stroke-width:2pt; font-stroke-color:#FFFFFFEE;}" +
+				"node{icon-image:\"uni0\"; text:eval(tag(\"name\")); text-color:#2E2D2B; font-size:12; font-stroke-width:1pt; font-stroke-color:#FFFFFFEE;}" +
 				"node[count>=2]{icon-image:\"uni1\"; text:eval(tag(\"count\"));}" +
 				"node[count>=4]{icon-image:\"uni2\";}" +
 				"node[count>=8]{icon-image:\"uni3\";}" +
