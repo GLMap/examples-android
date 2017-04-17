@@ -138,7 +138,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
             zoomToBBox();
         } else if (example == SampleSelectActivity.Samples.FLY_TO.ordinal()) {
 
-			mapView.setMapCenter(GLMapView.convertGeoToInternal(new MapGeoPoint(37.3257, -122.0353)), false);
+			mapView.setMapCenter( MapPoint.CreateFromGeoCoordinates(-122.0353, 37.3257), false);
 			mapView.setMapZoom(14, false);
 
 			final Button btn = (Button) this.findViewById(R.id.button_action);
@@ -188,6 +188,27 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
             GLMapManager.SetAllowedTileDownload(true);
         } else if (example == SampleSelectActivity.Samples.MARKERS_MAPCSS.ordinal()) {
 			addMarkersWithMapcss();
+
+			gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+				@Override
+				public boolean onSingleTapConfirmed(MotionEvent e) {
+					deleteMarker(e.getX(), e.getY());
+					return true;
+				}
+
+				@Override
+				public void onLongPress(MotionEvent e) {
+					addMarkerAsVectorObject(e.getX(), e.getY());
+				}
+			});
+
+			mapView.setOnTouchListener(new OnTouchListener() {
+				@Override
+				public boolean onTouch(View arg0, MotionEvent ev) {
+					return gestureDetector.onTouchEvent(ev);
+				}
+			});
+
 			GLMapManager.SetAllowedTileDownload(true);
 		}else if (example == SampleSelectActivity.Samples.MULTILINE.ordinal()) {
 			addMultiline();
@@ -362,8 +383,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void run()
 			{
 				GLMapBBox bbox = new GLMapBBox();
-				bbox.addPoint(GLMapView.convertGeoToInternal(new MapGeoPoint(52.5037, 13.4102))); // Berlin
-				bbox.addPoint(GLMapView.convertGeoToInternal(new MapGeoPoint(53.9024, 27.5618))); // Minsk
+				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(13.4102, 52.5037)); // Berlin
+				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(27.5618, 53.9024)); // Minsk
 
 			    mapView.setMapCenter(bbox.center(), false);
 				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
@@ -381,7 +402,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	//;
 
 		// Move map to the Montenegro capital
-		MapPoint pt = GLMapView.convertGeoToInternal(new MapGeoPoint(42.4341, 19.26));
+		MapPoint pt = MapPoint.CreateFromGeoCoordinates(19.26, 42.4341);
     	GLMapView mapView = (GLMapView) this.findViewById(R.id.map_view);
     	mapView.setMapCenter(pt, false);
     	mapView.setMapZoom(16, false);
@@ -500,6 +521,24 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		{
 			MapPoint newMarkers[] = new MapPoint[1];
 			newMarkers[0] = mapView.convertDisplayToInternal(new MapPoint(x, y));
+
+			markerLayer.modify(newMarkers, null, null, true, new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					Log.d("MarkerLayer", "Marker added");
+				}
+			});
+		}
+	}
+
+	void addMarkerAsVectorObject(float x, float y)
+	{
+		if(markerLayer != null)
+		{
+			GLMapVectorObject newMarkers[] = new GLMapVectorObject[1];
+			newMarkers[0] = GLMapVectorObject.createPoint(mapView.convertDisplayToInternal(new MapPoint(x, y)));
 
 			markerLayer.modify(newMarkers, null, null, true, new Runnable()
 			{
