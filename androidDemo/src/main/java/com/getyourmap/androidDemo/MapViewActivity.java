@@ -138,7 +138,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
             zoomToBBox();
         } else if (example == SampleSelectActivity.Samples.FLY_TO.ordinal()) {
 
-			mapView.setMapCenter( MapPoint.CreateFromGeoCoordinates(-122.0353, 37.3257), false);
+			mapView.setMapCenter( MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353), false);
 			mapView.setMapZoom(14, false);
 
 			final Button btn = (Button) this.findViewById(R.id.button_action);
@@ -383,8 +383,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void run()
 			{
 				GLMapBBox bbox = new GLMapBBox();
-				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(13.4102, 52.5037)); // Berlin
-				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(27.5618, 53.9024)); // Minsk
+				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
+				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
 
 			    mapView.setMapCenter(bbox.center(), false);
 				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
@@ -402,7 +402,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	//;
 
 		// Move map to the Montenegro capital
-		MapPoint pt = MapPoint.CreateFromGeoCoordinates(19.26, 42.4341);
+		MapPoint pt = MapPoint.CreateFromGeoCoordinates(42.4341, 19.26);
     	GLMapView mapView = (GLMapView) this.findViewById(R.id.map_view);
     	mapView.setMapCenter(pt, false);
     	mapView.setMapZoom(16, false);
