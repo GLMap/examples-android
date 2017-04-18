@@ -22,7 +22,7 @@ import com.glmapview.GLMapInfo;
 import com.glmapview.GLMapLocaleSettings;
 import com.glmapview.GLMapManager;
 import com.glmapview.GLMapView;
-import com.glmapview.PointD;
+import com.glmapview.MapPoint;
 
 import java.util.List;
 import java.util.Locale;
@@ -34,7 +34,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 		DELETE
 	}
 
-	private PointD center;
+	private MapPoint center;
 	private GLMapInfo selectedMap = null;
 	private GLMapLocaleSettings localeSettings;
 	private ListView listView;
@@ -118,7 +118,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 		GLMapManager.addStateListener(this);
 
         Intent i = getIntent();
-        center = GLMapView.convertGeoToInternal( new PointD(i.getDoubleExtra("cx", 0.0), i.getDoubleExtra("cy", 0.0)) );        
+        center = new MapPoint(i.getDoubleExtra("cx", 0.0), i.getDoubleExtra("cy", 0.0));
         long collectionID = i.getLongExtra("collectionID", 0) ;
         if(collectionID!=0)
         {
@@ -214,8 +214,8 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 				if (info.isCollection()) {
 					Intent intent = new Intent(DownloadActivity.this, DownloadActivity.class);
 					intent.putExtra("collectionID", info.getMapID());
-					intent.putExtra("cx", center.getX());
-					intent.putExtra("cy", center.getY());
+					intent.putExtra("cx", center.x);
+					intent.putExtra("cy", center.y);
 					DownloadActivity.this.startActivity(intent);
 				} else {
 					GLMapDownloadTask task = GLMapManager.getDownloadTask(info);
