@@ -326,7 +326,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	{
 		if(btnDownloadMap.getVisibility()==View.VISIBLE)
 		{
-			MapPoint center = mapView.getMapCenter(new MapPoint());
+			MapPoint center = mapView.getMapCenter();
 
 			mapToDownload = GLMapManager.MapAtPoint(center);
 
@@ -732,7 +732,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	image.setRotatesWithMap(true);
     	image.setAngle((float)Math.random()*360);
 
-    	image.setPosition(mapView.getMapCenter( new MapPoint()));
+    	image.setPosition(mapView.getMapCenter());
 
 		btn.setText("Move image");
     	btn.setOnClickListener(new OnClickListener(){
@@ -745,7 +745,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     
     void moveImage(final Button btn)
 	{
-		image.setPosition(mapView.getMapCenter(new MapPoint()));
+		image.setPosition(mapView.getMapCenter());
 		btn.setText("Remove image");
 		btn.setOnClickListener(new OnClickListener()
 		{
