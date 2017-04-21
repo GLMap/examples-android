@@ -1,14 +1,17 @@
 package com.getyourmap.androidDemo;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -116,10 +119,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0),
 				mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0));
 
-		mapView.setShowsUserLocation(true);
-
 		mapView.setScaleRulerStyle(GLUnits.SI, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
 		mapView.setAttributionPosition(GLMapPlacement.TopCenter);
+
+		checkAndRequestLocationPermission();
 
 		Bundle b = getIntent().getExtras();
 		final int example = b.getInt("example");
@@ -277,6 +280,31 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 	}
+
+	public void checkAndRequestLocationPermission()
+	{
+		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+		else
+			mapView.setShowsUserLocation(true);
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
+	{
+		switch (requestCode) {
+			case 0: {
+				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+					mapView.setShowsUserLocation(true);
+				}
+				break;
+			}
+			default:
+				super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+				break;
+		}
+	}
+
 
 	@Override
 	protected void onDestroy()
