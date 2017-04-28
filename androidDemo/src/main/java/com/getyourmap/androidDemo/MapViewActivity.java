@@ -804,19 +804,18 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     void addMultiline()
     {
         MapPoint[] line1 = new MapPoint[5];
-        line1[0] = new MapPoint(27.7151, 53.8869); // Minsk
-        line1[1] = new MapPoint(30.5186, 50.4339); // Kiev
-        line1[2] = new MapPoint(21.0103, 52.2251); // Warsaw
-        line1[3] = new MapPoint(13.4102, 52.5037); // Berlin
-        line1[4] = new MapPoint(2.3343, 48.8505); // Paris
+        line1[0] = MapPoint.CreateFromGeoCoordinates(53.8869, 27.7151); // Minsk
+        line1[1] = MapPoint.CreateFromGeoCoordinates(50.4339, 30.5186); // Kiev
+        line1[2] = MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103); // Warsaw
+        line1[3] = MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102); // Berlin
+        line1[4] = MapPoint.CreateFromGeoCoordinates(48.8505, 2.3343); // Paris
         
         MapPoint[] line2 = new MapPoint[3];
-        line2[0] = new MapPoint(4.9021, 52.3690); // Amsterdam
-        line2[1] = new MapPoint(4.3458, 50.8263); // Brussel
-        line2[2] = new MapPoint(6.1296, 49.6072); // Luxembourg
-       
-        MapPoint[][] multiline = {line1, line2};
+        line2[0] = MapPoint.CreateFromGeoCoordinates(52.3690, 4.9021); // Amsterdam
+        line2[1] = MapPoint.CreateFromGeoCoordinates(50.8263, 4.3458); // Brussel
+        line2[2] = MapPoint.CreateFromGeoCoordinates(49.6072, 6.1296); // Luxembourg
 
+        MapPoint[][] multiline = {line1, line2};
 		final GLMapVectorObject obj = GLMapVectorObject.createMultiline(multiline);
 		// style applied to all lines added. Style is string with mapcss rules. Read more in manual.
 		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
@@ -825,8 +824,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     void addPolygon()
     {
         int pointCount = 25;
-        MapPoint[] outerRing = new MapPoint[pointCount];
-        MapPoint[] innerRing = new MapPoint[pointCount];
+        MapGeoPoint[] outerRing = new MapGeoPoint[pointCount];
+		MapGeoPoint[] innerRing = new MapGeoPoint[pointCount];
         
         float rOuter = 20, rInner = 10;
         float cx = 30, cy = 30;
@@ -834,17 +833,17 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         // let's display circle
         for (int i=0; i<pointCount; i++) 
         {
-        	outerRing[i] = new MapPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rOuter,
+        	outerRing[i] = new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rOuter,
                                       cy + Math.cos(2*Math.PI / pointCount * i) * rOuter);
         	
-        	innerRing[i] =  new MapPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rInner,
+        	innerRing[i] =  new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rInner,
                     cy + Math.cos(2*Math.PI / pointCount * i) * rInner);        	
         }
-        
-        MapPoint[][] outerRings = {outerRing};
-        MapPoint[][] innerRings = {innerRing};
 
-		GLMapVectorObject obj = GLMapVectorObject.createPolygon(outerRings, innerRings);
+		MapGeoPoint[][] outerRings = {outerRing};
+		MapGeoPoint[][] innerRings = {innerRing};
+
+		GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
 		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
     }
 
