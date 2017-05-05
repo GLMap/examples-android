@@ -789,6 +789,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     {
 		if(image != null)
 		{
+			mapView.removeImage(image);
 			image.dispose();
 			image = null;
 		}
