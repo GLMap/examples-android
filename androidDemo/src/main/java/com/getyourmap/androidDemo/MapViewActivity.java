@@ -237,6 +237,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			case POLYGON:
 				addPolygon();
+				break;
 			case CAPTURE_SCREEN:
 				zoomToPoint();
 				captureScreen();
