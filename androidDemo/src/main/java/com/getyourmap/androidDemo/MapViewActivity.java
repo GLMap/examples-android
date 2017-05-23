@@ -149,8 +149,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			case FLY_TO:
 			{
-				mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353), false);
-				mapView.setMapZoom(14, false);
+				mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353));
+				mapView.setMapZoom(14);
 
 				final Button btn = (Button) this.findViewById(R.id.button_action);
 				btn.setVisibility(View.VISIBLE);
@@ -348,7 +348,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	public boolean onCreateOptionsMenu(Menu menu) 
 	{
     	MapPoint pt = new MapPoint(mapView.getWidth()/2, mapView.getHeight()/2);
-		mapView.changeMapZoom(-1, pt, true);
+		mapView.changeMapZoom(-1, pt, 1, GLMapView.Animation.EaseInOut);
 	    return false;
 	}
 
@@ -534,8 +534,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				}
 			}
 			//Zoom to bbox
-			mapView.setMapCenter(bbox.center(), false);
-			mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+			mapView.setMapCenter(bbox.center());
+			mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 		}
 	}
 
@@ -550,8 +550,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
 				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
 
-			    mapView.setMapCenter(bbox.center(), false);
-				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+			    mapView.setMapCenter(bbox.center());
+				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 			}
 		});
 	}
@@ -568,8 +568,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		// Move map to the Montenegro capital
 		MapPoint pt = MapPoint.CreateFromGeoCoordinates(42.4341, 19.26);
     	GLMapView mapView = (GLMapView) this.findViewById(R.id.map_view);
-    	mapView.setMapCenter(pt, false);
-    	mapView.setMapZoom(16, false);
+    	mapView.setMapCenter(pt);
+    	mapView.setMapZoom(16);
     }
           
     void addPin(float touchX, float touchY)
@@ -764,8 +764,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						@Override
 						public void run()
 						{
-							mapView.setMapCenter(bbox.center(), false);
-							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+							mapView.setMapCenter(bbox.center());
+							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 						}
 					});
 
@@ -858,8 +858,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						@Override
 						public void run()
 						{
-							mapView.setMapCenter(bbox.center(), false);
-							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+							mapView.setMapCenter(bbox.center());
+							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 						}
 					});
 
