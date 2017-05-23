@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -43,6 +44,9 @@ import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
 import com.glmapview.GLMapView.GLMapPlacement;
 import com.glmapview.GLMapView.GLUnits;
+import com.glmapview.GLSearchCategories;
+import com.glmapview.GLSearchCategory;
+import com.glmapview.GLSearchOffline;
 import com.glmapview.MapGeoPoint;
 import com.glmapview.MapPoint;
 
@@ -125,132 +129,155 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		checkAndRequestLocationPermission();
 
 		Bundle b = getIntent().getExtras();
-		final int example = b.getInt("example");
+		final SampleSelectActivity.Samples example = SampleSelectActivity.Samples.values()[b.getInt("example")];
+		switch (example)
+		{
+			case MAP_EMBEDD:
+				if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null)) {
+					//Failed to unpack to caches. Check free space.
+				}
+				zoomToPoint();
+				break;
+			case MAP_ONLINE:
+				GLMapManager.SetAllowedTileDownload(true);
+				break;
+			case MAP_ONLINE_RASTER:
+				mapView.setRasterTileSources(new GLMapRasterTileSource[]{ new OSMTileSource(this) } );
+				break;
+			case ZOOM_BBOX:
+				zoomToBBox();
+				break;
+			case FLY_TO:
+			{
+				mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353), false);
+				mapView.setMapZoom(14, false);
 
-		if (example == SampleSelectActivity.Samples.MAP_EMBEDD.ordinal()) {
-			if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null)) {
-				//Failed to unpack to caches. Check free space.
+				final Button btn = (Button) this.findViewById(R.id.button_action);
+				btn.setVisibility(View.VISIBLE);
+				btn.setText("Fly");
+				btn.setOnClickListener(new OnClickListener()
+				{
+					@Override
+					public void onClick(View v)
+					{
+						double min_lat = 33;
+						double max_lat = 48;
+						double min_lon = -118;
+						double max_lon = -85;
+
+						double lat = min_lat + (max_lat - min_lat) * Math.random();
+						double lon = min_lon + (max_lon - min_lon) * Math.random();
+
+						MapGeoPoint geoPoint = new MapGeoPoint(lat, lon);
+
+						mapView.flyTo(geoPoint, 15, 0, 0);
+					}
+				});
+				GLMapManager.SetAllowedTileDownload(true);
+				break;
 			}
-			zoomToPoint();
-		} else if (example == SampleSelectActivity.Samples.MAP_ONLINE.ordinal()) {
-			GLMapManager.SetAllowedTileDownload(true);
-		} else if (example == SampleSelectActivity.Samples.MAP_ONLINE_RASTER.ordinal()) {
+			case OFFLINE_SEARCH:
+				GLMapManager.AddMap(getAssets(), "Montenegro.vm", null);
+				zoomToPoint();
+				offlineSearch();
+				break;
+			case MARKERS:
+				mapView.setLongClickable(true);
 
-			mapView.setRasterTileSources(new GLMapRasterTileSource[]{ new OSMTileSource(this) } );
-		} else if (example == SampleSelectActivity.Samples.ZOOM_BBOX.ordinal()) {
-            zoomToBBox();
-        } else if (example == SampleSelectActivity.Samples.FLY_TO.ordinal()) {
+				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+					@Override
+					public boolean onSingleTapConfirmed(MotionEvent e) {
+						deleteMarker(e.getX(), e.getY());
+						return true;
+					}
 
-			mapView.setMapCenter( MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353), false);
-			mapView.setMapZoom(14, false);
+					@Override
+					public void onLongPress(MotionEvent e) {
+						addMarker(e.getX(), e.getY());
+					}
+				});
 
-			final Button btn = (Button) this.findViewById(R.id.button_action);
-			btn.setVisibility(View.VISIBLE);
-			btn.setText("Fly");
-			btn.setOnClickListener(new OnClickListener() {
-				@Override
-				public void onClick(View v) {
-					double min_lat = 33;
-					double max_lat = 48;
-					double min_lon = -118;
-					double max_lon = -85;
+				mapView.setOnTouchListener(new OnTouchListener() {
+					@Override
+					public boolean onTouch(View arg0, MotionEvent ev) {
+						return gestureDetector.onTouchEvent(ev);
+					}
+				});
 
-                    double lat = min_lat + (max_lat-min_lat) * Math.random();
-                    double lon = min_lon + (max_lon-min_lon) * Math.random();
+				addMarkers();
+				GLMapManager.SetAllowedTileDownload(true);
+				break;
+			case MARKERS_MAPCSS:
+				addMarkersWithMapcss();
 
-                    MapGeoPoint geoPoint = new MapGeoPoint(lat, lon);
+				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+					@Override
+					public boolean onSingleTapConfirmed(MotionEvent e) {
+						deleteMarker(e.getX(), e.getY());
+						return true;
+					}
 
-					mapView.flyTo(geoPoint, 15, 0, 0);
-				}
-			});
-			GLMapManager.SetAllowedTileDownload(true);
-		} else if (example == SampleSelectActivity.Samples.MARKERS.ordinal()) {
-            mapView.setLongClickable(true);
+					@Override
+					public void onLongPress(MotionEvent e) {
+						addMarkerAsVectorObject(e.getX(), e.getY());
+					}
+				});
 
-            gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
-                @Override
-                public boolean onSingleTapConfirmed(MotionEvent e) {
-                    deleteMarker(e.getX(), e.getY());
-                    return true;
-                }
+				mapView.setOnTouchListener(new OnTouchListener() {
+					@Override
+					public boolean onTouch(View arg0, MotionEvent ev) {
+						return gestureDetector.onTouchEvent(ev);
+					}
+				});
 
-                @Override
-                public void onLongPress(MotionEvent e) {
-                    addMarker(e.getX(), e.getY());
-                }
-            });
+				GLMapManager.SetAllowedTileDownload(true);
+				break;
+			case MULTILINE:
+				addMultiline();
+				break;
+			case POLYGON:
+				addPolygon();
+				break;
+			case CAPTURE_SCREEN:
+				zoomToPoint();
+				captureScreen();
+				break;
+			case IMAGE_SINGLE:
+			{
+				final Button btn = (Button) this.findViewById(R.id.button_action);
+				btn.setVisibility(View.VISIBLE);
+				delImage(btn);
+				break;
+			}
+			case IMAGE_MULTI:
+				mapView.setLongClickable(true);
 
-            mapView.setOnTouchListener(new OnTouchListener() {
-                @Override
-                public boolean onTouch(View arg0, MotionEvent ev) {
-                    return gestureDetector.onTouchEvent(ev);
-                }
-            });
+				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+					@Override
+					public boolean onSingleTapConfirmed(MotionEvent e) {
+						deletePin(e.getX(), e.getY());
+						return true;
+					}
 
-            addMarkers();
-            GLMapManager.SetAllowedTileDownload(true);
-        } else if (example == SampleSelectActivity.Samples.MARKERS_MAPCSS.ordinal()) {
-			addMarkersWithMapcss();
+					@Override
+					public void onLongPress(MotionEvent e) {
+						addPin(e.getX(), e.getY());
+					}
+				});
 
-			gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
-				@Override
-				public boolean onSingleTapConfirmed(MotionEvent e) {
-					deleteMarker(e.getX(), e.getY());
-					return true;
-				}
-
-				@Override
-				public void onLongPress(MotionEvent e) {
-					addMarkerAsVectorObject(e.getX(), e.getY());
-				}
-			});
-
-			mapView.setOnTouchListener(new OnTouchListener() {
-				@Override
-				public boolean onTouch(View arg0, MotionEvent ev) {
-					return gestureDetector.onTouchEvent(ev);
-				}
-			});
-
-			GLMapManager.SetAllowedTileDownload(true);
-		}else if (example == SampleSelectActivity.Samples.MULTILINE.ordinal()) {
-			addMultiline();
-		} else if (example == SampleSelectActivity.Samples.POLYGON.ordinal()) {
-			addPolygon();
-		} else if (example == SampleSelectActivity.Samples.CAPTURE_SCREEN.ordinal()) {
-			zoomToPoint();
-			captureScreen();
-		} else if (example == SampleSelectActivity.Samples.IMAGE_SINGLE.ordinal()) {
-			final Button btn = (Button) this.findViewById(R.id.button_action);
-			btn.setVisibility(View.VISIBLE);
-			delImage(btn);
-		} else if (example == SampleSelectActivity.Samples.IMAGE_MULTI.ordinal()) {
-			mapView.setLongClickable(true);
-
-			gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
-				@Override
-				public boolean onSingleTapConfirmed(MotionEvent e) {
-					deletePin(e.getX(), e.getY());
-					return true;
-				}
-
-				@Override
-				public void onLongPress(MotionEvent e) {
-					addPin(e.getX(), e.getY());
-				}
-			});
-
-			mapView.setOnTouchListener(new OnTouchListener() {
-				@Override
-				public boolean onTouch(View arg0, MotionEvent ev) {
-					return gestureDetector.onTouchEvent(ev);
-				}
-			});
-
-		} else if (example == SampleSelectActivity.Samples.GEO_JSON.ordinal()) {
-			loadGeoJSON();
-		} else if (example == SampleSelectActivity.Samples.STYLE_LIVE_RELOAD.ordinal()) {
-			styleLiveReload();
+				mapView.setOnTouchListener(new OnTouchListener() {
+					@Override
+					public boolean onTouch(View arg0, MotionEvent ev) {
+						return gestureDetector.onTouchEvent(ev);
+					}
+				});
+				break;
+			case GEO_JSON:
+				loadGeoJSON();
+				break;
+			case STYLE_LIVE_RELOAD:
+				styleLiveReload();
+				break;
 		}
 
 		mapView.setCenterTileStateChangedCallback(new Runnable() {
@@ -267,8 +294,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		mapView.setMapDidMoveCallback(new Runnable() {
 			@Override
 			public void run() {
-
-				if (example == SampleSelectActivity.Samples.CALLBACK_TEST.ordinal()) {
+				if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
 					Log.w("GLMapView", "Did move");
 				}
 				runOnUiThread(new Runnable() {
@@ -403,7 +429,117 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}
 	}
 
-	// Example how to calcludate zoom level for some bbox
+	private static GLSearchCategories searchCategories;
+	//Example how to load search categories.
+	public static GLSearchCategories getSearchCategories(Resources resources)
+	{
+		if(searchCategories == null)
+		{
+			byte raw[] = null;
+			byte icuData[] = null;
+			try
+			{
+				//Read prepared categories
+				InputStream stream = resources.openRawResource(R.raw.categories);
+				raw = new byte[stream.available()];
+				stream.read(raw);
+				stream.close();
+
+				//Read icu collation data
+				stream = resources.openRawResource(R.raw.icudt56l);
+				icuData = new byte[stream.available()];
+				stream.read(icuData);
+				stream.close();
+			} catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+
+			//Construct categories
+			searchCategories = GLSearchCategories.CreateFromBytes(raw, icuData);
+		}
+		return searchCategories;
+	}
+
+	void offlineSearch()
+	{
+		GLSearchCategories categories = getSearchCategories(getResources());
+
+		GLSearchOffline searchOffline = new GLSearchOffline();
+		searchOffline.setCategories(categories); //Set categories to use for search
+		searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); //Set center of search
+		searchOffline.setLimit(20); //Set maximum number of results. By default is is 100
+		searchOffline.setLocaleSettings(mapView.getLocaleSettings()); //Locale settings to give bonus for results that match to user language
+
+		GLSearchCategory category[] = categories.getStartedWith(new String[]{"food"}, localeSettings); //find categories by name
+		if(category.length != 0)
+		{
+			searchOffline.addCategoryFilter(category[0]); //Filter results by category
+		}
+		//searchOffline.addNameFilter("cali"); //Add filter by name
+
+		searchOffline.start(new GLSearchOffline.GLMapSearchCompletion()
+		{
+			@Override
+			public void onResults(final Object[] objects)
+			{
+				runOnUiThread(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						displaySearchResults(objects);
+					}
+				});
+			}
+		});
+	}
+
+	void displaySearchResults(Object[] objects)
+	{
+		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
+		style.addStyle(new GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svgpb", 0.2f, 0xFFFF0000)));
+		style.setDataCallback(new GLMapMarkerStyleCollectionDataCallback()
+		{
+			@Override
+			public void fillUnionData(int markersCount, long nativeMarker)
+			{
+				//Not called if clustering is off
+			}
+			@Override
+			public void fillData(Object marker, long nativeMarker)
+			{
+				if(marker instanceof GLMapVectorObject)
+				{
+					GLMapVectorObject obj = (GLMapVectorObject)marker;
+					GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
+				}
+				GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
+			}
+		});
+		GLMapMarkerLayer layer = new GLMapMarkerLayer(objects, style);
+		layer.setClusteringEnabled(false);
+		mapView.displayMarkerLayer(layer);
+
+		//Zoom to results
+		if(objects.length != 0)
+		{
+			//Calculate bbox
+			final GLMapBBox bbox = new GLMapBBox();
+			for(Object object : objects)
+			{
+				if(object instanceof GLMapVectorObject)
+				{
+					bbox.addPoint(((GLMapVectorObject)object).point());
+				}
+			}
+			//Zoom to bbox
+			mapView.setMapCenter(bbox.center(), false);
+			mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+		}
+	}
+
+	// Example how to calculate zoom level for some bbox
 	void zoomToBBox()
 	{
 		mapView.doWhenSurfaceCreated(new Runnable(){
@@ -789,6 +925,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     {
 		if(image != null)
 		{
+			mapView.removeImage(image);
 			image.dispose();
 			image = null;
 		}
@@ -804,19 +941,18 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     void addMultiline()
     {
         MapPoint[] line1 = new MapPoint[5];
-        line1[0] = new MapPoint(27.7151, 53.8869); // Minsk
-        line1[1] = new MapPoint(30.5186, 50.4339); // Kiev
-        line1[2] = new MapPoint(21.0103, 52.2251); // Warsaw
-        line1[3] = new MapPoint(13.4102, 52.5037); // Berlin
-        line1[4] = new MapPoint(2.3343, 48.8505); // Paris
+        line1[0] = MapPoint.CreateFromGeoCoordinates(53.8869, 27.7151); // Minsk
+        line1[1] = MapPoint.CreateFromGeoCoordinates(50.4339, 30.5186); // Kiev
+        line1[2] = MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103); // Warsaw
+        line1[3] = MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102); // Berlin
+        line1[4] = MapPoint.CreateFromGeoCoordinates(48.8505, 2.3343); // Paris
         
         MapPoint[] line2 = new MapPoint[3];
-        line2[0] = new MapPoint(4.9021, 52.3690); // Amsterdam
-        line2[1] = new MapPoint(4.3458, 50.8263); // Brussel
-        line2[2] = new MapPoint(6.1296, 49.6072); // Luxembourg
-       
-        MapPoint[][] multiline = {line1, line2};
+        line2[0] = MapPoint.CreateFromGeoCoordinates(52.3690, 4.9021); // Amsterdam
+        line2[1] = MapPoint.CreateFromGeoCoordinates(50.8263, 4.3458); // Brussel
+        line2[2] = MapPoint.CreateFromGeoCoordinates(49.6072, 6.1296); // Luxembourg
 
+        MapPoint[][] multiline = {line1, line2};
 		final GLMapVectorObject obj = GLMapVectorObject.createMultiline(multiline);
 		// style applied to all lines added. Style is string with mapcss rules. Read more in manual.
 		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
@@ -825,8 +961,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     void addPolygon()
     {
         int pointCount = 25;
-        MapPoint[] outerRing = new MapPoint[pointCount];
-        MapPoint[] innerRing = new MapPoint[pointCount];
+        MapGeoPoint[] outerRing = new MapGeoPoint[pointCount];
+		MapGeoPoint[] innerRing = new MapGeoPoint[pointCount];
         
         float rOuter = 20, rInner = 10;
         float cx = 30, cy = 30;
@@ -834,17 +970,17 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         // let's display circle
         for (int i=0; i<pointCount; i++) 
         {
-        	outerRing[i] = new MapPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rOuter,
+        	outerRing[i] = new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rOuter,
                                       cy + Math.cos(2*Math.PI / pointCount * i) * rOuter);
         	
-        	innerRing[i] =  new MapPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rInner,
+        	innerRing[i] =  new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rInner,
                     cy + Math.cos(2*Math.PI / pointCount * i) * rInner);        	
         }
-        
-        MapPoint[][] outerRings = {outerRing};
-        MapPoint[][] innerRings = {innerRing};
 
-		GLMapVectorObject obj = GLMapVectorObject.createPolygon(outerRings, innerRings);
+		MapGeoPoint[][] outerRings = {outerRing};
+		MapGeoPoint[][] innerRings = {innerRing};
+
+		GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
 		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
     }
 
