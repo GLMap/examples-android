@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -80,6 +81,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	GLMapMarkerLayer markerLayer;
 	GLMapLocaleSettings localeSettings;
+	CurLocationHelper curLocationHelper;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,14 +121,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		localeSettings = new GLMapLocaleSettings();
 		mapView.setLocaleSettings(localeSettings);
 		mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
-		mapView.setUserLocationImages(
-				mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0),
-				mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0));
+		checkAndRequestLocationPermission();
 
 		mapView.setScaleRulerStyle(GLUnits.SI, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
 		mapView.setAttributionPosition(GLMapPlacement.TopCenter);
-
-		checkAndRequestLocationPermission();
 
 		Bundle b = getIntent().getExtras();
 		final SampleSelectActivity.Samples example = SampleSelectActivity.Samples.values()[b.getInt("example")];
@@ -309,20 +307,22 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	public void checkAndRequestLocationPermission()
 	{
-		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+		//Create helper if not exist
+		if(curLocationHelper==null)
+			curLocationHelper = new CurLocationHelper(mapView);
+
+		//Try to start location updates. If we need permissions - ask for them
+		if(!curLocationHelper.initLocationManager(this))
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
-		else
-			mapView.setShowsUserLocation(true);
 	}
 
 	@Override
-	public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
+	public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults)
 	{
 		switch (requestCode) {
 			case 0: {
-				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-					mapView.setShowsUserLocation(true);
-				}
+				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+					curLocationHelper.initLocationManager(this);
 				break;
 			}
 			default:
@@ -330,7 +330,6 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 		}
 	}
-
 
 	@Override
 	protected void onDestroy()
@@ -340,6 +339,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		{
 			markerLayer.dispose();
 			markerLayer = null;
+		}
+		if(curLocationHelper!=null)
+		{
+			curLocationHelper.onDestroy();
 		}
 		super.onDestroy();
 	}
