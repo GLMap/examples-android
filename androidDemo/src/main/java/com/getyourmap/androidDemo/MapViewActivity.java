@@ -43,6 +43,7 @@ import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapVectorObjectList;
 import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
+import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLMapPlacement;
 import com.glmapview.GLMapView.GLUnits;
 import com.glmapview.GLSearchCategories;
@@ -408,7 +409,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	{
 		switch (mapView.getCenterTileState())
 		{
-			case NoData:
+			case GLMapTileState.NoData:
 			{
 				if(btnDownloadMap.getVisibility()==View.INVISIBLE)
 				{
@@ -419,7 +420,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			}
 
-			case Loaded:
+			case GLMapTileState.Loaded:
 			{
 				if(btnDownloadMap.getVisibility()==View.VISIBLE)
 				{
@@ -427,7 +428,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				}
 				break;
 			}
-			case Unknown:
+			case GLMapTileState.Unknown:
 				break;
 		}
 	}
