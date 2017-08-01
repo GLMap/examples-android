@@ -481,8 +481,20 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}
 		//searchOffline.addNameFilter("cali"); //Add filter by name
 
-		searchOffline.start(new GLSearchOffline.GLMapSearchCompletion()
+		searchOffline.start(null, new GLSearchOffline.GLMapSearchCompletion()
 		{
+			@Override
+			public GLSearchCategory getCustomObjectCategory(Object object)
+			{
+				return null;
+			}
+
+			@Override
+			public MapPoint getCustomObjectLocation(Object object)
+			{
+				return null;
+			}
+
 			@Override
 			public void onResults(final Object[] objects)
 			{
