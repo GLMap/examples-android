@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -42,6 +43,7 @@ import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapVectorObjectList;
 import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
+import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLMapPlacement;
 import com.glmapview.GLMapView.GLUnits;
 import com.glmapview.GLSearchCategories;
@@ -80,6 +82,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	GLMapMarkerLayer markerLayer;
 	GLMapLocaleSettings localeSettings;
+	CurLocationHelper curLocationHelper;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,14 +122,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		localeSettings = new GLMapLocaleSettings();
 		mapView.setLocaleSettings(localeSettings);
 		mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
-		mapView.setUserLocationImages(
-				mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0),
-				mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0));
+		checkAndRequestLocationPermission();
 
 		mapView.setScaleRulerStyle(GLUnits.SI, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
 		mapView.setAttributionPosition(GLMapPlacement.TopCenter);
-
-		checkAndRequestLocationPermission();
 
 		Bundle b = getIntent().getExtras();
 		final SampleSelectActivity.Samples example = SampleSelectActivity.Samples.values()[b.getInt("example")];
@@ -149,8 +148,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			case FLY_TO:
 			{
-				mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353), false);
-				mapView.setMapZoom(14, false);
+				mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353));
+				mapView.setMapZoom(14);
 
 				final Button btn = (Button) this.findViewById(R.id.button_action);
 				btn.setVisibility(View.VISIBLE);
@@ -309,20 +308,22 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	public void checkAndRequestLocationPermission()
 	{
-		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+		//Create helper if not exist
+		if(curLocationHelper==null)
+			curLocationHelper = new CurLocationHelper(mapView);
+
+		//Try to start location updates. If we need permissions - ask for them
+		if(!curLocationHelper.initLocationManager(this))
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
-		else
-			mapView.setShowsUserLocation(true);
 	}
 
 	@Override
-	public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
+	public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults)
 	{
 		switch (requestCode) {
 			case 0: {
-				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-					mapView.setShowsUserLocation(true);
-				}
+				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+					curLocationHelper.initLocationManager(this);
 				break;
 			}
 			default:
@@ -330,7 +331,6 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 		}
 	}
-
 
 	@Override
 	protected void onDestroy()
@@ -341,6 +341,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			markerLayer.dispose();
 			markerLayer = null;
 		}
+		if(curLocationHelper!=null)
+		{
+			curLocationHelper.onDestroy();
+		}
 		super.onDestroy();
 	}
 
@@ -348,7 +352,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	public boolean onCreateOptionsMenu(Menu menu) 
 	{
     	MapPoint pt = new MapPoint(mapView.getWidth()/2, mapView.getHeight()/2);
-		mapView.changeMapZoom(-1, pt, true);
+		mapView.changeMapZoom(-1, pt, 1, GLMapView.Animation.EaseInOut);
 	    return false;
 	}
 
@@ -405,7 +409,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	{
 		switch (mapView.getCenterTileState())
 		{
-			case NoData:
+			case GLMapTileState.NoData:
 			{
 				if(btnDownloadMap.getVisibility()==View.INVISIBLE)
 				{
@@ -416,7 +420,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			}
 
-			case Loaded:
+			case GLMapTileState.Loaded:
 			{
 				if(btnDownloadMap.getVisibility()==View.VISIBLE)
 				{
@@ -424,7 +428,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				}
 				break;
 			}
-			case Unknown:
+			case GLMapTileState.Unknown:
 				break;
 		}
 	}
@@ -478,8 +482,20 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}
 		//searchOffline.addNameFilter("cali"); //Add filter by name
 
-		searchOffline.start(new GLSearchOffline.GLMapSearchCompletion()
+		searchOffline.start(null, new GLSearchOffline.GLMapSearchCompletion()
 		{
+			@Override
+			public GLSearchCategory getCustomObjectCategory(Object object)
+			{
+				return null;
+			}
+
+			@Override
+			public MapPoint getCustomObjectLocation(Object object)
+			{
+				return null;
+			}
+
 			@Override
 			public void onResults(final Object[] objects)
 			{
@@ -534,8 +550,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				}
 			}
 			//Zoom to bbox
-			mapView.setMapCenter(bbox.center(), false);
-			mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+			mapView.setMapCenter(bbox.center());
+			mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 		}
 	}
 
@@ -550,8 +566,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
 				bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
 
-			    mapView.setMapCenter(bbox.center(), false);
-				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+			    mapView.setMapCenter(bbox.center());
+				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 			}
 		});
 	}
@@ -568,8 +584,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		// Move map to the Montenegro capital
 		MapPoint pt = MapPoint.CreateFromGeoCoordinates(42.4341, 19.26);
     	GLMapView mapView = (GLMapView) this.findViewById(R.id.map_view);
-    	mapView.setMapCenter(pt, false);
-    	mapView.setMapZoom(16, false);
+    	mapView.setMapCenter(pt);
+    	mapView.setMapZoom(16);
     }
           
     void addPin(float touchX, float touchY)
@@ -764,8 +780,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						@Override
 						public void run()
 						{
-							mapView.setMapCenter(bbox.center(), false);
-							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+							mapView.setMapCenter(bbox.center());
+							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 						}
 					});
 
@@ -858,8 +874,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						@Override
 						public void run()
 						{
-							mapView.setMapCenter(bbox.center(), false);
-							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()), false);
+							mapView.setMapCenter(bbox.center());
+							mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
 						}
 					});
 
