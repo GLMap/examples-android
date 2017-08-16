@@ -558,6 +558,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	// Example how to calculate zoom level for some bbox
 	void zoomToBBox()
 	{
+		//When surface will be created - getWidth and getHeight will have valid values
 		mapView.doWhenSurfaceCreated(new Runnable(){
 			@Override
 			public void run()
