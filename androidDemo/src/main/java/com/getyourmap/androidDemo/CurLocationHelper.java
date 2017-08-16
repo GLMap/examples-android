@@ -13,6 +13,8 @@ import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.glmapview.GLMapImage;
+import com.glmapview.GLMapVectorCascadeStyle;
+import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapView;
 import com.glmapview.MapGeoPoint;
 import com.glmapview.MapPoint;
@@ -31,6 +33,7 @@ class CurLocationHelper implements LocationListener
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 1 meter
 
     private GLMapImage userMovementImage, userLocationImage;
+    private GLMapVectorObject accuracyCircle;
     private boolean isFollowLocationEnabled = false;
     private LocationManager locationManager;
     private Location lastLocation;
@@ -39,26 +42,6 @@ class CurLocationHelper implements LocationListener
     CurLocationHelper(GLMapView mapView)
     {
         this.mapView = mapView;
-        Bitmap locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0);
-        if (locationImage != null)
-        {
-            userLocationImage = mapView.displayImage(locationImage);
-            userLocationImage.setDrawOrder(100);
-            userLocationImage.setHidden(true);
-            userLocationImage.setOffset(new MapPoint(locationImage.getWidth() / 2, locationImage.getHeight() / 2));
-            locationImage.recycle();
-        }
-
-        Bitmap movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0);
-        if (movementImage != null)
-        {
-            userMovementImage = mapView.displayImage(movementImage);
-            userMovementImage.setDrawOrder(100);
-            userMovementImage.setHidden(true);
-            userMovementImage.setOffset(new MapPoint(movementImage.getWidth() / 2, movementImage.getHeight() / 2));
-            userMovementImage.setRotatesWithMap(true);
-            movementImage.recycle();
-        }
     }
 
     void onDestroy()
@@ -151,24 +134,77 @@ class CurLocationHelper implements LocationListener
         lastLocation = location;
 
         MapGeoPoint geoPoint = new MapGeoPoint(location.getLatitude(), location.getLongitude());
-        MapPoint point = new MapPoint(geoPoint);
+        final MapPoint position = new MapPoint(geoPoint);
         if(isFollowLocationEnabled)
             mapView.flyTo(geoPoint, mapView.getMapZoom(), 0, 0);
 
-        if (location.hasBearing() && userMovementImage!=null)
+        if (userLocationImage == null) {
+            Bitmap locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0);
+            if (locationImage != null) {
+                userLocationImage = mapView.displayImage(locationImage);
+                userLocationImage.setDrawOrder(100);
+                userLocationImage.setHidden(true);
+                userLocationImage.setOffset(new MapPoint(locationImage.getWidth() / 2, locationImage.getHeight() / 2));
+                userLocationImage.setPosition(position);
+                locationImage.recycle();
+            }
+        }
+
+        if (userMovementImage == null) {
+            Bitmap movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0);
+            if (movementImage != null) {
+                userMovementImage = mapView.displayImage(movementImage);
+                userMovementImage.setDrawOrder(100);
+                userMovementImage.setHidden(true);
+                userMovementImage.setOffset(new MapPoint(movementImage.getWidth() / 2, movementImage.getHeight() / 2));
+                userMovementImage.setRotatesWithMap(true);
+                userMovementImage.setPosition(position);
+                movementImage.recycle();
+            }
+        }
+
+        if (location.hasBearing())
         {
             userMovementImage.setHidden(false);
-            userMovementImage.setPosition(point);
             userMovementImage.setAngle(-location.getBearing());
-            if (userLocationImage != null)
-                userLocationImage.setHidden(false);
-        } else if (userLocationImage != null)
+            userLocationImage.setHidden(false);
+        } else
         {
             userLocationImage.setHidden(false);
-            userLocationImage.setPosition(point);
-            if (userMovementImage != null)
-                userMovementImage.setHidden(true);
+            userMovementImage.setHidden(true);
         }
+
+        mapView.startImagePositionAnimation(userMovementImage, null, position, 1, GLMapView.Animation.Linear);
+        mapView.startImagePositionAnimation(userLocationImage, null, position, 1, GLMapView.Animation.Linear);
+
+        if(accuracyCircle == null)
+        {
+            final int pointCount = 100;
+            //Use MapPoint to avoid distortions of circle
+            MapPoint[] points = new MapPoint[pointCount];
+            for (int i = 0; i < pointCount; i++)
+            {
+                double f = 2 * Math.PI * i / pointCount;
+                //If radius of circle will be 1 only 2 points will be in final geometry (after douglas-peucker)
+                points[i] = new MapPoint(Math.sin(f) * 2048, Math.cos(f) * 2048);
+            }
+            accuracyCircle = GLMapVectorObject.createPolygon(new MapPoint[][]{points}, null);
+            accuracyCircle.useTransform();
+
+            //Set layer to 100 so circle will draw above map objects
+            mapView.addVectorObjectWithStyle(accuracyCircle, GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"), null);
+
+            // setTransform could be used only when mapView surface is created
+            mapView.doWhenSurfaceCreated(new Runnable() {
+                @Override
+                public void run() {
+                    accuracyCircle.setTransform(mapView, position, 0.1f);
+                }
+            });
+        }
+        float r = (float)mapView.convertMetersToInternal(location.getAccuracy());
+        r = (float)mapView.convertMetersToInternal(30);
+        mapView.startVectorObjectAnimation(accuracyCircle, null, position, Float.NaN, r/2048.0f, 1, GLMapView.Animation.Linear);
     }
 
     @Override
