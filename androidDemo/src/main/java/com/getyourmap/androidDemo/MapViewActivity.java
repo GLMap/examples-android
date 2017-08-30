@@ -43,12 +43,13 @@ import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapVectorObjectList;
 import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
-import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLMapPlacement;
+import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLUnits;
 import com.glmapview.GLSearchCategories;
 import com.glmapview.GLSearchCategory;
 import com.glmapview.GLSearchOffline;
+import com.glmapview.ImageManager;
 import com.glmapview.MapGeoPoint;
 import com.glmapview.MapPoint;
 
@@ -63,21 +64,133 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener {
 
-	class Pin
+	private static class Pin
 	{
-		public MapPoint pos;
-		public int imageVariant;		
+		MapPoint pos;
+		int imageVariant;
 	}
 
-	private GLMapImage image=null;
-	private GLMapImageGroup imageGroup=null;
-	private List<Pin> pins = new ArrayList<>();	
+	private static class Pins implements GLMapImageGroupCallback
+	{
+		private ReentrantLock lock;
+		private Bitmap images[];
+		private List<Pin> pins;
+
+		Pins(ImageManager imageManager)
+		{
+			lock = new ReentrantLock();
+			images = new Bitmap[3];
+			pins = new ArrayList<>();
+			images[0] = imageManager.open("1.svgpb", 1, 0xFFFF0000);
+			images[1] = imageManager.open("2.svgpb", 1, 0xFF00FF00);
+			images[2] = imageManager.open("3.svgpb", 1, 0xFF0000FF);
+		}
+
+			@Override
+		public int getImagesCount()
+		{
+			return pins.size();
+		}
+
+		@Override
+		public int getImageIndex(int i)
+		{
+			return pins.get(i).imageVariant;
+		}
+
+		@Override
+		public MapPoint getImagePos(int i)
+		{
+			return pins.get(i).pos;
+		}
+
+		@Override
+		public void updateStarted()
+		{
+			Log.i("GLMapImageGroupCallback", "Update started");
+			lock.lock();
+		}
+
+		@Override
+		public void updateFinished()
+		{
+			Log.i("GLMapImageGroupCallback", "Update finished");
+			lock.unlock();
+		}
+
+		@Override
+		public int getImageVariantsCount()
+		{
+			return images.length;
+		}
+
+		@Override
+		public Bitmap getImageVariantBitmap(int i)
+		{
+			return images[i];
+		}
+
+		@Override
+		public MapPoint getImageVariantOffset(int i)
+		{
+			return new MapPoint(images[i].getWidth()/2, 0);
+		}
+
+		int size()
+		{
+			int rv;
+			lock.lock();
+			rv = pins.size();
+			lock.unlock();
+			return rv;
+		}
+
+		void add(Pin pin)
+		{
+			lock.lock();
+			pins.add(pin);
+			lock.unlock();
+		}
+
+		void remove(Pin pin)
+		{
+			lock.lock();
+			pins.remove(pin);
+			lock.unlock();
+		}
+
+		Pin findPin(GLMapView mapView, float touchX, float touchY)
+		{
+			Pin rv = null;
+			lock.lock();
+			for(int i=0; i<pins.size(); ++i)
+			{
+				Pin pin = pins.get(i);
+
+				MapPoint screenPos = mapView.convertInternalToDisplay(new MapPoint(pin.pos));
+				Rect rt = new Rect(-40,-40,40,40);
+				rt.offset( (int)screenPos.x, (int)screenPos.y );
+				if(rt.contains((int)touchX, (int)touchY))
+				{
+					rv = pin;
+					break;
+				}
+			}
+			lock.unlock();
+			return rv;
+		}
+	}
+
+	private GLMapImage image;
+	private GLMapImageGroup imageGroup;
+	private Pins pins;
 	private GestureDetector gestureDetector;
 	private GLMapView mapView;
-	private GLMapInfo mapToDownload=null;
+	private GLMapInfo mapToDownload;
 	private Button btnDownloadMap;
 
 	GLMapMarkerLayer markerLayer;
@@ -336,11 +449,25 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	protected void onDestroy()
 	{
 		GLMapManager.removeStateListener(this);
+		if(mapView!=null)
+		{
+			mapView.removeAllObjects();
+			mapView.setCenterTileStateChangedCallback(null);
+			mapView.setMapDidMoveCallback(null);
+		}
+
 		if(markerLayer!=null)
 		{
 			markerLayer.dispose();
 			markerLayer = null;
 		}
+
+		if(imageGroup!=null)
+		{
+			imageGroup.dispose();
+			imageGroup = null;
+		}
+
 		if(curLocationHelper!=null)
 		{
 			curLocationHelper.onDestroy();
@@ -533,8 +660,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
 			}
 		});
-		GLMapMarkerLayer layer = new GLMapMarkerLayer(objects, style);
-		layer.setClusteringEnabled(false);
+		GLMapMarkerLayer layer = new GLMapMarkerLayer(objects, style, false, 4);
 		mapView.displayMarkerLayer(layer);
 
 		//Zoom to results
@@ -591,90 +717,32 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
           
     void addPin(float touchX, float touchY)
     {
+		if(pins == null)
+			pins = new Pins(mapView.imageManager);
+
     	if(imageGroup == null)
     	{
-    		final Bitmap images[] = new Bitmap[3];    		
-    		images[0] = mapView.imageManager.open("1.svgpb", 1, 0xFFFF0000);
-    		images[1] = mapView.imageManager.open("2.svgpb", 1, 0xFF00FF00);
-    		images[2] = mapView.imageManager.open("3.svgpb", 1, 0xFF0000FF);
-    		
-        	class Callback implements GLMapImageGroupCallback {
-        		@Override
-        		public int getImagesCount() 
-        		{
-        			return pins.size();
-        		}
+    		imageGroup = new GLMapImageGroup(pins, 3);
+			mapView.displayImageGroup(imageGroup);
+    	}
 
-        		@Override
-        		public int getImageIndex(int i) 
-        		{
-        			return pins.get(i).imageVariant;
-        		}
-
-        		@Override
-        		public MapPoint getImagePos(int i)
-        		{
-        			return pins.get(i).pos;
-        		}
-
-				@Override
-				public void updateStarted()
-				{
-					Log.i("GLMapImageGroupCallback", "Update started");
-				}
-
-				@Override
-				public void updateFinished()
-				{
-					Log.i("GLMapImageGroupCallback", "Update finished");
-				}
-
-				@Override
-        		public int getImageVariantsCount()
-        		{
-        			return images.length;
-        		}
-        		
-        		@Override        		
-        		public Bitmap getImageVariantBitmap(int i)
-        		{
-        			return images[i];
-        		}
-        		@Override        		
-        		public MapPoint getImageVariantOffset(int i)
-        		{
-        			return new MapPoint(images[i].getWidth()/2, 0);
-        		}
-            }          	    		
-    		imageGroup = mapView.createImageGroup(new Callback());    		
-    	}    	
-    	
     	MapPoint pt = mapView.convertDisplayToInternal(new MapPoint(touchX, touchY));
-    	
     	Pin pin = new Pin();
     	pin.pos = pt;
     	pin.imageVariant = pins.size() % 3;    	
-    	pins.add( pin );    	
-    	imageGroup.setNeedsUpdate();    	   	
+    	pins.add(pin);
+    	imageGroup.setNeedsUpdate(false);
     }
     
     
     void deletePin(float touchX, float touchY)
     {
-    	for(int i=0; i<pins.size(); ++i)
-    	{    	    	
-    		MapPoint pos = pins.get(i).pos;
-    		MapPoint screenPos = mapView.convertInternalToDisplay(new MapPoint(pos));
-    		
-    		Rect rt = new Rect(-40,-40,40,40);
-    		rt.offset( (int)screenPos.x, (int)screenPos.y );
-    		if(rt.contains((int)touchX, (int)touchY))
-    		{
-    			pins.remove(i);
-    			imageGroup.setNeedsUpdate();
-    			break;	
-    		}    		    		    		
-    	}
+		Pin pin = pins.findPin(mapView, touchX, touchY);
+		if(pin != null)
+		{
+			pins.remove(pin);
+			imageGroup.setNeedsUpdate(false);
+		}
     }
 
 	void deleteMarker(float x, float y)
@@ -908,7 +976,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     void addImage(final Button btn)
     {
     	Bitmap bmp = mapView.imageManager.open("arrow-maphint.svgpb", 1, 0);
-    	image = mapView.displayImage(bmp);
+    	image = mapView.displayImage(bmp, 2);
     	image.setOffset(new MapPoint(bmp.getWidth(), bmp.getHeight()/2));
     	image.setRotatesWithMap(true);
     	image.setAngle((float)Math.random()*360);

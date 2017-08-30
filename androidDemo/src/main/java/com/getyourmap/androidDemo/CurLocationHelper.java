@@ -141,8 +141,7 @@ class CurLocationHelper implements LocationListener
         if (userLocationImage == null) {
             Bitmap locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0);
             if (locationImage != null) {
-                userLocationImage = mapView.displayImage(locationImage);
-                userLocationImage.setDrawOrder(100);
+                userLocationImage = mapView.displayImage(locationImage, 100);
                 userLocationImage.setHidden(true);
                 userLocationImage.setOffset(new MapPoint(locationImage.getWidth() / 2, locationImage.getHeight() / 2));
                 userLocationImage.setPosition(position);
@@ -153,8 +152,7 @@ class CurLocationHelper implements LocationListener
         if (userMovementImage == null) {
             Bitmap movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0);
             if (movementImage != null) {
-                userMovementImage = mapView.displayImage(movementImage);
-                userMovementImage.setDrawOrder(100);
+                userMovementImage = mapView.displayImage(movementImage, 100);
                 userMovementImage.setHidden(true);
                 userMovementImage.setOffset(new MapPoint(movementImage.getWidth() / 2, movementImage.getHeight() / 2));
                 userMovementImage.setRotatesWithMap(true);
