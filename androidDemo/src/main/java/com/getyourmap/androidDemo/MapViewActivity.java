@@ -471,6 +471,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		if(curLocationHelper!=null)
 		{
 			curLocationHelper.onDestroy();
+			curLocationHelper = null;
 		}
 		super.onDestroy();
 	}
@@ -638,30 +639,32 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		});
 	}
 
+	static class SearchStyle extends GLMapMarkerStyleCollectionDataCallback
+	{
+		@Override
+		public void fillUnionData(int markersCount, long nativeMarker)
+		{
+			//Not called if clustering is off
+		}
+		@Override
+		public void fillData(Object marker, long nativeMarker)
+		{
+			if(marker instanceof GLMapVectorObject)
+			{
+				GLMapVectorObject obj = (GLMapVectorObject)marker;
+				GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
+			}
+			GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
+		}
+	}
+
 	void displaySearchResults(Object[] objects)
 	{
 		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
 		style.addStyle(new GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svgpb", 0.2f, 0xFFFF0000)));
-		style.setDataCallback(new GLMapMarkerStyleCollectionDataCallback()
-		{
-			@Override
-			public void fillUnionData(int markersCount, long nativeMarker)
-			{
-				//Not called if clustering is off
-			}
-			@Override
-			public void fillData(Object marker, long nativeMarker)
-			{
-				if(marker instanceof GLMapVectorObject)
-				{
-					GLMapVectorObject obj = (GLMapVectorObject)marker;
-					GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
-				}
-				GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
-			}
-		});
-		GLMapMarkerLayer layer = new GLMapMarkerLayer(objects, style, false, 4);
-		mapView.displayMarkerLayer(layer);
+		style.setDataCallback(new SearchStyle());
+		markerLayer = new GLMapMarkerLayer(objects, style, false, 4);
+		mapView.displayMarkerLayer(markerLayer);
 
 		//Zoom to results
 		if(objects.length != 0)
@@ -877,54 +880,48 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}.execute();
 	}
 
-	void addMarkers()
+	static class MarkersStyle extends GLMapMarkerStyleCollectionDataCallback
 	{
-		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
-		final int unionCounts[] = {1, 2, 4, 8, 16, 32, 64, 128};
-		for(int i=0; i<unionCounts.length; i++)
+		static int unionCounts[] = {1, 2, 4, 8, 16, 32, 64, 128};
+		GLMapVectorStyle textStyle = GLMapVectorStyle.createStyle("{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}");
+
+		@Override
+		public void fillUnionData(int markersCount, long nativeMarker)
 		{
-			float scale = (float)(0.2+0.1*i);
-			style.addStyle(new GLMapMarkerImage("marker"+scale, mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])));
+			for(int i=unionCounts.length-1; i>=0; i--)
+			{
+				if(markersCount > unionCounts[i])
+				{
+					GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, i);
+					break;
+				}
+			}
+			GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount) , new Point(0, 0), textStyle);
 		}
 
-		final GLMapVectorStyle textStyle = GLMapVectorStyle.createStyle("{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}");
-		style.setDataCallback(new GLMapMarkerStyleCollectionDataCallback()
+		@Override
+		public void fillData(Object marker, long nativeMarker)
 		{
-			@Override
-			public void fillUnionData(int markersCount, long nativeMarker)
+			if(marker instanceof MapPoint)
 			{
-				for(int i=unionCounts.length-1; i>=0; i--)
-				{
-					if(markersCount > unionCounts[i])
-					{
-						GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, i);
-						break;
-					}
-				}
-				GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount) , new Point(0, 0), textStyle);
-			}
-
-			@Override
-			public void fillData(Object marker, long nativeMarker)
+				GLMapMarkerStyleCollection.setMarkerLocation(nativeMarker, (MapPoint) marker);
+				GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0,0), textStyle);
+			}else if(marker instanceof GLMapVectorObject)
 			{
-				if(marker instanceof MapPoint)
+				GLMapVectorObject obj = (GLMapVectorObject)marker;
+				GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
+				String name = obj.valueForKey("name");
+				if(name!=null)
 				{
-					GLMapMarkerStyleCollection.setMarkerLocation(nativeMarker, (MapPoint) marker);
-					GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0,0), textStyle);
-				}else if(marker instanceof GLMapVectorObject)
-				{
-					GLMapVectorObject obj = (GLMapVectorObject)marker;
-					GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
-					String name = obj.valueForKey("name");
-					if(name!=null)
-					{
-						GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, new Point(0, 15/2), textStyle);
-					}
+					GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, new Point(0, 15/2), textStyle);
 				}
-				GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
 			}
-		});
+			GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
+		}
+	}
 
+	void addMarkers()
+	{
 		new AsyncTask<Void, Void, GLMapMarkerLayer>()
 		{
 			@Override
@@ -933,6 +930,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				GLMapMarkerLayer rv;
 				try
 				{
+					GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
+					for(int i=0; i<MarkersStyle.unionCounts.length; i++)
+					{
+						float scale = (float)(0.2+0.1*i);
+						style.addStyle(new GLMapMarkerImage("marker"+scale, mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])));
+					}
+					style.setDataCallback(new MarkersStyle());
+
 					Log.w("GLMapView", "Start parsing");
 					GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
 					Log.w("GLMapView", "Finish parsing");
@@ -972,7 +977,6 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}.execute();
 	}
 
-    
     void addImage(final Button btn)
     {
     	Bitmap bmp = mapView.imageManager.open("arrow-maphint.svgpb", 1, 0);
@@ -1040,7 +1044,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         MapPoint[][] multiline = {line1, line2};
 		final GLMapVectorObject obj = GLMapVectorObject.createMultiline(multiline);
 		// style applied to all lines added. Style is string with mapcss rules. Read more in manual.
-		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
+		mapView.injectVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
      }
     
     void addPolygon()
@@ -1066,7 +1070,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		MapGeoPoint[][] innerRings = {innerRing};
 
 		GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
-		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
+		mapView.injectVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
     }
 
 	private void styleLiveReload()
@@ -1163,7 +1167,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				+ "line{linecap: round; width: 5pt; color:blue;}"
 				+ "area{fill-color:green; width:1pt; color:red;}");
 
-		mapView.addVectorObjectsWithStyle(objects.toArray(), style);
+		mapView.injectVectorObjectsWithStyle(objects.toArray(), style);
 	}
     
     void captureScreen()

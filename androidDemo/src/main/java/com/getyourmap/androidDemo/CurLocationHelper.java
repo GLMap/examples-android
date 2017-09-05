@@ -32,8 +32,7 @@ class CurLocationHelper implements LocationListener
     private static final long MIN_TIME_BW_UPDATES = 1000; // 1 second
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 1 meter
 
-    private GLMapImage userMovementImage, userLocationImage;
-    private GLMapVectorObject accuracyCircle;
+    private GLMapImage userMovementImage, userLocationImage, accuracyCircle;
     private boolean isFollowLocationEnabled = false;
     private LocationManager locationManager;
     private Location lastLocation;
@@ -49,6 +48,7 @@ class CurLocationHelper implements LocationListener
         if(locationManager!=null)
         {
             locationManager.removeUpdates(this);
+            locationManager = null;
         }
     }
 
@@ -173,7 +173,6 @@ class CurLocationHelper implements LocationListener
         }
 
         mapView.startImagePositionAnimation(userMovementImage, null, position, 1, GLMapView.Animation.Linear);
-        mapView.startImagePositionAnimation(userLocationImage, null, position, 1, GLMapView.Animation.Linear);
 
         if(accuracyCircle == null)
         {
@@ -186,23 +185,19 @@ class CurLocationHelper implements LocationListener
                 //If radius of circle will be 1 only 2 points will be in final geometry (after douglas-peucker)
                 points[i] = new MapPoint(Math.sin(f) * 2048, Math.cos(f) * 2048);
             }
-            accuracyCircle = GLMapVectorObject.createPolygon(new MapPoint[][]{points}, null);
-            accuracyCircle.useTransform();
+            GLMapVectorObject circle = GLMapVectorObject.createPolygon(new MapPoint[][]{points}, null);
 
-            //Set layer to 100 so circle will draw above map objects
-            mapView.addVectorObjectWithStyle(accuracyCircle, GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"), null);
+            accuracyCircle = new GLMapImage(99);
+            accuracyCircle.setUseTransform(true);
+            accuracyCircle.setPosition(position);
+            accuracyCircle.setScale(0.1);
+            accuracyCircle.setVectorObject(mapView, circle, GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"), null);
 
-            // setTransform could be used only when mapView surface is created
-            mapView.doWhenSurfaceCreated(new Runnable() {
-                @Override
-                public void run() {
-                    accuracyCircle.setTransform(mapView, position, 0.1f);
-                }
-            });
+            mapView.displayImage(accuracyCircle);
         }
         float r = (float)mapView.convertMetersToInternal(location.getAccuracy());
-        r = (float)mapView.convertMetersToInternal(30);
-        mapView.startVectorObjectAnimation(accuracyCircle, null, position, Float.NaN, r/2048.0f, 1, GLMapView.Animation.Linear);
+        mapView.startImagePositionAnimation(accuracyCircle, null, position, 1, GLMapView.Animation.Linear);
+        mapView.startImageScaleAnimation(accuracyCircle, Float.NaN, r/2048.0f, 1, GLMapView.Animation.Linear);
     }
 
     @Override
