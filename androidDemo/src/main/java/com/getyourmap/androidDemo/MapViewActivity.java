@@ -25,9 +25,10 @@ import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.glmapview.GLMapAnimation;
 import com.glmapview.GLMapBBox;
 import com.glmapview.GLMapDownloadTask;
-import com.glmapview.GLMapImage;
+import com.glmapview.GLMapDrawable;
 import com.glmapview.GLMapImageGroup;
 import com.glmapview.GLMapImageGroupCallback;
 import com.glmapview.GLMapInfo;
@@ -185,7 +186,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		}
 	}
 
-	private GLMapImage image;
+	private GLMapDrawable image;
 	private GLMapImageGroup imageGroup;
 	private Pins pins;
 	private GestureDetector gestureDetector;
@@ -480,7 +481,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	public boolean onCreateOptionsMenu(Menu menu) 
 	{
     	MapPoint pt = new MapPoint(mapView.getWidth()/2, mapView.getHeight()/2);
-		mapView.changeMapZoom(-1, pt, 1, GLMapView.Animation.EaseInOut);
+		mapView.changeMapZoom(-1, pt, 1, GLMapAnimation.EaseInOut);
 	    return false;
 	}
 
@@ -664,7 +665,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		style.addStyle(new GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svgpb", 0.2f, 0xFFFF0000)));
 		style.setDataCallback(new SearchStyle());
 		markerLayer = new GLMapMarkerLayer(objects, style, false, 4);
-		mapView.displayMarkerLayer(markerLayer);
+		mapView.add(markerLayer);
 
 		//Zoom to results
 		if(objects.length != 0)
@@ -726,7 +727,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	if(imageGroup == null)
     	{
     		imageGroup = new GLMapImageGroup(pins, 3);
-			mapView.displayImageGroup(imageGroup);
+			mapView.add(imageGroup);
     	}
 
     	MapPoint pt = mapView.convertDisplayToInternal(new MapPoint(touchX, touchY));
@@ -874,7 +875,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				if(layer != null)
 				{
 					markerLayer = layer;
-					mapView.displayMarkerLayer(layer);
+					mapView.add(layer);
 				}
 			}
 		}.execute();
@@ -970,7 +971,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				if(layer != null)
 				{
 					markerLayer = layer;
-					mapView.displayMarkerLayer(layer);
+					mapView.add(layer);
 				}
 			}
 
@@ -980,12 +981,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     void addImage(final Button btn)
     {
     	Bitmap bmp = mapView.imageManager.open("arrow-maphint.svgpb", 1, 0);
-    	image = mapView.displayImage(bmp, 2);
-    	image.setOffset(new MapPoint(bmp.getWidth(), bmp.getHeight()/2));
+    	image = new GLMapDrawable(bmp, 2);
+    	image.setOffset(bmp.getWidth(), bmp.getHeight()/2);
     	image.setRotatesWithMap(true);
     	image.setAngle((float)Math.random()*360);
-
     	image.setPosition(mapView.getMapCenter());
+		mapView.add(image);
 
 		btn.setText("Move image");
     	btn.setOnClickListener(new OnClickListener(){
@@ -1014,7 +1015,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     {
 		if(image != null)
 		{
-			mapView.removeImage(image);
+			mapView.remove(image);
 			image.dispose();
 			image = null;
 		}
@@ -1044,7 +1045,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         MapPoint[][] multiline = {line1, line2};
 		final GLMapVectorObject obj = GLMapVectorObject.createMultiline(multiline);
 		// style applied to all lines added. Style is string with mapcss rules. Read more in manual.
-		mapView.injectVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
+
+		GLMapDrawable drawable = new GLMapDrawable();
+		drawable.setVectorObject(mapView, obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
+		mapView.add(drawable);
      }
     
     void addPolygon()
@@ -1070,7 +1074,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		MapGeoPoint[][] innerRings = {innerRing};
 
 		GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
-		mapView.injectVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
+		GLMapDrawable drawable = new GLMapDrawable();
+		drawable.setVectorObject(mapView, obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
+		mapView.add(drawable);
     }
 
 	private void styleLiveReload()
@@ -1167,7 +1173,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				+ "line{linecap: round; width: 5pt; color:blue;}"
 				+ "area{fill-color:green; width:1pt; color:red;}");
 
-		mapView.injectVectorObjectsWithStyle(objects.toArray(), style);
+		for(long i=0; i<objects.size(); ++i)
+		{
+			GLMapDrawable drawable = new GLMapDrawable();
+			drawable.setVectorObject(mapView, objects.get(i), style, null);
+			mapView.add(drawable);
+		}
 	}
     
     void captureScreen()

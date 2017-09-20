@@ -12,7 +12,8 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-import com.glmapview.GLMapImage;
+import com.glmapview.GLMapAnimation;
+import com.glmapview.GLMapDrawable;
 import com.glmapview.GLMapVectorCascadeStyle;
 import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapView;
@@ -32,7 +33,7 @@ class CurLocationHelper implements LocationListener
     private static final long MIN_TIME_BW_UPDATES = 1000; // 1 second
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 1 meter
 
-    private GLMapImage userMovementImage, userLocationImage, accuracyCircle;
+    private GLMapDrawable userMovementImage, userLocationImage, accuracyCircle;
     private boolean isFollowLocationEnabled = false;
     private LocationManager locationManager;
     private Location lastLocation;
@@ -134,17 +135,19 @@ class CurLocationHelper implements LocationListener
         lastLocation = location;
 
         MapGeoPoint geoPoint = new MapGeoPoint(location.getLatitude(), location.getLongitude());
-        final MapPoint position = new MapPoint(geoPoint);
+        MapPoint position = new MapPoint(geoPoint);
         if(isFollowLocationEnabled)
             mapView.flyTo(geoPoint, mapView.getMapZoom(), 0, 0);
 
+        //Create drawables if not exist and set initial positions.
         if (userLocationImage == null) {
             Bitmap locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0);
             if (locationImage != null) {
-                userLocationImage = mapView.displayImage(locationImage, 100);
+                userLocationImage = new GLMapDrawable(locationImage, 100);
                 userLocationImage.setHidden(true);
-                userLocationImage.setOffset(new MapPoint(locationImage.getWidth() / 2, locationImage.getHeight() / 2));
+                userLocationImage.setOffset(locationImage.getWidth() / 2, locationImage.getHeight() / 2);
                 userLocationImage.setPosition(position);
+                mapView.add(userLocationImage);
                 locationImage.recycle();
             }
         }
@@ -152,28 +155,33 @@ class CurLocationHelper implements LocationListener
         if (userMovementImage == null) {
             Bitmap movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0);
             if (movementImage != null) {
-                userMovementImage = mapView.displayImage(movementImage, 100);
+                userMovementImage = new GLMapDrawable(movementImage, 100);
                 userMovementImage.setHidden(true);
-                userMovementImage.setOffset(new MapPoint(movementImage.getWidth() / 2, movementImage.getHeight() / 2));
+                userMovementImage.setOffset(movementImage.getWidth() / 2, movementImage.getHeight() / 2);
                 userMovementImage.setRotatesWithMap(true);
                 userMovementImage.setPosition(position);
+                if(location.hasBearing())
+                    userLocationImage.setAngle(-location.getBearing());
+                mapView.add(userMovementImage);
                 movementImage.recycle();
             }
         }
 
+        //Select what image to display
         if (location.hasBearing())
         {
             userMovementImage.setHidden(false);
-            userMovementImage.setAngle(-location.getBearing());
-            userLocationImage.setHidden(false);
+            userLocationImage.setHidden(true);
         } else
         {
             userLocationImage.setHidden(false);
             userMovementImage.setHidden(true);
         }
 
-        mapView.startImagePositionAnimation(userMovementImage, null, position, 1, GLMapView.Animation.Linear);
 
+        //Calculate radius of accuracy circle
+        float r = (float)mapView.convertMetersToInternal(location.getAccuracy());
+        //If accuracy circle drawable not exits - create it and set initial position
         if(accuracyCircle == null)
         {
             final int pointCount = 100;
@@ -187,17 +195,24 @@ class CurLocationHelper implements LocationListener
             }
             GLMapVectorObject circle = GLMapVectorObject.createPolygon(new MapPoint[][]{points}, null);
 
-            accuracyCircle = new GLMapImage(99);
+            accuracyCircle = new GLMapDrawable(99);
             accuracyCircle.setUseTransform(true);
             accuracyCircle.setPosition(position);
-            accuracyCircle.setScale(0.1);
+            accuracyCircle.setScale(r/2048.0f);
             accuracyCircle.setVectorObject(mapView, circle, GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"), null);
-
-            mapView.displayImage(accuracyCircle);
+            mapView.add(accuracyCircle);
         }
-        float r = (float)mapView.convertMetersToInternal(location.getAccuracy());
-        mapView.startImagePositionAnimation(accuracyCircle, null, position, 1, GLMapView.Animation.Linear);
-        mapView.startImageScaleAnimation(accuracyCircle, Float.NaN, r/2048.0f, 1, GLMapView.Animation.Linear);
+
+        //Create animation that will move drawables to new location
+        GLMapAnimation animation = new GLMapAnimation(GLMapAnimation.Linear, 1);
+        animation.setPosition(userMovementImage, position);
+        animation.setPosition(userLocationImage, position);
+        animation.setPosition(accuracyCircle, position);
+        animation.setScale(accuracyCircle, r/2048.0f);
+        if(location.hasBearing())
+            animation.setAngle(userMovementImage, -location.getBearing());
+
+        mapView.startAnimation(animation);
     }
 
     @Override
