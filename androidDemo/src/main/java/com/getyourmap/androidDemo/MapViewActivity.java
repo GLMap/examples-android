@@ -450,7 +450,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				stream.close();
 
 				//Read icu collation data
-				stream = resources.openRawResource(R.raw.icudt56l);
+				stream = resources.openRawResource(R.raw.icudt59l);
 				icuData = new byte[stream.available()];
 				stream.read(icuData);
 				stream.close();
