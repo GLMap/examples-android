@@ -11,10 +11,10 @@ import java.io.File;
 /**
  * Created by destman on 11/11/15.
  */
-public class OSMTileSource extends GLMapRasterTileSource {
-    String mirrors[];
+class OSMTileSource extends GLMapRasterTileSource {
+    private String mirrors[];
 
-    public OSMTileSource(Activity activity) throws OutOfMemoryError {
+    OSMTileSource(Activity activity) throws OutOfMemoryError {
         super(CachePath(activity));
 
         mirrors = new String[3];
@@ -34,7 +34,7 @@ public class OSMTileSource extends GLMapRasterTileSource {
         setAttributionText("© OpenStreetMap contributors");
     }
 
-    static public String CachePath(Activity activity)
+    static private String CachePath(Activity activity)
     {
         File filesDir = new File(activity.getFilesDir().getAbsolutePath(), "RasterCache");
         filesDir.mkdir();
