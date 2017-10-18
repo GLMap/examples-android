@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.glmapview.GLMapManager;
 import com.glmapview.GLMapView;
 
 public class SampleSelectActivity extends ListActivity 
@@ -42,11 +41,6 @@ public class SampleSelectActivity extends ListActivity
     {
         super.onCreate(savedInstanceState);
 		setContentView(R.layout.sample_select);
-        		
-		if(!GLMapManager.initialize(this, this.getString(R.string.api_key), null))
-		{
-			//Error caching resources. Check free space for world database (~25MB)			
-		}
         
         String[] values = new String[] {
         		"Open offline map",
