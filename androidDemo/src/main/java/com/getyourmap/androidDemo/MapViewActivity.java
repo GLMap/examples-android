@@ -643,6 +643,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	static class SearchStyle extends GLMapMarkerStyleCollectionDataCallback
 	{
 		@Override
+		public MapPoint getLocation(Object marker)
+		{
+			if(marker instanceof GLMapVectorObject)
+				return ((GLMapVectorObject)marker).point();
+			return new MapPoint(0 ,0);
+		}
+
+		@Override
 		public void fillUnionData(int markersCount, long nativeMarker)
 		{
 			//Not called if clustering is off
@@ -650,11 +658,6 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		@Override
 		public void fillData(Object marker, long nativeMarker)
 		{
-			if(marker instanceof GLMapVectorObject)
-			{
-				GLMapVectorObject obj = (GLMapVectorObject)marker;
-				GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
-			}
 			GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
 		}
 	}
@@ -664,7 +667,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
 		style.addStyle(new GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svgpb", 0.2f, 0xFFFF0000)));
 		style.setDataCallback(new SearchStyle());
-		markerLayer = new GLMapMarkerLayer(objects, style, false, 4);
+		markerLayer = new GLMapMarkerLayer(objects, style, 0, 4);
 		mapView.add(markerLayer);
 
 		//Zoom to results
@@ -859,7 +862,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					});
 
 					Log.w("GLMapView", "Start creating layer");
-					rv = new GLMapMarkerLayer(objects, style, styleCollection);
+					rv = new GLMapMarkerLayer(objects, style, styleCollection, 35, 3);
 					Log.w("GLMapView", "Finish creating layer");
 					objects.dispose();
 				} catch (Exception e)
@@ -887,6 +890,19 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		GLMapVectorStyle textStyle = GLMapVectorStyle.createStyle("{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}");
 
 		@Override
+		public MapPoint getLocation(Object marker)
+		{
+			if(marker instanceof MapPoint)
+			{
+				return (MapPoint)marker;
+			}else if(marker instanceof GLMapVectorObject)
+			{
+				return ((GLMapVectorObject)marker).point();
+			}
+			return new MapPoint(0,0);
+		}
+
+		@Override
 		public void fillUnionData(int markersCount, long nativeMarker)
 		{
 			for(int i=unionCounts.length-1; i>=0; i--)
@@ -905,13 +921,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		{
 			if(marker instanceof MapPoint)
 			{
-				GLMapMarkerStyleCollection.setMarkerLocation(nativeMarker, (MapPoint) marker);
 				GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0,0), textStyle);
 			}else if(marker instanceof GLMapVectorObject)
 			{
-				GLMapVectorObject obj = (GLMapVectorObject)marker;
-				GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
-				String name = obj.valueForKey("name");
+				String name = ((GLMapVectorObject)marker).valueForKey("name");
 				if(name!=null)
 				{
 					GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, new Point(0, 15/2), textStyle);
@@ -955,7 +968,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					});
 
 					Log.w("GLMapView", "Start creating layer");
-					rv = new GLMapMarkerLayer(objects.toArray(), style);
+					rv = new GLMapMarkerLayer(objects.toArray(), style, 35, 3);
 					Log.w("GLMapView", "Finish creating layer");
 					objects.dispose();
 				} catch (Exception e)
