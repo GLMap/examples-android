@@ -46,7 +46,7 @@ import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
 import com.glmapview.GLMapView.GLMapPlacement;
 import com.glmapview.GLMapView.GLMapTileState;
-import com.glmapview.GLMapView.GLUnits;
+import com.glmapview.GLMapView.GLUnitSystem;
 import com.glmapview.GLSearchCategories;
 import com.glmapview.GLSearchCategory;
 import com.glmapview.GLSearchOffline;
@@ -238,7 +238,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
 		checkAndRequestLocationPermission();
 
-		mapView.setScaleRulerStyle(GLUnits.SI, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
+		mapView.setScaleRulerStyle(GLUnitSystem.International, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
 		mapView.setAttributionPosition(GLMapPlacement.TopCenter);
 
 		Bundle b = getIntent().getExtras();
@@ -252,7 +252,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				zoomToPoint();
 				break;
 			case MAP_ONLINE:
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			case MAP_ONLINE_RASTER:
 				mapView.setRasterTileSources(new GLMapRasterTileSource[]{ new OSMTileSource(this) } );
@@ -286,7 +286,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						mapView.flyTo(geoPoint, 15, 0, 0);
 					}
 				});
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			}
 			case OFFLINE_SEARCH:
@@ -318,7 +318,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				});
 
 				addMarkers();
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			case MARKERS_MAPCSS:
 				addMarkersWithMapcss();
@@ -343,7 +343,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					}
 				});
 
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			case MULTILINE:
 				addMultiline();
