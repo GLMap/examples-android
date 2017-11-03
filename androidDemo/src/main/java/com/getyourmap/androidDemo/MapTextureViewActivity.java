@@ -16,11 +16,11 @@ public class MapTextureViewActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.texture_view_map);
 
-        TextureView textureView = (TextureView)findViewById(R.id.texture_view);
+        TextureView textureView = findViewById(R.id.texture_view);
         mapView = new GLMapView(this, textureView);
 
         mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
-        mapView.setScaleRulerStyle(GLMapView.GLUnits.SI, GLMapView.GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
+        mapView.setScaleRulerStyle(GLMapView.GLUnitSystem.International, GLMapView.GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
         mapView.setAttributionPosition(GLMapView.GLMapPlacement.TopCenter);
     }
 }

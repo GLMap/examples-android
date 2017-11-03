@@ -45,7 +45,7 @@ import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
 import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLMapPlacement;
-import com.glmapview.GLMapView.GLUnits;
+import com.glmapview.GLMapView.GLUnitSystem;
 import com.glmapview.GLSearchCategories;
 import com.glmapview.GLSearchCategory;
 import com.glmapview.GLSearchOffline;
@@ -124,7 +124,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
 		checkAndRequestLocationPermission();
 
-		mapView.setScaleRulerStyle(GLUnits.SI, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
+		mapView.setScaleRulerStyle(GLUnitSystem.International, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
 		mapView.setAttributionPosition(GLMapPlacement.TopCenter);
 
 		Bundle b = getIntent().getExtras();
