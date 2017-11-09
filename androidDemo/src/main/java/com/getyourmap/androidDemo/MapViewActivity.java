@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -39,6 +40,8 @@ import com.glmapview.GLMapMarkerLayer;
 import com.glmapview.GLMapMarkerStyleCollection;
 import com.glmapview.GLMapMarkerStyleCollectionDataCallback;
 import com.glmapview.GLMapRasterTileSource;
+import com.glmapview.GLMapTrack;
+import com.glmapview.GLMapTrackData;
 import com.glmapview.GLMapVectorCascadeStyle;
 import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapVectorObjectList;
@@ -194,20 +197,26 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	private GLMapInfo mapToDownload;
 	private Button btnDownloadMap;
 
-	GLMapMarkerLayer markerLayer;
-	GLMapLocaleSettings localeSettings;
-	CurLocationHelper curLocationHelper;
+	private GLMapMarkerLayer markerLayer;
+	private GLMapLocaleSettings localeSettings;
+	private CurLocationHelper curLocationHelper;
+
+	private int trackPointIndex;
+	private GLMapTrack track;
+	private GLMapTrackData trackData;
+	private Handler handler;
+	private Runnable trackRecordRunnable;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.map);
-		mapView = (GLMapView) this.findViewById(R.id.map_view);
+		mapView = this.findViewById(R.id.map_view);
 
 		// Map list is updated, because download button depends on available map list and during first launch this list is empty
 		GLMapManager.updateMapList(this, null);
 
-		btnDownloadMap = (Button) this.findViewById(R.id.button_dl_map);
+		btnDownloadMap = this.findViewById(R.id.button_dl_map);
 		btnDownloadMap.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -245,7 +254,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		final SampleSelectActivity.Samples example = SampleSelectActivity.Samples.values()[b.getInt("example")];
 		switch (example)
 		{
-			case MAP_EMBEDD:
+			case MAP_EMBEDDED:
 				if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null)) {
 					//Failed to unpack to caches. Check free space.
 				}
@@ -357,7 +366,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			case IMAGE_SINGLE:
 			{
-				final Button btn = (Button) this.findViewById(R.id.button_action);
+				Button btn = this.findViewById(R.id.button_action);
 				btn.setVisibility(View.VISIBLE);
 				delImage(btn);
 				break;
@@ -391,31 +400,25 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case STYLE_LIVE_RELOAD:
 				styleLiveReload();
 				break;
+			case RECORD_TRACK:
+				recordTrack();
+				break;
 		}
 
 		mapView.setCenterTileStateChangedCallback(new Runnable() {
 			@Override
 			public void run() {
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						updateMapDownloadButton();
-					}
-				});
+				updateMapDownloadButton();
 			}
 		});
+
 		mapView.setMapDidMoveCallback(new Runnable() {
 			@Override
 			public void run() {
 				if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
 					Log.w("GLMapView", "Did move");
 				}
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						updateMapDownloadButtonText();
-					}
-				});
+				updateMapDownloadButtonText();
 			}
 		});
 	}
@@ -474,11 +477,17 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			curLocationHelper.onDestroy();
 			curLocationHelper = null;
 		}
+
+		if(handler!=null)
+		{
+			handler.removeCallbacks(trackRecordRunnable);
+			handler = null;
+		}
 		super.onDestroy();
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) 
+	public boolean onCreateOptionsMenu(Menu menu)
 	{
     	MapPoint pt = new MapPoint(mapView.getWidth()/2, mapView.getHeight()/2);
 		mapView.changeMapZoom(-1, pt, 1, GLMapAnimation.EaseInOut);
@@ -705,12 +714,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 	}
-	    
+
     void zoomToPoint()
     {
     	//New York
     	//MapPoint pt = new MapPoint(-74.0059700 , 40.7142700	);
-    	
+
     	//Belarus
     	//MapPoint pt = new MapPoint(27.56, 53.9);
     	//;
@@ -721,7 +730,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	mapView.setMapCenter(pt);
     	mapView.setMapZoom(16);
     }
-          
+
     void addPin(float touchX, float touchY)
     {
 		if(pins == null)
@@ -736,12 +745,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	MapPoint pt = mapView.convertDisplayToInternal(new MapPoint(touchX, touchY));
     	Pin pin = new Pin();
     	pin.pos = pt;
-    	pin.imageVariant = pins.size() % 3;    	
+    	pin.imageVariant = pins.size() % 3;
     	pins.add(pin);
     	imageGroup.setNeedsUpdate(false);
     }
-    
-    
+
+
     void deletePin(float touchX, float touchY)
     {
 		Pin pin = pins.findPin(mapView, touchX, touchY);
@@ -1007,9 +1016,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void onClick(View v) {
 				moveImage(btn);
 			}
-    	});    	
+    	});
     }
-    
+
     void moveImage(final Button btn)
 	{
 		image.setPosition(mapView.getMapCenter());
@@ -1023,7 +1032,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 	}
-    
+
     void delImage(final Button btn)
     {
 		if(image != null)
@@ -1038,9 +1047,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void onClick(View v) {
 				addImage(btn);
 			}
-    	});     	
+    	});
     }
-    
+
     void addMultiline()
     {
         MapPoint[] line1 = new MapPoint[5];
@@ -1049,7 +1058,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         line1[2] = MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103); // Warsaw
         line1[3] = MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102); // Berlin
         line1[4] = MapPoint.CreateFromGeoCoordinates(48.8505, 2.3343); // Paris
-        
+
         MapPoint[] line2 = new MapPoint[3];
         line2[0] = MapPoint.CreateFromGeoCoordinates(52.3690, 4.9021); // Amsterdam
         line2[1] = MapPoint.CreateFromGeoCoordinates(50.8263, 4.3458); // Brussel
@@ -1063,24 +1072,24 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		drawable.setVectorObject(mapView, obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
 		mapView.add(drawable);
      }
-    
+
     void addPolygon()
     {
         int pointCount = 25;
         MapGeoPoint[] outerRing = new MapGeoPoint[pointCount];
 		MapGeoPoint[] innerRing = new MapGeoPoint[pointCount];
-        
+
         float rOuter = 20, rInner = 10;
         float cx = 30, cy = 30;
 
         // let's display circle
-        for (int i=0; i<pointCount; i++) 
+        for (int i=0; i<pointCount; i++)
         {
         	outerRing[i] = new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rOuter,
                                       cy + Math.cos(2*Math.PI / pointCount * i) * rOuter);
-        	
+
         	innerRing[i] =  new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rInner,
-                    cy + Math.cos(2*Math.PI / pointCount * i) * rInner);        	
+                    cy + Math.cos(2*Math.PI / pointCount * i) * rInner);
         }
 
 		MapGeoPoint[][] outerRings = {outerRing};
@@ -1094,10 +1103,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	private void styleLiveReload()
 	{
-		final EditText editText = (EditText) this.findViewById(R.id.edit_text);
+		final EditText editText = this.findViewById(R.id.edit_text);
 		editText.setVisibility(View.VISIBLE);
 
-		final Button btn = (Button) this.findViewById(R.id.button_action);
+		final Button btn = this.findViewById(R.id.button_action);
 		btn.setVisibility(View.VISIBLE);
 		btn.setText("Reload");
 		btn.setOnClickListener(new OnClickListener()
@@ -1170,6 +1179,69 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				}.execute(editText.getText().toString());
 			}
 		});
+	}
+
+	int colorForTrack(int index)
+	{
+		int r = Math.max(0, 255-index);
+		int g = Math.max(0, 255-index/100);
+		int b = Math.max(0, 255-index/200);
+		return Color.argb(255, r, g, b);
+	}
+
+	private void recordTrack()
+	{
+		final float rStart = 20f;
+		final float rDelta = (float)(Math.PI/30);
+		final float rDiff = 0.01f;
+		final float clat = 30f, clon = 30f;
+
+		//Create trackData with initial data
+		trackPointIndex = 1500;
+		trackData = new GLMapTrackData(new GLMapTrackData.PointsCallback()
+		{
+			@Override
+			public void fillData(int index, long nativePoint)
+			{
+				GLMapTrackData.setPointDataGeo(nativePoint,
+						clat + Math.sin(rDelta * index) * (rStart-rDiff*index),
+						clon + Math.cos(rDelta * index) * (rStart-rDiff*index),
+						colorForTrack(index));
+			}
+		}, trackPointIndex);
+
+		track = new GLMapTrack(trackData, 2);
+		mapView.add(track);
+		mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(clat, clon));
+		mapView.setMapZoom(4);
+
+		if(handler == null)
+		{
+			handler = new Handler();
+		}
+
+		trackRecordRunnable = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				//Create new trackData with additional point
+				GLMapTrackData newData = trackData.copyTrackAndAddGeoPoint(
+						clat + Math.sin(rDelta * trackPointIndex) * (rStart-rDiff*trackPointIndex),
+						clon + Math.cos(rDelta * trackPointIndex) * (rStart-rDiff*trackPointIndex),
+						colorForTrack(trackPointIndex),
+						false);
+				//Set data to track
+				track.setData(newData);
+
+				trackData.dispose(); //Release native data before GC will occur
+				trackData = newData;
+
+				trackPointIndex ++;
+				handler.postDelayed(trackRecordRunnable, 1000);
+			}
+		};
+		handler.postDelayed(trackRecordRunnable, 1000);
 	}
     
 	private void loadGeoJSON() 

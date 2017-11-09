@@ -14,7 +14,7 @@ public class SampleSelectActivity extends ListActivity
 {
     public enum Samples {
         MAP,
-        MAP_EMBEDD,
+		MAP_EMBEDDED,
         MAP_ONLINE,
 		MAP_ONLINE_RASTER,
 		MAP_TEXTURE_VIEW,
@@ -31,6 +31,7 @@ public class SampleSelectActivity extends ListActivity
         CAPTURE_SCREEN,
 		FLY_TO,
 		STYLE_LIVE_RELOAD,
+		RECORD_TRACK,
         DOWNLOAD_MAP,
         SVG_TEST,
         CRASH_NDK,
@@ -44,7 +45,7 @@ public class SampleSelectActivity extends ListActivity
         
         String[] values = new String[] {
         		"Open offline map",
-        		"Open embedd map", 
+        		"Open embedded map",
         		"Open online map",
 				"Open online raster map",
 				"GLMapView in TextureView",
@@ -61,6 +62,7 @@ public class SampleSelectActivity extends ListActivity
         		"Capture screen",
 				"Fly to",
 				"Style live reload",
+				"Recording track",
         		"Download Map",
         		"SVG Test",
         		"Crash NDK",
