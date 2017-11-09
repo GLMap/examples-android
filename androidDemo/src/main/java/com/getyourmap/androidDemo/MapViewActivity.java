@@ -138,7 +138,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				zoomToPoint();
 				break;
 			case MAP_ONLINE:
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			case MAP_ONLINE_RASTER:
 				mapView.setRasterTileSources(new GLMapRasterTileSource[]{ new OSMTileSource(this) } );
@@ -172,7 +172,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						mapView.flyTo(geoPoint, 15, 0, 0);
 					}
 				});
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			}
 			case OFFLINE_SEARCH:
@@ -204,7 +204,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				});
 
 				addMarkers();
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			case MARKERS_MAPCSS:
 				addMarkersWithMapcss();
@@ -229,7 +229,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					}
 				});
 
-				GLMapManager.SetAllowedTileDownload(true);
+				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
 			case MULTILINE:
 				addMultiline();
