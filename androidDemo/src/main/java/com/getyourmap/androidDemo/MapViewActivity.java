@@ -397,6 +397,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case GEO_JSON:
 				loadGeoJSON();
 				break;
+			case TILES_BULK_DOWNLOAD:
+				bulkDownload();
+				break;
 			case STYLE_LIVE_RELOAD:
 				styleLiveReload();
 				break;
@@ -1100,6 +1103,41 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		drawable.setVectorObject(mapView, obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
 		mapView.add(drawable);
     }
+
+    private void bulkDownload()
+	{
+		mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(53, 27));
+		mapView.setMapZoom(12.5);
+
+		final Button btn = this.findViewById(R.id.button_action);
+		btn.setVisibility(View.VISIBLE);
+		btn.setText("Download");
+		btn.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View view)
+			{
+				long allTiles[] = GLMapManager.VectorTilesAtBBox(mapView.getBBox());
+				Log.i("BulkDownload", String.format("tilesCount = %d", allTiles.length));
+    			GLMapManager.CacheTiles(allTiles, new GLMapManager.TileDownloadProgress()
+				{
+					@Override
+					public boolean onSuccess(long tile)
+					{
+						Log.i("BulkDownloadSuccess", String.format("tile = %d", tile));
+						return true;
+					}
+
+					@Override
+					public boolean onError(long tile, int errorCode)
+					{
+						Log.i("BulkDownloadError", String.format("tile = %d, error = %d", tile, errorCode));
+						return true;
+					}
+				});
+			}
+		});
+	}
 
 	private void styleLiveReload()
 	{
