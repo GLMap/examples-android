@@ -756,7 +756,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
     void deletePin(float touchX, float touchY)
     {
-		Pin pin = pins.findPin(mapView, touchX, touchY);
+		Pin pin = pins!=null ? pins.findPin(mapView, touchX, touchY) : null;
 		if(pin != null)
 		{
 			pins.remove(pin);
