@@ -30,6 +30,7 @@ import com.glmapview.GLMapAnimation;
 import com.glmapview.GLMapBBox;
 import com.glmapview.GLMapDownloadTask;
 import com.glmapview.GLMapDrawable;
+import com.glmapview.GLMapError;
 import com.glmapview.GLMapImageGroup;
 import com.glmapview.GLMapImageGroupCallback;
 import com.glmapview.GLMapInfo;
@@ -1129,9 +1130,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					}
 
 					@Override
-					public boolean onError(long tile, int errorCode)
+					public boolean onError(long tile, GLMapError errorCode)
 					{
-						Log.i("BulkDownloadError", String.format("tile = %d, error = %d", tile, errorCode));
+						Log.i("BulkDownloadError", String.format("tile = %d, error = %d", tile, errorCode.getCode()));
 						return true;
 					}
 				});
