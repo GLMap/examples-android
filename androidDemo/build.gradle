@@ -2,14 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 27
-    buildToolsVersion "27.0.1"
+    buildToolsVersion "27.0.3"
 
     defaultConfig {
         applicationId "com.getyourmap.androidDemo"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 817
-        versionName "0.8.17"
+        versionCode 901
+        versionName "0.9.1"
     }
     buildTypes {
         release {
@@ -24,17 +24,14 @@ android {
 
 repositories {
     jcenter()
+    google()
     maven { url 'http://maven.getyourmap.com/artifactory/libs' }
-    maven {
-        url 'https://maven.google.com/'
-        name 'Google'
-    }
 }
 
 dependencies {
     //    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:27.0.0'
-    compile('com.getyourmap:glmap:0.8.17') {
+    compile 'com.android.support:appcompat-v7:27.0.2'
+    compile('com.getyourmap:glmap:0.9.1') {
         transitive = true
     }
 }

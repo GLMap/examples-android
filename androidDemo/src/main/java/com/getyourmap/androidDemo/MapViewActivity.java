@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -25,9 +26,11 @@ import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.glmapview.GLMapAnimation;
 import com.glmapview.GLMapBBox;
 import com.glmapview.GLMapDownloadTask;
-import com.glmapview.GLMapImage;
+import com.glmapview.GLMapDrawable;
+import com.glmapview.GLMapError;
 import com.glmapview.GLMapImageGroup;
 import com.glmapview.GLMapImageGroupCallback;
 import com.glmapview.GLMapInfo;
@@ -38,17 +41,20 @@ import com.glmapview.GLMapMarkerLayer;
 import com.glmapview.GLMapMarkerStyleCollection;
 import com.glmapview.GLMapMarkerStyleCollectionDataCallback;
 import com.glmapview.GLMapRasterTileSource;
+import com.glmapview.GLMapTrack;
+import com.glmapview.GLMapTrackData;
 import com.glmapview.GLMapVectorCascadeStyle;
 import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapVectorObjectList;
 import com.glmapview.GLMapVectorStyle;
 import com.glmapview.GLMapView;
-import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLMapPlacement;
+import com.glmapview.GLMapView.GLMapTileState;
 import com.glmapview.GLMapView.GLUnitSystem;
 import com.glmapview.GLSearchCategories;
 import com.glmapview.GLSearchCategory;
 import com.glmapview.GLSearchOffline;
+import com.glmapview.ImageManager;
 import com.glmapview.MapGeoPoint;
 import com.glmapview.MapPoint;
 
@@ -63,37 +69,155 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener {
 
-	class Pin
+	private static class Pin
 	{
-		public MapPoint pos;
-		public int imageVariant;		
+		MapPoint pos;
+		int imageVariant;
 	}
 
-	private GLMapImage image=null;
-	private GLMapImageGroup imageGroup=null;
-	private List<Pin> pins = new ArrayList<>();	
+	private static class Pins implements GLMapImageGroupCallback
+	{
+		private ReentrantLock lock;
+		private Bitmap images[];
+		private List<Pin> pins;
+
+		Pins(ImageManager imageManager)
+		{
+			lock = new ReentrantLock();
+			images = new Bitmap[3];
+			pins = new ArrayList<>();
+			images[0] = imageManager.open("1.svgpb", 1, 0xFFFF0000);
+			images[1] = imageManager.open("2.svgpb", 1, 0xFF00FF00);
+			images[2] = imageManager.open("3.svgpb", 1, 0xFF0000FF);
+		}
+
+			@Override
+		public int getImagesCount()
+		{
+			return pins.size();
+		}
+
+		@Override
+		public int getImageIndex(int i)
+		{
+			return pins.get(i).imageVariant;
+		}
+
+		@Override
+		public MapPoint getImagePos(int i)
+		{
+			return pins.get(i).pos;
+		}
+
+		@Override
+		public void updateStarted()
+		{
+			Log.i("GLMapImageGroupCallback", "Update started");
+			lock.lock();
+		}
+
+		@Override
+		public void updateFinished()
+		{
+			Log.i("GLMapImageGroupCallback", "Update finished");
+			lock.unlock();
+		}
+
+		@Override
+		public int getImageVariantsCount()
+		{
+			return images.length;
+		}
+
+		@Override
+		public Bitmap getImageVariantBitmap(int i)
+		{
+			return images[i];
+		}
+
+		@Override
+		public MapPoint getImageVariantOffset(int i)
+		{
+			return new MapPoint(images[i].getWidth()/2, 0);
+		}
+
+		int size()
+		{
+			int rv;
+			lock.lock();
+			rv = pins.size();
+			lock.unlock();
+			return rv;
+		}
+
+		void add(Pin pin)
+		{
+			lock.lock();
+			pins.add(pin);
+			lock.unlock();
+		}
+
+		void remove(Pin pin)
+		{
+			lock.lock();
+			pins.remove(pin);
+			lock.unlock();
+		}
+
+		Pin findPin(GLMapView mapView, float touchX, float touchY)
+		{
+			Pin rv = null;
+			lock.lock();
+			for(int i=0; i<pins.size(); ++i)
+			{
+				Pin pin = pins.get(i);
+
+				MapPoint screenPos = mapView.convertInternalToDisplay(new MapPoint(pin.pos));
+				Rect rt = new Rect(-40,-40,40,40);
+				rt.offset( (int)screenPos.x, (int)screenPos.y );
+				if(rt.contains((int)touchX, (int)touchY))
+				{
+					rv = pin;
+					break;
+				}
+			}
+			lock.unlock();
+			return rv;
+		}
+	}
+
+	private GLMapDrawable image;
+	private GLMapImageGroup imageGroup;
+	private Pins pins;
 	private GestureDetector gestureDetector;
 	private GLMapView mapView;
-	private GLMapInfo mapToDownload=null;
+	private GLMapInfo mapToDownload;
 	private Button btnDownloadMap;
 
-	GLMapMarkerLayer markerLayer;
-	GLMapLocaleSettings localeSettings;
-	CurLocationHelper curLocationHelper;
+	private GLMapMarkerLayer markerLayer;
+	private GLMapLocaleSettings localeSettings;
+	private CurLocationHelper curLocationHelper;
+
+	private int trackPointIndex;
+	private GLMapTrack track;
+	private GLMapTrackData trackData;
+	private Handler handler;
+	private Runnable trackRecordRunnable;
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.map);
-		mapView = (GLMapView) this.findViewById(R.id.map_view);
+		mapView = this.findViewById(R.id.map_view);
 
 		// Map list is updated, because download button depends on available map list and during first launch this list is empty
 		GLMapManager.updateMapList(this, null);
 
-		btnDownloadMap = (Button) this.findViewById(R.id.button_dl_map);
+		btnDownloadMap = this.findViewById(R.id.button_dl_map);
 		btnDownloadMap.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -131,7 +255,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		final SampleSelectActivity.Samples example = SampleSelectActivity.Samples.values()[b.getInt("example")];
 		switch (example)
 		{
-			case MAP_EMBEDD:
+			case MAP_EMBEDDED:
 				if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null)) {
 					//Failed to unpack to caches. Check free space.
 				}
@@ -243,7 +367,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			case IMAGE_SINGLE:
 			{
-				final Button btn = (Button) this.findViewById(R.id.button_action);
+				Button btn = this.findViewById(R.id.button_action);
 				btn.setVisibility(View.VISIBLE);
 				delImage(btn);
 				break;
@@ -274,34 +398,31 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case GEO_JSON:
 				loadGeoJSON();
 				break;
+			case TILES_BULK_DOWNLOAD:
+				bulkDownload();
+				break;
 			case STYLE_LIVE_RELOAD:
 				styleLiveReload();
+				break;
+			case RECORD_TRACK:
+				recordTrack();
 				break;
 		}
 
 		mapView.setCenterTileStateChangedCallback(new Runnable() {
 			@Override
 			public void run() {
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						updateMapDownloadButton();
-					}
-				});
+				updateMapDownloadButton();
 			}
 		});
+
 		mapView.setMapDidMoveCallback(new Runnable() {
 			@Override
 			public void run() {
 				if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
 					Log.w("GLMapView", "Did move");
 				}
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						updateMapDownloadButtonText();
-					}
-				});
+				updateMapDownloadButtonText();
 			}
 		});
 	}
@@ -336,23 +457,44 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	protected void onDestroy()
 	{
 		GLMapManager.removeStateListener(this);
+		if(mapView!=null)
+		{
+			mapView.removeAllObjects();
+			mapView.setCenterTileStateChangedCallback(null);
+			mapView.setMapDidMoveCallback(null);
+		}
+
 		if(markerLayer!=null)
 		{
 			markerLayer.dispose();
 			markerLayer = null;
 		}
+
+		if(imageGroup!=null)
+		{
+			imageGroup.dispose();
+			imageGroup = null;
+		}
+
 		if(curLocationHelper!=null)
 		{
 			curLocationHelper.onDestroy();
+			curLocationHelper = null;
+		}
+
+		if(handler!=null)
+		{
+			handler.removeCallbacks(trackRecordRunnable);
+			handler = null;
 		}
 		super.onDestroy();
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu(Menu menu) 
+	public boolean onCreateOptionsMenu(Menu menu)
 	{
     	MapPoint pt = new MapPoint(mapView.getWidth()/2, mapView.getHeight()/2);
-		mapView.changeMapZoom(-1, pt, 1, GLMapView.Animation.EaseInOut);
+		mapView.changeMapZoom(-1, pt, 1, GLMapAnimation.EaseInOut);
 	    return false;
 	}
 
@@ -511,31 +653,35 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		});
 	}
 
+	static class SearchStyle extends GLMapMarkerStyleCollectionDataCallback
+	{
+		@Override
+		public MapPoint getLocation(Object marker)
+		{
+			if(marker instanceof GLMapVectorObject)
+				return ((GLMapVectorObject)marker).point();
+			return new MapPoint(0 ,0);
+		}
+
+		@Override
+		public void fillUnionData(int markersCount, long nativeMarker)
+		{
+			//Not called if clustering is off
+		}
+		@Override
+		public void fillData(Object marker, long nativeMarker)
+		{
+			GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
+		}
+	}
+
 	void displaySearchResults(Object[] objects)
 	{
 		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
 		style.addStyle(new GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svgpb", 0.2f, 0xFFFF0000)));
-		style.setDataCallback(new GLMapMarkerStyleCollectionDataCallback()
-		{
-			@Override
-			public void fillUnionData(int markersCount, long nativeMarker)
-			{
-				//Not called if clustering is off
-			}
-			@Override
-			public void fillData(Object marker, long nativeMarker)
-			{
-				if(marker instanceof GLMapVectorObject)
-				{
-					GLMapVectorObject obj = (GLMapVectorObject)marker;
-					GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
-				}
-				GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
-			}
-		});
-		GLMapMarkerLayer layer = new GLMapMarkerLayer(objects, style);
-		layer.setClusteringEnabled(false);
-		mapView.displayMarkerLayer(layer);
+		style.setDataCallback(new SearchStyle());
+		markerLayer = new GLMapMarkerLayer(objects, style, 0, 4);
+		mapView.add(markerLayer);
 
 		//Zoom to results
 		if(objects.length != 0)
@@ -572,12 +718,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 	}
-	    
+
     void zoomToPoint()
     {
     	//New York
     	//MapPoint pt = new MapPoint(-74.0059700 , 40.7142700	);
-    	
+
     	//Belarus
     	//MapPoint pt = new MapPoint(27.56, 53.9);
     	//;
@@ -588,93 +734,35 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
     	mapView.setMapCenter(pt);
     	mapView.setMapZoom(16);
     }
-          
+
     void addPin(float touchX, float touchY)
     {
+		if(pins == null)
+			pins = new Pins(mapView.imageManager);
+
     	if(imageGroup == null)
     	{
-    		final Bitmap images[] = new Bitmap[3];    		
-    		images[0] = mapView.imageManager.open("1.svgpb", 1, 0xFFFF0000);
-    		images[1] = mapView.imageManager.open("2.svgpb", 1, 0xFF00FF00);
-    		images[2] = mapView.imageManager.open("3.svgpb", 1, 0xFF0000FF);
-    		
-        	class Callback implements GLMapImageGroupCallback {
-        		@Override
-        		public int getImagesCount() 
-        		{
-        			return pins.size();
-        		}
+    		imageGroup = new GLMapImageGroup(pins, 3);
+			mapView.add(imageGroup);
+    	}
 
-        		@Override
-        		public int getImageIndex(int i) 
-        		{
-        			return pins.get(i).imageVariant;
-        		}
-
-        		@Override
-        		public MapPoint getImagePos(int i)
-        		{
-        			return pins.get(i).pos;
-        		}
-
-				@Override
-				public void updateStarted()
-				{
-					Log.i("GLMapImageGroupCallback", "Update started");
-				}
-
-				@Override
-				public void updateFinished()
-				{
-					Log.i("GLMapImageGroupCallback", "Update finished");
-				}
-
-				@Override
-        		public int getImageVariantsCount()
-        		{
-        			return images.length;
-        		}
-        		
-        		@Override        		
-        		public Bitmap getImageVariantBitmap(int i)
-        		{
-        			return images[i];
-        		}
-        		@Override        		
-        		public MapPoint getImageVariantOffset(int i)
-        		{
-        			return new MapPoint(images[i].getWidth()/2, 0);
-        		}
-            }          	    		
-    		imageGroup = mapView.createImageGroup(new Callback());    		
-    	}    	
-    	
     	MapPoint pt = mapView.convertDisplayToInternal(new MapPoint(touchX, touchY));
-    	
     	Pin pin = new Pin();
     	pin.pos = pt;
-    	pin.imageVariant = pins.size() % 3;    	
-    	pins.add( pin );    	
-    	imageGroup.setNeedsUpdate();    	   	
+    	pin.imageVariant = pins.size() % 3;
+    	pins.add(pin);
+    	imageGroup.setNeedsUpdate(false);
     }
-    
-    
+
+
     void deletePin(float touchX, float touchY)
     {
-    	for(int i=0; i<pins.size(); ++i)
-    	{    	    	
-    		MapPoint pos = pins.get(i).pos;
-    		MapPoint screenPos = mapView.convertInternalToDisplay(new MapPoint(pos));
-    		
-    		Rect rt = new Rect(-40,-40,40,40);
-    		rt.offset( (int)screenPos.x, (int)screenPos.y );
-    		if(rt.contains((int)touchX, (int)touchY))
-    		{
-    			pins.remove(i);
-    			imageGroup.setNeedsUpdate();
-    			break;	
-    		}    		    		    		
-    	}
+		Pin pin = pins!=null ? pins.findPin(mapView, touchX, touchY) : null;
+		if(pin != null)
+		{
+			pins.remove(pin);
+			imageGroup.setNeedsUpdate(false);
+		}
     }
 
 	void deleteMarker(float x, float y)
@@ -787,7 +875,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					});
 
 					Log.w("GLMapView", "Start creating layer");
-					rv = new GLMapMarkerLayer(objects, style, styleCollection);
+					rv = new GLMapMarkerLayer(objects, style, styleCollection, 35, 3);
 					Log.w("GLMapView", "Finish creating layer");
 					objects.dispose();
 				} catch (Exception e)
@@ -803,60 +891,64 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				if(layer != null)
 				{
 					markerLayer = layer;
-					mapView.displayMarkerLayer(layer);
+					mapView.add(layer);
 				}
 			}
 		}.execute();
 	}
 
-	void addMarkers()
+	static class MarkersStyle extends GLMapMarkerStyleCollectionDataCallback
 	{
-		final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
-		final int unionCounts[] = {1, 2, 4, 8, 16, 32, 64, 128};
-		for(int i=0; i<unionCounts.length; i++)
+		static int unionCounts[] = {1, 2, 4, 8, 16, 32, 64, 128};
+		GLMapVectorStyle textStyle = GLMapVectorStyle.createStyle("{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}");
+
+		@Override
+		public MapPoint getLocation(Object marker)
 		{
-			float scale = (float)(0.2+0.1*i);
-			style.addStyle(new GLMapMarkerImage("marker"+scale, mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])));
+			if(marker instanceof MapPoint)
+			{
+				return (MapPoint)marker;
+			}else if(marker instanceof GLMapVectorObject)
+			{
+				return ((GLMapVectorObject)marker).point();
+			}
+			return new MapPoint(0,0);
 		}
 
-		final GLMapVectorStyle textStyle = GLMapVectorStyle.createStyle("{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}");
-		style.setDataCallback(new GLMapMarkerStyleCollectionDataCallback()
+		@Override
+		public void fillUnionData(int markersCount, long nativeMarker)
 		{
-			@Override
-			public void fillUnionData(int markersCount, long nativeMarker)
+			for(int i=unionCounts.length-1; i>=0; i--)
 			{
-				for(int i=unionCounts.length-1; i>=0; i--)
+				if(markersCount > unionCounts[i])
 				{
-					if(markersCount > unionCounts[i])
-					{
-						GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, i);
-						break;
-					}
+					GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, i);
+					break;
 				}
-				GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount) , new Point(0, 0), textStyle);
 			}
+			GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount) , new Point(0, 0), textStyle);
+		}
 
-			@Override
-			public void fillData(Object marker, long nativeMarker)
+		@Override
+		public void fillData(Object marker, long nativeMarker)
+		{
+			if(marker instanceof MapPoint)
 			{
-				if(marker instanceof MapPoint)
+				GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0,0), textStyle);
+			}else if(marker instanceof GLMapVectorObject)
+			{
+				String name = ((GLMapVectorObject)marker).valueForKey("name");
+				if(name!=null)
 				{
-					GLMapMarkerStyleCollection.setMarkerLocation(nativeMarker, (MapPoint) marker);
-					GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0,0), textStyle);
-				}else if(marker instanceof GLMapVectorObject)
-				{
-					GLMapVectorObject obj = (GLMapVectorObject)marker;
-					GLMapMarkerStyleCollection.setMarkerLocationFromVectorObject(nativeMarker, obj);
-					String name = obj.valueForKey("name");
-					if(name!=null)
-					{
-						GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, new Point(0, 15/2), textStyle);
-					}
+					GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, new Point(0, 15/2), textStyle);
 				}
-				GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
 			}
-		});
+			GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
+		}
+	}
 
+	void addMarkers()
+	{
 		new AsyncTask<Void, Void, GLMapMarkerLayer>()
 		{
 			@Override
@@ -865,6 +957,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				GLMapMarkerLayer rv;
 				try
 				{
+					GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
+					for(int i=0; i<MarkersStyle.unionCounts.length; i++)
+					{
+						float scale = (float)(0.2+0.1*i);
+						style.addStyle(new GLMapMarkerImage("marker"+scale, mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])));
+					}
+					style.setDataCallback(new MarkersStyle());
+
 					Log.w("GLMapView", "Start parsing");
 					GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
 					Log.w("GLMapView", "Finish parsing");
@@ -881,7 +981,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					});
 
 					Log.w("GLMapView", "Start creating layer");
-					rv = new GLMapMarkerLayer(objects.toArray(), style);
+					rv = new GLMapMarkerLayer(objects.toArray(), style, 35, 3);
 					Log.w("GLMapView", "Finish creating layer");
 					objects.dispose();
 				} catch (Exception e)
@@ -897,23 +997,22 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				if(layer != null)
 				{
 					markerLayer = layer;
-					mapView.displayMarkerLayer(layer);
+					mapView.add(layer);
 				}
 			}
 
 		}.execute();
 	}
 
-    
     void addImage(final Button btn)
     {
     	Bitmap bmp = mapView.imageManager.open("arrow-maphint.svgpb", 1, 0);
-    	image = mapView.displayImage(bmp);
-    	image.setOffset(new MapPoint(bmp.getWidth(), bmp.getHeight()/2));
+    	image = new GLMapDrawable(bmp, 2);
+    	image.setOffset(bmp.getWidth(), bmp.getHeight()/2);
     	image.setRotatesWithMap(true);
     	image.setAngle((float)Math.random()*360);
-
     	image.setPosition(mapView.getMapCenter());
+		mapView.add(image);
 
 		btn.setText("Move image");
     	btn.setOnClickListener(new OnClickListener(){
@@ -921,9 +1020,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void onClick(View v) {
 				moveImage(btn);
 			}
-    	});    	
+    	});
     }
-    
+
     void moveImage(final Button btn)
 	{
 		image.setPosition(mapView.getMapCenter());
@@ -937,12 +1036,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 	}
-    
+
     void delImage(final Button btn)
     {
 		if(image != null)
 		{
-			mapView.removeImage(image);
+			mapView.remove(image);
 			image.dispose();
 			image = null;
 		}
@@ -952,9 +1051,9 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void onClick(View v) {
 				addImage(btn);
 			}
-    	});     	
+    	});
     }
-    
+
     void addMultiline()
     {
         MapPoint[] line1 = new MapPoint[5];
@@ -963,7 +1062,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         line1[2] = MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103); // Warsaw
         line1[3] = MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102); // Berlin
         line1[4] = MapPoint.CreateFromGeoCoordinates(48.8505, 2.3343); // Paris
-        
+
         MapPoint[] line2 = new MapPoint[3];
         line2[0] = MapPoint.CreateFromGeoCoordinates(52.3690, 4.9021); // Amsterdam
         line2[1] = MapPoint.CreateFromGeoCoordinates(50.8263, 4.3458); // Brussel
@@ -972,41 +1071,81 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
         MapPoint[][] multiline = {line1, line2};
 		final GLMapVectorObject obj = GLMapVectorObject.createMultiline(multiline);
 		// style applied to all lines added. Style is string with mapcss rules. Read more in manual.
-		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
+
+		GLMapDrawable drawable = new GLMapDrawable();
+		drawable.setVectorObject(mapView, obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
+		mapView.add(drawable);
      }
-    
+
     void addPolygon()
     {
         int pointCount = 25;
         MapGeoPoint[] outerRing = new MapGeoPoint[pointCount];
 		MapGeoPoint[] innerRing = new MapGeoPoint[pointCount];
-        
+
         float rOuter = 20, rInner = 10;
         float cx = 30, cy = 30;
 
         // let's display circle
-        for (int i=0; i<pointCount; i++) 
+        for (int i=0; i<pointCount; i++)
         {
         	outerRing[i] = new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rOuter,
                                       cy + Math.cos(2*Math.PI / pointCount * i) * rOuter);
-        	
+
         	innerRing[i] =  new MapGeoPoint(cx + Math.sin(2*Math.PI / pointCount * i) * rInner,
-                    cy + Math.cos(2*Math.PI / pointCount * i) * rInner);        	
+                    cy + Math.cos(2*Math.PI / pointCount * i) * rInner);
         }
 
 		MapGeoPoint[][] outerRings = {outerRing};
 		MapGeoPoint[][] innerRings = {innerRing};
 
 		GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
-		mapView.addVectorObjectWithStyle(obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
+		GLMapDrawable drawable = new GLMapDrawable();
+		drawable.setVectorObject(mapView, obj, GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"), null); // #RRGGBBAA format
+		mapView.add(drawable);
     }
+
+    private void bulkDownload()
+	{
+		mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(53, 27));
+		mapView.setMapZoom(12.5);
+
+		final Button btn = this.findViewById(R.id.button_action);
+		btn.setVisibility(View.VISIBLE);
+		btn.setText("Download");
+		btn.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View view)
+			{
+				long allTiles[] = GLMapManager.VectorTilesAtBBox(mapView.getBBox());
+				Log.i("BulkDownload", String.format("tilesCount = %d", allTiles.length));
+    			GLMapManager.CacheTiles(allTiles, new GLMapManager.TileDownloadProgress()
+				{
+					@Override
+					public boolean onSuccess(long tile)
+					{
+						Log.i("BulkDownloadSuccess", String.format("tile = %d", tile));
+						return true;
+					}
+
+					@Override
+					public boolean onError(long tile, GLMapError errorCode)
+					{
+						Log.i("BulkDownloadError", String.format("tile = %d, error = %d", tile, errorCode.getCode()));
+						return true;
+					}
+				});
+			}
+		});
+	}
 
 	private void styleLiveReload()
 	{
-		final EditText editText = (EditText) this.findViewById(R.id.edit_text);
+		final EditText editText = this.findViewById(R.id.edit_text);
 		editText.setVisibility(View.VISIBLE);
 
-		final Button btn = (Button) this.findViewById(R.id.button_action);
+		final Button btn = this.findViewById(R.id.button_action);
 		btn.setVisibility(View.VISIBLE);
 		btn.setText("Reload");
 		btn.setOnClickListener(new OnClickListener()
@@ -1080,6 +1219,69 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			}
 		});
 	}
+
+	int colorForTrack(int index)
+	{
+		int r = Math.max(0, 255-index);
+		int g = Math.max(0, 255-index/100);
+		int b = Math.max(0, 255-index/200);
+		return Color.argb(255, r, g, b);
+	}
+
+	private void recordTrack()
+	{
+		final float rStart = 20f;
+		final float rDelta = (float)(Math.PI/30);
+		final float rDiff = 0.01f;
+		final float clat = 30f, clon = 30f;
+
+		//Create trackData with initial data
+		trackPointIndex = 1500;
+		trackData = new GLMapTrackData(new GLMapTrackData.PointsCallback()
+		{
+			@Override
+			public void fillData(int index, long nativePoint)
+			{
+				GLMapTrackData.setPointDataGeo(nativePoint,
+						clat + Math.sin(rDelta * index) * (rStart-rDiff*index),
+						clon + Math.cos(rDelta * index) * (rStart-rDiff*index),
+						colorForTrack(index));
+			}
+		}, trackPointIndex);
+
+		track = new GLMapTrack(trackData, 2);
+		mapView.add(track);
+		mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(clat, clon));
+		mapView.setMapZoom(4);
+
+		if(handler == null)
+		{
+			handler = new Handler();
+		}
+
+		trackRecordRunnable = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				//Create new trackData with additional point
+				GLMapTrackData newData = trackData.copyTrackAndAddGeoPoint(
+						clat + Math.sin(rDelta * trackPointIndex) * (rStart-rDiff*trackPointIndex),
+						clon + Math.cos(rDelta * trackPointIndex) * (rStart-rDiff*trackPointIndex),
+						colorForTrack(trackPointIndex),
+						false);
+				//Set data to track
+				track.setData(newData);
+
+				trackData.dispose(); //Release native data before GC will occur
+				trackData = newData;
+
+				trackPointIndex ++;
+				handler.postDelayed(trackRecordRunnable, 1000);
+			}
+		};
+		handler.postDelayed(trackRecordRunnable, 1000);
+	}
     
 	private void loadGeoJSON() 
 	{	
@@ -1095,7 +1297,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				+ "line{linecap: round; width: 5pt; color:blue;}"
 				+ "area{fill-color:green; width:1pt; color:red;}");
 
-		mapView.addVectorObjectsWithStyle(objects.toArray(), style);
+		for(long i=0; i<objects.size(); ++i)
+		{
+			GLMapDrawable drawable = new GLMapDrawable();
+			drawable.setVectorObject(mapView, objects.get(i), style, null);
+			mapView.add(drawable);
+		}
 	}
     
     void captureScreen()
