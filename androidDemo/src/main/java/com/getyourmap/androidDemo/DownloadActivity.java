@@ -21,7 +21,6 @@ import com.glmapview.GLMapDownloadTask;
 import com.glmapview.GLMapInfo;
 import com.glmapview.GLMapLocaleSettings;
 import com.glmapview.GLMapManager;
-import com.glmapview.GLMapView;
 import com.glmapview.MapPoint;
 
 import java.util.List;
@@ -122,19 +121,19 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
         long collectionID = i.getLongExtra("collectionID", 0) ;
         if(collectionID!=0)
         {
-			GLMapInfo collection = GLMapManager.getMapWithID(collectionID);
+			GLMapInfo collection = GLMapManager.GetMapWithID(collectionID);
 			if(collection != null)
 			{
 				updateAllItems(collection.getMaps());
 			}
         }else
         {       
-	        updateAllItems(GLMapManager.getMaps());	        
+	        updateAllItems(GLMapManager.GetMaps());
 	        GLMapManager.updateMapList(this, new Runnable(){
 				@Override
 				public void run()
 				{
-					updateAllItems(GLMapManager.getMaps());
+					updateAllItems(GLMapManager.GetMaps());
 				}
 	        });
 		}
@@ -187,8 +186,8 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 		ContextItems selected = ContextItems.values()[item.getItemId()];
 		switch (selected) {
 			case DELETE:
-				selectedMap.deleteFiles();
-				final ListView listView = (ListView) findViewById(android.R.id.list);
+				GLMapManager.DeleteMap(selectedMap);
+				ListView listView = findViewById(android.R.id.list);
 				((MapsAdapter)listView.getAdapter()).notifyDataSetChanged();
 				break;
 
@@ -204,7 +203,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
             return;
 
         GLMapManager.SortMaps(maps, center);
-       	final ListView listView = (ListView) findViewById(android.R.id.list);
+       	final ListView listView = findViewById(android.R.id.list);
         listView.setAdapter(new MapsAdapter(maps, this));
         listView.setOnItemClickListener(new OnItemClickListener() {
 			@Override
@@ -232,7 +231,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 				GLMapInfo info = ((MapsAdapter) listView.getAdapter()).maps[position];
-				GLMapInfo.State state = info.getState();
+				@GLMapInfo.State int state = info.getState();
 				if (state == GLMapInfo.State.DOWNLOADED || state == GLMapInfo.State.NEED_RESUME || state == GLMapInfo.State.NEED_UPDATE)
 				{
 					selectedMap = info;
