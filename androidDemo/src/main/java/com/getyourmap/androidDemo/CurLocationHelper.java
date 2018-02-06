@@ -17,7 +17,6 @@ import com.glmapview.GLMapDrawable;
 import com.glmapview.GLMapVectorCascadeStyle;
 import com.glmapview.GLMapVectorObject;
 import com.glmapview.GLMapView;
-import com.glmapview.MapGeoPoint;
 import com.glmapview.MapPoint;
 
 import java.util.List;
@@ -127,17 +126,24 @@ class CurLocationHelper implements LocationListener
     }
 
     @Override
-    public void onLocationChanged(Location location)
+    public void onLocationChanged(final Location location)
     {
         if(location == null)
             return;
 
         lastLocation = location;
-
-        MapGeoPoint geoPoint = new MapGeoPoint(location.getLatitude(), location.getLongitude());
-        MapPoint position = new MapPoint(geoPoint);
+        final MapPoint position = MapPoint.CreateFromGeoCoordinates(location.getLatitude(), location.getLongitude());
         if(isFollowLocationEnabled)
-            mapView.flyTo(geoPoint, mapView.getMapZoom(), 0, 0);
+        {
+            mapView.animate(new GLMapView.AnimateCallback()
+            {
+                @Override
+                public void run(GLMapAnimation animation)
+                {
+                    animation.flyToPoint(position);
+                }
+            });
+        }
 
         //Create drawables if not exist and set initial positions.
         if (userLocationImage == null) {
@@ -180,7 +186,7 @@ class CurLocationHelper implements LocationListener
 
 
         //Calculate radius of accuracy circle
-        float r = (float)mapView.convertMetersToInternal(location.getAccuracy());
+        final float r = (float)mapView.convertMetersToInternal(location.getAccuracy());
         //If accuracy circle drawable not exits - create it and set initial position
         if(accuracyCircle == null)
         {
@@ -203,16 +209,22 @@ class CurLocationHelper implements LocationListener
             mapView.add(accuracyCircle);
         }
 
-        //Create animation that will move drawables to new location
-        GLMapAnimation animation = new GLMapAnimation(GLMapAnimation.Linear, 1);
-        animation.setPosition(userMovementImage, position);
-        animation.setPosition(userLocationImage, position);
-        animation.setPosition(accuracyCircle, position);
-        animation.setScale(accuracyCircle, r/2048.0f);
-        if(location.hasBearing())
-            animation.setAngle(userMovementImage, -location.getBearing());
 
-        mapView.startAnimation(animation);
+        mapView.animate(new GLMapView.AnimateCallback()
+        {
+            @Override
+            public void run(GLMapAnimation animation)
+            {
+                animation.setTransition(GLMapAnimation.Linear);
+                animation.setDuration(1);
+                userMovementImage.setPosition(position);
+                userLocationImage.setPosition(position);
+                accuracyCircle.setPosition(position);
+                accuracyCircle.setScale(r/2048.0f);
+                if(location.hasBearing())
+                    userLocationImage.setAngle(-location.getBearing());
+            }
+        });
     }
 
     @Override
