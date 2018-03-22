@@ -291,9 +291,16 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 						double lat = min_lat + (max_lat - min_lat) * Math.random();
 						double lon = min_lon + (max_lon - min_lon) * Math.random();
 
-						MapGeoPoint geoPoint = new MapGeoPoint(lat, lon);
-
-						mapView.flyTo(geoPoint, 15, 0, 0);
+						final MapPoint point = MapPoint.CreateFromGeoCoordinates(lat, lon);
+						mapView.animate(new GLMapView.AnimateCallback()
+						{
+							@Override
+							public void run(GLMapAnimation animation)
+							{
+								mapView.setMapZoom(15);
+								animation.flyToPoint(point);
+							}
+						});
 					}
 				});
 				GLMapManager.SetTileDownloadingAllowed(true);
@@ -493,8 +500,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
-    	MapPoint pt = new MapPoint(mapView.getWidth()/2, mapView.getHeight()/2);
-		mapView.changeMapZoom(-1, pt, 1, GLMapAnimation.EaseInOut);
+		mapView.animate(new GLMapView.AnimateCallback()
+		{
+			@Override
+			public void run(GLMapAnimation animation)
+			{
+				mapView.setMapZoom(mapView.getMapZoom()-1);
+			}
+		});
 	    return false;
 	}
 
