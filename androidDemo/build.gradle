@@ -8,8 +8,8 @@ android {
         applicationId "com.getyourmap.androidDemo"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 906
-        versionName "0.9.6"
+        versionCode 907
+        versionName "0.9.7"
     }
     buildTypes {
         release {
@@ -31,7 +31,7 @@ repositories {
 dependencies {
     //    compile fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:27.1.0'
-    implementation('com.getyourmap:glmap:0.9.6') {
+    implementation('com.getyourmap:glmap:0.9.7') {
         transitive = true
     }
 }
