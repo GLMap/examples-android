@@ -227,7 +227,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					{
 						task.cancel();
 					} else {
-						GLMapManager.createDownloadTask(mapToDownload, MapViewActivity.this).start();
+						GLMapManager.downloadMap(mapToDownload, MapViewActivity.this, true);
 					}
 					updateMapDownloadButtonText();
 				} else {
@@ -512,19 +512,19 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	}
 
 	@Override
-	public void onStartDownloading(GLMapInfo map)
+	public void onStartDownloading(GLMapDownloadTask task)
 	{
 
 	}
 
 	@Override
-	public void onDownloadProgress(GLMapInfo map)
+	public void onDownloadProgress(GLMapDownloadTask task)
 	{
 		updateMapDownloadButtonText();
 	}
 
 	@Override
-	public void onFinishDownloading(GLMapInfo map)
+	public void onFinishDownloading(GLMapDownloadTask task)
 	{
 		mapView.reloadTiles();
 	}
@@ -546,9 +546,16 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			if (mapToDownload != null)
 			{
 				String text;
+
 				if(mapToDownload.getState() == GLMapInfo.State.IN_PROGRESS)
 				{
-					text = String.format(Locale.getDefault(), "Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), (int)(mapToDownload.getDownloadProgress()*100));
+					float progress = 0;
+					GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
+					if(task != null && task.total != 0)
+					{
+						progress = (float)task.downloaded/(float)task.total;
+					}
+					text = String.format(Locale.getDefault(), "Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), (int)(progress*100));
 				}else
 				{
 					text = String.format(Locale.getDefault(), "Download %s", mapToDownload.getLocalizedName(localeSettings));

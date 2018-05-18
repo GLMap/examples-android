@@ -76,7 +76,12 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 				txtDescription.setText("Need resume");
 			}else if( map.getState() == GLMapInfo.State.IN_PROGRESS)
 			{
-				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", map.getDownloadProgress()*100));
+				float progress = 0;
+				GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
+				if(task != null && task.total != 0)
+					progress = (float)task.downloaded/(float)task.total;
+
+				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress*100));
 			}else
 			{
 				txtDescription.setText(NumberFormatter.FormatSize(map.getSize()));
@@ -147,19 +152,19 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 	}
 
 	@Override
-	public void onStartDownloading(GLMapInfo map)
+	public void onStartDownloading(GLMapDownloadTask task)
 	{
 
 	}
 
 	@Override
-	public void onDownloadProgress(GLMapInfo map)
+	public void onDownloadProgress(GLMapDownloadTask task)
 	{
 		((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
 	}
 
 	@Override
-	public void onFinishDownloading(GLMapInfo map)
+	public void onFinishDownloading(GLMapDownloadTask task)
 	{
 
 	}
@@ -221,7 +226,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 					if (task != null) {
 						task.cancel();
 					} else if (info.getState() != GLMapInfo.State.DOWNLOADED) {
-						GLMapManager.createDownloadTask(info, DownloadActivity.this).start();
+						GLMapManager.downloadMap(info, DownloadActivity.this, true);
 					}
 				}
 			}
