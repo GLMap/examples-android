@@ -84,7 +84,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress*100));
 			}else
 			{
-				txtDescription.setText(NumberFormatter.FormatSize(map.getSize()));
+				txtDescription.setText(NumberFormatter.FormatSize(map.getSizeOnServer()));
 			}
 
             return convertView;
@@ -226,7 +226,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 					if (task != null) {
 						task.cancel();
 					} else if (info.getState() != GLMapInfo.State.DOWNLOADED) {
-						GLMapManager.downloadMap(info, DownloadActivity.this, true);
+						GLMapManager.DownloadMap(info, DownloadActivity.this);
 					}
 				}
 			}

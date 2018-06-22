@@ -227,7 +227,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					{
 						task.cancel();
 					} else {
-						GLMapManager.downloadMap(mapToDownload, MapViewActivity.this, true);
+						GLMapManager.DownloadMap(mapToDownload, MapViewActivity.this);
 					}
 					updateMapDownloadButtonText();
 				} else {
