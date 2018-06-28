@@ -223,11 +223,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			public void onClick(View v) {
 				if (mapToDownload != null) {
 					GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-					if (task != null)
-					{
+					if (task != null) {
 						task.cancel();
 					} else {
-						GLMapManager.DownloadMap(mapToDownload, MapViewActivity.this);
+						GLMapManager.DownloadDataSets(mapToDownload, GLMapInfo.DataSetMask.ALL,MapViewActivity.this);
 					}
 					updateMapDownloadButtonText();
 				} else {
@@ -546,17 +545,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			if (mapToDownload != null)
 			{
 				String text;
-
-				if(mapToDownload.getState() == GLMapInfo.State.IN_PROGRESS)
+				GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
+				if(task != null && task.total != 0)
 				{
-					float progress = 0;
-					GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-					if(task != null && task.total != 0)
-					{
-						progress = (float)task.downloaded/(float)task.total;
-					}
-					text = String.format(Locale.getDefault(), "Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), (int)(progress*100));
-				}else
+					int progress = task.downloaded * 100 / task.total;
+					text = String.format(Locale.getDefault(), "Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), progress);
+				} else
 				{
 					text = String.format(Locale.getDefault(), "Download %s", mapToDownload.getLocalizedName(localeSettings));
 				}
@@ -1152,7 +1146,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					@Override
 					public boolean onError(long tile, GLMapError errorCode)
 					{
-						Log.i("BulkDownloadError", String.format("tile = %d, error = %d", tile, errorCode.getCode()));
+						Log.i("BulkDownloadError", String.format("tile = %d, domain = %s, errorCode = %d", tile, errorCode.getErrorDomain(), errorCode.getErrorCode()));
 						return true;
 					}
 				});

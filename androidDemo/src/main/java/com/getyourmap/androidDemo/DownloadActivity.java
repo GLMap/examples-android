@@ -38,6 +38,24 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 	private GLMapLocaleSettings localeSettings;
 	private ListView listView;
 
+	static boolean anyDataSetHaveState(GLMapInfo info, @GLMapInfo.State int state){
+		for(int i=0; i<GLMapInfo.DataSet.COUNT; ++i)
+		{
+			if(info.getState(i) == state)
+				return true;
+		}
+		return false;
+	}
+
+	static boolean isOnDevice(GLMapInfo info)
+	{
+		return anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS) ||
+				anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED) ||
+				anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME) ||
+				anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE) ||
+				anyDataSetHaveState(info, GLMapInfo.State.REMOVED);
+	}
+
 	private class MapsAdapter extends BaseAdapter implements ListAdapter {
         private GLMapInfo[] maps;
         private Context context;
@@ -58,35 +76,36 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
             {
                 convertView = LayoutInflater.from(context).inflate(R.layout.map_name, null);
             }
-            txtHeaderName = ((TextView) convertView.findViewById(android.R.id.text1));
-            txtDescription = ((TextView) convertView.findViewById(android.R.id.text2));
+            txtHeaderName = convertView.findViewById(android.R.id.text1);
+            txtDescription = convertView.findViewById(android.R.id.text2);
             
 			txtHeaderName.setText(map.getLocalizedName(localeSettings));
-			if(map.isCollection())
+
+			GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
+			if(task != null)
+			{
+				float progress;
+				if(task.total != 0)
+					progress = 100.0f * task.downloaded / task.total;
+				else
+					progress = 0;
+				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress));
+			}else if(map.isCollection())
 			{
 				txtDescription.setText("Collection");
-			} else if (map.getState() == GLMapInfo.State.DOWNLOADED)
-			{
-				txtDescription.setText("Downloaded");
-			} else if( map.getState() == GLMapInfo.State.NEED_UPDATE)
+			}else if(anyDataSetHaveState(map, GLMapInfo.State.NEED_UPDATE))
 			{
 				txtDescription.setText("Need update");
-			}else if( map.getState() == GLMapInfo.State.NEED_RESUME)
+			}else if(anyDataSetHaveState(map, GLMapInfo.State.NEED_RESUME))
 			{
 				txtDescription.setText("Need resume");
-			}else if( map.getState() == GLMapInfo.State.IN_PROGRESS)
-			{
-				float progress = 0;
-				GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
-				if(task != null && task.total != 0)
-					progress = (float)task.downloaded/(float)task.total;
-
-				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress*100));
 			}else
 			{
-				txtDescription.setText(NumberFormatter.FormatSize(map.getSizeOnServer()));
+				long size = map.getSizeOnDisk(GLMapInfo.DataSetMask.ALL);
+				if(size == 0)
+					size = map.getSizeOnServer(GLMapInfo.DataSetMask.ALL);
+				txtDescription.setText(NumberFormatter.FormatSize(size));
 			}
-
             return convertView;
         }
 
@@ -191,7 +210,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 		ContextItems selected = ContextItems.values()[item.getItemId()];
 		switch (selected) {
 			case DELETE:
-				GLMapManager.DeleteMap(selectedMap);
+				GLMapManager.DeleteDataSets(selectedMap, GLMapInfo.DataSetMask.ALL);
 				ListView listView = findViewById(android.R.id.list);
 				((MapsAdapter)listView.getAdapter()).notifyDataSetChanged();
 				break;
@@ -225,8 +244,8 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 					GLMapDownloadTask task = GLMapManager.getDownloadTask(info);
 					if (task != null) {
 						task.cancel();
-					} else if (info.getState() != GLMapInfo.State.DOWNLOADED) {
-						GLMapManager.DownloadMap(info, DownloadActivity.this);
+					} else {
+						GLMapManager.DownloadDataSets(info, GLMapInfo.DataSetMask.ALL, DownloadActivity.this);
 					}
 				}
 			}
@@ -236,8 +255,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 				GLMapInfo info = ((MapsAdapter) listView.getAdapter()).maps[position];
-				@GLMapInfo.State int state = info.getState();
-				if (state == GLMapInfo.State.DOWNLOADED || state == GLMapInfo.State.NEED_RESUME || state == GLMapInfo.State.NEED_UPDATE)
+				if (isOnDevice(info))
 				{
 					selectedMap = info;
 					return false;
