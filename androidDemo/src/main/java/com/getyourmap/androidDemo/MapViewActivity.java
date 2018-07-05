@@ -25,6 +25,7 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.glmapview.GLMapAnimation;
 import com.glmapview.GLMapBBox;
@@ -41,6 +42,7 @@ import com.glmapview.GLMapMarkerLayer;
 import com.glmapview.GLMapMarkerStyleCollection;
 import com.glmapview.GLMapMarkerStyleCollectionDataCallback;
 import com.glmapview.GLMapRasterTileSource;
+import com.glmapview.GLMapRouteData;
 import com.glmapview.GLMapTrack;
 import com.glmapview.GLMapTrackData;
 import com.glmapview.GLMapVectorCascadeStyle;
@@ -57,6 +59,7 @@ import com.glmapview.GLSearchOffline;
 import com.glmapview.ImageManager;
 import com.glmapview.MapGeoPoint;
 import com.glmapview.MapPoint;
+import com.glmapview.RoutePoint;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -65,13 +68,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener {
+public class MapViewActivity extends Activity implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener
+{
 
 	private static class Pin
 	{
@@ -95,7 +100,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			images[2] = imageManager.open("3.svgpb", 1, 0xFF0000FF);
 		}
 
-			@Override
+		@Override
 		public int getImagesCount()
 		{
 			return pins.size();
@@ -142,7 +147,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		@Override
 		public MapPoint getImageVariantOffset(int i)
 		{
-			return new MapPoint(images[i].getWidth()/2, 0);
+			return new MapPoint(images[i].getWidth() / 2, 0);
 		}
 
 		int size()
@@ -172,14 +177,14 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		{
 			Pin rv = null;
 			lock.lock();
-			for(int i=0; i<pins.size(); ++i)
+			for (int i = 0; i < pins.size(); ++i)
 			{
 				Pin pin = pins.get(i);
 
 				MapPoint screenPos = mapView.convertInternalToDisplay(new MapPoint(pin.pos));
-				Rect rt = new Rect(-40,-40,40,40);
-				rt.offset( (int)screenPos.x, (int)screenPos.y );
-				if(rt.contains((int)touchX, (int)touchY))
+				Rect rt = new Rect(-40, -40, 40, 40);
+				rt.offset((int) screenPos.x, (int) screenPos.y);
+				if (rt.contains((int) touchX, (int) touchY))
 				{
 					rv = pin;
 					break;
@@ -209,7 +214,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	private Runnable trackRecordRunnable;
 
 	@Override
-    protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState)
+	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.map);
 		mapView = this.findViewById(R.id.map_view);
@@ -218,21 +224,27 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		GLMapManager.updateMapList(this, null);
 
 		btnDownloadMap = this.findViewById(R.id.button_dl_map);
-		btnDownloadMap.setOnClickListener(new OnClickListener() {
+		btnDownloadMap.setOnClickListener(new OnClickListener()
+		{
 			@Override
-			public void onClick(View v) {
-				if (mapToDownload != null) {
+			public void onClick(View v)
+			{
+				if (mapToDownload != null)
+				{
 					GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-					if (task != null) {
+					if (task != null)
+					{
 						task.cancel();
-					} else {
-						GLMapManager.DownloadDataSets(mapToDownload, GLMapInfo.DataSetMask.ALL,MapViewActivity.this);
+					} else
+					{
+						GLMapManager.DownloadDataSets(mapToDownload, GLMapInfo.DataSetMask.ALL, MapViewActivity.this);
 					}
 					updateMapDownloadButtonText();
-				} else {
+				} else
+				{
 					Intent i = new Intent(v.getContext(), DownloadActivity.class);
 
-                    MapPoint pt = mapView.getMapCenter();
+					MapPoint pt = mapView.getMapCenter();
 					i.putExtra("cx", pt.x);
 					i.putExtra("cy", pt.y);
 					v.getContext().startActivity(i);
@@ -255,16 +267,19 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		switch (example)
 		{
 			case MAP_EMBEDDED:
-				if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null)) {
-					//Failed to unpack to caches. Check free space.
-				}
-				zoomToPoint();
+				showEmbedded();
 				break;
 			case MAP_ONLINE:
 				GLMapManager.SetTileDownloadingAllowed(true);
 				break;
+			case ONLINE_ROUTING:
+				onlineRouting();
+				break;
+			case OFFLINE_ROUTING:
+				offlineRouting();
+				break;
 			case MAP_ONLINE_RASTER:
-				mapView.setRasterTileSources(new GLMapRasterTileSource[]{ new OSMTileSource(this) } );
+				mapView.setRasterTileSources(new GLMapRasterTileSource[]{new OSMTileSource(this)});
 				break;
 			case ZOOM_BBOX:
 				zoomToBBox();
@@ -313,22 +328,27 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case MARKERS:
 				mapView.setLongClickable(true);
 
-				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener()
+				{
 					@Override
-					public boolean onSingleTapConfirmed(MotionEvent e) {
+					public boolean onSingleTapConfirmed(MotionEvent e)
+					{
 						deleteMarker(e.getX(), e.getY());
 						return true;
 					}
 
 					@Override
-					public void onLongPress(MotionEvent e) {
+					public void onLongPress(MotionEvent e)
+					{
 						addMarker(e.getX(), e.getY());
 					}
 				});
 
-				mapView.setOnTouchListener(new OnTouchListener() {
+				mapView.setOnTouchListener(new OnTouchListener()
+				{
 					@Override
-					public boolean onTouch(View arg0, MotionEvent ev) {
+					public boolean onTouch(View arg0, MotionEvent ev)
+					{
 						return gestureDetector.onTouchEvent(ev);
 					}
 				});
@@ -339,22 +359,27 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case MARKERS_MAPCSS:
 				addMarkersWithMapcss();
 
-				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener()
+				{
 					@Override
-					public boolean onSingleTapConfirmed(MotionEvent e) {
+					public boolean onSingleTapConfirmed(MotionEvent e)
+					{
 						deleteMarker(e.getX(), e.getY());
 						return true;
 					}
 
 					@Override
-					public void onLongPress(MotionEvent e) {
+					public void onLongPress(MotionEvent e)
+					{
 						addMarkerAsVectorObject(e.getX(), e.getY());
 					}
 				});
 
-				mapView.setOnTouchListener(new OnTouchListener() {
+				mapView.setOnTouchListener(new OnTouchListener()
+				{
 					@Override
-					public boolean onTouch(View arg0, MotionEvent ev) {
+					public boolean onTouch(View arg0, MotionEvent ev)
+					{
 						return gestureDetector.onTouchEvent(ev);
 					}
 				});
@@ -381,22 +406,27 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case IMAGE_MULTI:
 				mapView.setLongClickable(true);
 
-				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
+				gestureDetector = new GestureDetector(this, new SimpleOnGestureListener()
+				{
 					@Override
-					public boolean onSingleTapConfirmed(MotionEvent e) {
+					public boolean onSingleTapConfirmed(MotionEvent e)
+					{
 						deletePin(e.getX(), e.getY());
 						return true;
 					}
 
 					@Override
-					public void onLongPress(MotionEvent e) {
+					public void onLongPress(MotionEvent e)
+					{
 						addPin(e.getX(), e.getY());
 					}
 				});
 
-				mapView.setOnTouchListener(new OnTouchListener() {
+				mapView.setOnTouchListener(new OnTouchListener()
+				{
 					@Override
-					public boolean onTouch(View arg0, MotionEvent ev) {
+					public boolean onTouch(View arg0, MotionEvent ev)
+					{
 						return gestureDetector.onTouchEvent(ev);
 					}
 				});
@@ -415,17 +445,22 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 		}
 
-		mapView.setCenterTileStateChangedCallback(new Runnable() {
+		mapView.setCenterTileStateChangedCallback(new Runnable()
+		{
 			@Override
-			public void run() {
+			public void run()
+			{
 				updateMapDownloadButton();
 			}
 		});
 
-		mapView.setMapDidMoveCallback(new Runnable() {
+		mapView.setMapDidMoveCallback(new Runnable()
+		{
 			@Override
-			public void run() {
-				if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
+			public void run()
+			{
+				if (example == SampleSelectActivity.Samples.CALLBACK_TEST)
+				{
 					Log.w("GLMapView", "Did move");
 				}
 				updateMapDownloadButtonText();
@@ -436,19 +471,20 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	public void checkAndRequestLocationPermission()
 	{
 		//Create helper if not exist
-		if(curLocationHelper==null)
-			curLocationHelper = new CurLocationHelper(mapView);
+		if (curLocationHelper == null) curLocationHelper = new CurLocationHelper(mapView);
 
 		//Try to start location updates. If we need permissions - ask for them
-		if(!curLocationHelper.initLocationManager(this))
+		if (!curLocationHelper.initLocationManager(this))
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
 	}
 
 	@Override
 	public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults)
 	{
-		switch (requestCode) {
-			case 0: {
+		switch (requestCode)
+		{
+			case 0:
+			{
 				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
 					curLocationHelper.initLocationManager(this);
 				break;
@@ -463,32 +499,32 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	protected void onDestroy()
 	{
 		GLMapManager.removeStateListener(this);
-		if(mapView!=null)
+		if (mapView != null)
 		{
 			mapView.removeAllObjects();
 			mapView.setCenterTileStateChangedCallback(null);
 			mapView.setMapDidMoveCallback(null);
 		}
 
-		if(markerLayer!=null)
+		if (markerLayer != null)
 		{
 			markerLayer.dispose();
 			markerLayer = null;
 		}
 
-		if(imageGroup!=null)
+		if (imageGroup != null)
 		{
 			imageGroup.dispose();
 			imageGroup = null;
 		}
 
-		if(curLocationHelper!=null)
+		if (curLocationHelper != null)
 		{
 			curLocationHelper.onDestroy();
 			curLocationHelper = null;
 		}
 
-		if(handler!=null)
+		if (handler != null)
 		{
 			handler.removeCallbacks(trackRecordRunnable);
 			handler = null;
@@ -504,10 +540,10 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			@Override
 			public void run(GLMapAnimation animation)
 			{
-				mapView.setMapZoom(mapView.getMapZoom()-1);
+				mapView.setMapZoom(mapView.getMapZoom() - 1);
 			}
 		});
-	    return false;
+		return false;
 	}
 
 	@Override
@@ -536,7 +572,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 	void updateMapDownloadButtonText()
 	{
-		if(btnDownloadMap.getVisibility()==View.VISIBLE)
+		if (btnDownloadMap.getVisibility() == View.VISIBLE)
 		{
 			MapPoint center = mapView.getMapCenter();
 
@@ -546,7 +582,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			{
 				String text;
 				GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-				if(task != null && task.total != 0)
+				if (task != null && task.total != 0)
 				{
 					int progress = task.downloaded * 100 / task.total;
 					text = String.format(Locale.getDefault(), "Downloading %s %d%%", mapToDownload.getLocalizedName(localeSettings), progress);
@@ -555,10 +591,20 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					text = String.format(Locale.getDefault(), "Download %s", mapToDownload.getLocalizedName(localeSettings));
 				}
 				btnDownloadMap.setText(text);
-			} else {
+			} else
+			{
 				btnDownloadMap.setText("Download maps");
 			}
 		}
+	}
+
+	void showEmbedded()
+	{
+		if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null))
+		{
+			//Failed to unpack to caches. Check free space.
+		}
+		zoomToPoint();
 	}
 
 	void updateMapDownloadButton()
@@ -567,7 +613,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		{
 			case GLMapTileState.NoData:
 			{
-				if(btnDownloadMap.getVisibility()==View.INVISIBLE)
+				if (btnDownloadMap.getVisibility() == View.INVISIBLE)
 				{
 					btnDownloadMap.setVisibility(View.VISIBLE);
 					btnDownloadMap.getParent().requestLayout();
@@ -578,7 +624,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 			case GLMapTileState.Loaded:
 			{
-				if(btnDownloadMap.getVisibility()==View.VISIBLE)
+				if (btnDownloadMap.getVisibility() == View.VISIBLE)
 				{
 					btnDownloadMap.setVisibility(View.INVISIBLE);
 				}
@@ -587,6 +633,93 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case GLMapTileState.Unknown:
 				break;
 		}
+	}
+
+	void onlineRouting()
+	{
+		showEmbedded();
+
+		RoutePoint pts[] = {
+				new RoutePoint(new MapGeoPoint(mapView.getMapCenter()), Float.NaN, true),
+				new RoutePoint(43, 20, Float.NaN, true)};
+
+		GLMapRouteData.requestOnlineRouteData(pts, GLMapRouteData.Mode.DRIVE, "en", GLUnitSystem.International, new GLMapRouteData.ResultsCallback()
+		{
+			@Override
+			public void onResult(GLMapRouteData data)
+			{
+				GLMapTrackData trackData = data.getTrackData(Color.argb(255, 255, 0, 0));
+				GLMapTrack track = new GLMapTrack(trackData, 5);
+				mapView.add(track);
+				GLMapBBox bbox = trackData.getBBox();
+				mapView.setMapCenter(bbox.center());
+				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+			}
+
+			@Override
+			public void onError(GLMapError error)
+			{
+				Toast.makeText(MapViewActivity.this, error.message, Toast.LENGTH_LONG).show();
+			}
+		});
+	}
+
+	private static String valhallaConfig;
+	//Example how to load search categories.
+	public static String getValhallaConfig(Resources resources)
+	{
+		if(valhallaConfig == null)
+		{
+			byte raw[] = null;
+			try
+			{
+				//Read prepared categories
+				InputStream stream = resources.openRawResource(R.raw.valhalla);
+				raw = new byte[stream.available()];
+				stream.read(raw);
+				stream.close();
+			} catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+			//Construct categories
+			valhallaConfig = new String(raw, Charset.defaultCharset());
+		}
+		return valhallaConfig;
+	}
+
+	void offlineRouting()
+	{
+		GLMapInfo info = GLMapManager.GetMapWithID(59065);
+		if(info == null || info.getSizeOnDisk(GLMapInfo.DataSetMask.NAVIGATION)==0)
+		{
+			Toast.makeText(MapViewActivity.this, "Belarus have no downloaded offline navigation data", Toast.LENGTH_LONG).show();
+			return;
+		}
+
+		RoutePoint pts[] = {
+				new RoutePoint(52.093027, 23.685570, Float.NaN, true),
+				new RoutePoint(53.907273, 27.552126, Float.NaN, true)};
+
+		GLMapRouteData.requestOfflineRouteData(getValhallaConfig(getResources()), pts, GLMapRouteData.Mode.DRIVE, "en", GLUnitSystem.International, new GLMapRouteData.ResultsCallback()
+		{
+			@Override
+			public void onResult(GLMapRouteData data)
+			{
+				GLMapTrackData trackData = data.getTrackData(Color.argb(255, 255, 0, 0));
+				GLMapTrack track = new GLMapTrack(trackData, 5);
+				mapView.add(track);
+				GLMapBBox bbox = trackData.getBBox();
+				mapView.setMapCenter(bbox.center());
+				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+			}
+
+			@Override
+			public void onError(GLMapError error)
+			{
+				Toast.makeText(MapViewActivity.this, error.message, Toast.LENGTH_LONG).show();
+			}
+		});
 	}
 
 	private static GLSearchCategories searchCategories;
@@ -744,7 +877,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 
 		// Move map to the Montenegro capital
 		MapPoint pt = MapPoint.CreateFromGeoCoordinates(42.4341, 19.26);
-    	GLMapView mapView = (GLMapView) this.findViewById(R.id.map_view);
+    	GLMapView mapView = this.findViewById(R.id.map_view);
     	mapView.setMapCenter(pt);
     	mapView.setMapZoom(16);
     }
