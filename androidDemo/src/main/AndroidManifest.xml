@@ -67,6 +67,13 @@
             android:label="@string/app_name"
             android:theme="@android:style/Theme.Black" >
         </activity>
+
+        <activity
+            android:name=".RoutingActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/app_name"
+            android:theme="@style/TabAppTheme" />
+
     </application>
 
 </manifest>

@@ -239,7 +239,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 					{
 						GLMapManager.DownloadDataSets(mapToDownload, GLMapInfo.DataSetMask.ALL, MapViewActivity.this);
 					}
-					updateMapDownloadButtonText();
+					updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
 				} else
 				{
 					Intent i = new Intent(v.getContext(), DownloadActivity.class);
@@ -271,12 +271,6 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				break;
 			case MAP_ONLINE:
 				GLMapManager.SetTileDownloadingAllowed(true);
-				break;
-			case ONLINE_ROUTING:
-				onlineRouting();
-				break;
-			case OFFLINE_ROUTING:
-				offlineRouting();
 				break;
 			case MAP_ONLINE_RASTER:
 				mapView.setRasterTileSources(new GLMapRasterTileSource[]{new OSMTileSource(this)});
@@ -450,7 +444,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			@Override
 			public void run()
 			{
-				updateMapDownloadButton();
+				updateMapDownloadButton(mapView, btnDownloadMap, mapToDownload, localeSettings);
 			}
 		});
 
@@ -463,7 +457,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				{
 					Log.w("GLMapView", "Did move");
 				}
-				updateMapDownloadButtonText();
+				updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
 			}
 		});
 	}
@@ -555,7 +549,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	@Override
 	public void onDownloadProgress(GLMapDownloadTask task)
 	{
-		updateMapDownloadButtonText();
+		updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
 	}
 
 	@Override
@@ -567,10 +561,12 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 	@Override
 	public void onStateChanged(GLMapInfo map)
 	{
-		updateMapDownloadButtonText();
+		updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
 	}
 
-	void updateMapDownloadButtonText()
+	public static void updateMapDownloadButtonText(GLMapView mapView, Button btnDownloadMap,
+												   GLMapInfo mapToDownload,
+												   GLMapLocaleSettings localeSettings)
 	{
 		if (btnDownloadMap.getVisibility() == View.VISIBLE)
 		{
@@ -607,7 +603,8 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 		zoomToPoint();
 	}
 
-	void updateMapDownloadButton()
+	public static void updateMapDownloadButton(GLMapView mapView, Button btnDownloadMap, GLMapInfo mapToDownload,
+											   GLMapLocaleSettings localeSettings)
 	{
 		switch (mapView.getCenterTileState())
 		{
@@ -617,7 +614,7 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 				{
 					btnDownloadMap.setVisibility(View.VISIBLE);
 					btnDownloadMap.getParent().requestLayout();
-					updateMapDownloadButtonText();
+					updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
 				}
 				break;
 			}
@@ -633,93 +630,6 @@ public class MapViewActivity extends Activity implements GLMapView.ScreenCapture
 			case GLMapTileState.Unknown:
 				break;
 		}
-	}
-
-	void onlineRouting()
-	{
-		showEmbedded();
-
-		RoutePoint pts[] = {
-				new RoutePoint(new MapGeoPoint(mapView.getMapCenter()), Float.NaN, true),
-				new RoutePoint(43, 20, Float.NaN, true)};
-
-		GLMapRouteData.requestOnlineRouteData(pts, GLMapRouteData.Mode.DRIVE, "en", GLUnitSystem.International, new GLMapRouteData.ResultsCallback()
-		{
-			@Override
-			public void onResult(GLMapRouteData data)
-			{
-				GLMapTrackData trackData = data.getTrackData(Color.argb(255, 255, 0, 0));
-				GLMapTrack track = new GLMapTrack(trackData, 5);
-				mapView.add(track);
-				GLMapBBox bbox = trackData.getBBox();
-				mapView.setMapCenter(bbox.center());
-				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
-			}
-
-			@Override
-			public void onError(GLMapError error)
-			{
-				Toast.makeText(MapViewActivity.this, error.message, Toast.LENGTH_LONG).show();
-			}
-		});
-	}
-
-	private static String valhallaConfig;
-	//Example how to load search categories.
-	public static String getValhallaConfig(Resources resources)
-	{
-		if(valhallaConfig == null)
-		{
-			byte raw[] = null;
-			try
-			{
-				//Read prepared categories
-				InputStream stream = resources.openRawResource(R.raw.valhalla);
-				raw = new byte[stream.available()];
-				stream.read(raw);
-				stream.close();
-			} catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-			//Construct categories
-			valhallaConfig = new String(raw, Charset.defaultCharset());
-		}
-		return valhallaConfig;
-	}
-
-	void offlineRouting()
-	{
-		GLMapInfo info = GLMapManager.GetMapWithID(59065);
-		if(info == null || info.getSizeOnDisk(GLMapInfo.DataSetMask.NAVIGATION)==0)
-		{
-			Toast.makeText(MapViewActivity.this, "Belarus have no downloaded offline navigation data", Toast.LENGTH_LONG).show();
-			return;
-		}
-
-		RoutePoint pts[] = {
-				new RoutePoint(52.093027, 23.685570, Float.NaN, true),
-				new RoutePoint(53.907273, 27.552126, Float.NaN, true)};
-
-		GLMapRouteData.requestOfflineRouteData(getValhallaConfig(getResources()), pts, GLMapRouteData.Mode.DRIVE, "en", GLUnitSystem.International, new GLMapRouteData.ResultsCallback()
-		{
-			@Override
-			public void onResult(GLMapRouteData data)
-			{
-				GLMapTrackData trackData = data.getTrackData(Color.argb(255, 255, 0, 0));
-				GLMapTrack track = new GLMapTrack(trackData, 5);
-				mapView.add(track);
-				GLMapBBox bbox = trackData.getBBox();
-				mapView.setMapCenter(bbox.center());
-				mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
-			}
-
-			@Override
-			public void onError(GLMapError error)
-			{
-				Toast.makeText(MapViewActivity.this, error.message, Toast.LENGTH_LONG).show();
-			}
-		});
 	}
 
 	private static GLSearchCategories searchCategories;

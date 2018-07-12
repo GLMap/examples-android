@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <ScrollView
+        android:id="@+id/scroller"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/arrow_up"
+        android:background="@drawable/popup_background"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/tracks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+
+    </ScrollView>
+
+    <ImageView
+        android:id="@+id/arrow_up"
+        android:layout_width="40dp"
+        android:layout_height="28dp"
+        android:layout_marginTop="-11dp"
+        android:src="@drawable/arrow_vector" />
+
+    <ImageView
+        android:id="@+id/arrow_down"
+        android:layout_width="40dp"
+        android:layout_height="28dp"
+        android:layout_below="@id/scroller"
+        android:layout_marginBottom="-11dip"
+        android:rotation="180"
+        android:src="@drawable/arrow_vector" />
+
+</RelativeLayout>

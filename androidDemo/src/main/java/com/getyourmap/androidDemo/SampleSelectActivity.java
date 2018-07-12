@@ -16,9 +16,8 @@ public class SampleSelectActivity extends ListActivity
         MAP,
 		MAP_EMBEDDED,
         MAP_ONLINE,
-        ONLINE_ROUTING,
-		OFFLINE_ROUTING,
 		MAP_ONLINE_RASTER,
+		OPEN_ROUTING,
 		MAP_TEXTURE_VIEW,
         ZOOM_BBOX,
 		OFFLINE_SEARCH,
@@ -50,10 +49,9 @@ public class SampleSelectActivity extends ListActivity
         		"Open offline map",
         		"Open embedded map",
         		"Open online map",
-				"Online routing",
-				"Offline routing",
 				"Open online raster map",
-				"GLMapView in TextureView",
+                "Routing",
+                "GLMapView in TextureView",
         		"Zoom to bbox",
 				"Offline Search",
 				"Markers",
@@ -80,7 +78,13 @@ public class SampleSelectActivity extends ListActivity
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) 
     {
-		if(position == Samples.MAP_TEXTURE_VIEW.ordinal())
+        if (position == Samples.OPEN_ROUTING.ordinal()) {
+            Intent intent = new Intent(this, RoutingActivity.class);
+            this.startActivity(intent);
+            return;
+        }
+
+        if(position == Samples.MAP_TEXTURE_VIEW.ordinal())
 		{
 			Intent i = new Intent(this, MapTextureViewActivity.class);
 			i.putExtra("cx", 27.0);
