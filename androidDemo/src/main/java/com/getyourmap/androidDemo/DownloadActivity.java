@@ -16,255 +16,218 @@ import android.widget.BaseAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import com.glmapview.GLMapDownloadTask;
 import com.glmapview.GLMapInfo;
 import com.glmapview.GLMapLocaleSettings;
 import com.glmapview.GLMapManager;
 import com.glmapview.MapPoint;
-
 import java.util.List;
 import java.util.Locale;
 
 @SuppressLint("InflateParams")
-public class DownloadActivity extends ListActivity implements GLMapManager.StateListener
-{
-	private enum ContextItems {
-		DELETE
-	}
+public class DownloadActivity extends ListActivity implements GLMapManager.StateListener {
+  private enum ContextItems {
+    DELETE
+  }
 
-	private MapPoint center;
-	private GLMapInfo selectedMap = null;
-	private GLMapLocaleSettings localeSettings;
-	private ListView listView;
+  private MapPoint center;
+  private GLMapInfo selectedMap = null;
+  private GLMapLocaleSettings localeSettings;
+  private ListView listView;
 
-	static boolean anyDataSetHaveState(GLMapInfo info, @GLMapInfo.State int state){
-		for(int i=0; i<GLMapInfo.DataSet.COUNT; ++i)
-		{
-			if(info.getState(i) == state)
-				return true;
-		}
-		return false;
-	}
+  static boolean anyDataSetHaveState(GLMapInfo info, @GLMapInfo.State int state) {
+    for (int i = 0; i < GLMapInfo.DataSet.COUNT; ++i) {
+      if (info.getState(i) == state) return true;
+    }
+    return false;
+  }
 
-	static boolean isOnDevice(GLMapInfo info)
-	{
-		return anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS) ||
-				anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED) ||
-				anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME) ||
-				anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE) ||
-				anyDataSetHaveState(info, GLMapInfo.State.REMOVED);
-	}
+  static boolean isOnDevice(GLMapInfo info) {
+    return anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS)
+        || anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED)
+        || anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME)
+        || anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE)
+        || anyDataSetHaveState(info, GLMapInfo.State.REMOVED);
+  }
 
-	private class MapsAdapter extends BaseAdapter implements ListAdapter {
-        private GLMapInfo[] maps;
-        private Context context;
-        
-		MapsAdapter(GLMapInfo[] maps, Context context)
-        {
-        	this.maps= maps;
-        	this.context = context;
-			localeSettings = new GLMapLocaleSettings();
-        }
+  private class MapsAdapter extends BaseAdapter implements ListAdapter {
+    private GLMapInfo[] maps;
+    private Context context;
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) 
-        {
-        	GLMapInfo map = maps[position]; 
-            TextView txtDescription, txtHeaderName;
-            if (convertView == null) 
-            {
-                convertView = LayoutInflater.from(context).inflate(R.layout.map_name, null);
-            }
-            txtHeaderName = convertView.findViewById(android.R.id.text1);
-            txtDescription = convertView.findViewById(android.R.id.text2);
-            
-			txtHeaderName.setText(map.getLocalizedName(localeSettings));
-
-			GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
-			if(task != null)
-			{
-				float progress;
-				if(task.total != 0)
-					progress = 100.0f * task.downloaded / task.total;
-				else
-					progress = 0;
-				txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress));
-			}else if(map.isCollection())
-			{
-				txtDescription.setText("Collection");
-			}else if(anyDataSetHaveState(map, GLMapInfo.State.NEED_UPDATE))
-			{
-				txtDescription.setText("Need update");
-			}else if(anyDataSetHaveState(map, GLMapInfo.State.NEED_RESUME))
-			{
-				txtDescription.setText("Need resume");
-			}else
-			{
-				long size = map.getSizeOnDisk(GLMapInfo.DataSetMask.ALL);
-				if(size == 0)
-					size = map.getSizeOnServer(GLMapInfo.DataSetMask.ALL);
-				txtDescription.setText(NumberFormatter.FormatSize(size));
-			}
-            return convertView;
-        }
-
-		@Override
-		public int getCount() 
-		{
-			return maps.length;
-		}
-
-		@Override
-		public Object getItem(int position) 
-		{
-			return maps[position];
-		}
-
-		@Override
-		public long getItemId(int position) 
-		{
-			return position;
-		}	
-	}
-	
-	
-    @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.download);
-
-		listView = (ListView) findViewById(android.R.id.list);
-		registerForContextMenu(listView);
-		List<GLMapDownloadTask> tasks = GLMapManager.getMapDownloadTasks();
-		GLMapManager.addStateListener(this);
-
-        Intent i = getIntent();
-        center = new MapPoint(i.getDoubleExtra("cx", 0.0), i.getDoubleExtra("cy", 0.0));
-        long collectionID = i.getLongExtra("collectionID", 0) ;
-        if(collectionID!=0)
-        {
-			GLMapInfo collection = GLMapManager.GetMapWithID(collectionID);
-			if(collection != null)
-			{
-				updateAllItems(collection.getMaps());
-			}
-        }else
-        {       
-	        updateAllItems(GLMapManager.GetMaps());
-	        GLMapManager.updateMapList(this, new Runnable(){
-				@Override
-				public void run()
-				{
-					updateAllItems(GLMapManager.GetMaps());
-				}
-	        });
-		}
+    MapsAdapter(GLMapInfo[] maps, Context context) {
+      this.maps = maps;
+      this.context = context;
+      localeSettings = new GLMapLocaleSettings();
     }
 
-	@Override
-	protected void onDestroy()
-	{
-		GLMapManager.removeStateListener(this);
-		super.onDestroy();
-	}
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+      GLMapInfo map = maps[position];
+      TextView txtDescription, txtHeaderName;
+      if (convertView == null) {
+        convertView = LayoutInflater.from(context).inflate(R.layout.map_name, null);
+      }
+      txtHeaderName = convertView.findViewById(android.R.id.text1);
+      txtDescription = convertView.findViewById(android.R.id.text2);
 
-	@Override
-	public void onStartDownloading(GLMapDownloadTask task)
-	{
+      txtHeaderName.setText(map.getLocalizedName(localeSettings));
 
-	}
+      GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
+      if (task != null) {
+        float progress;
+        if (task.total != 0) progress = 100.0f * task.downloaded / task.total;
+        else progress = 0;
+        txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress));
+      } else if (map.isCollection()) {
+        txtDescription.setText("Collection");
+      } else if (anyDataSetHaveState(map, GLMapInfo.State.NEED_UPDATE)) {
+        txtDescription.setText("Need update");
+      } else if (anyDataSetHaveState(map, GLMapInfo.State.NEED_RESUME)) {
+        txtDescription.setText("Need resume");
+      } else {
+        long size = map.getSizeOnDisk(GLMapInfo.DataSetMask.ALL);
+        if (size == 0) size = map.getSizeOnServer(GLMapInfo.DataSetMask.ALL);
+        txtDescription.setText(NumberFormatter.FormatSize(size));
+      }
+      return convertView;
+    }
 
-	@Override
-	public void onDownloadProgress(GLMapDownloadTask task)
-	{
-		((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
-	}
+    @Override
+    public int getCount() {
+      return maps.length;
+    }
 
-	@Override
-	public void onFinishDownloading(GLMapDownloadTask task)
-	{
+    @Override
+    public Object getItem(int position) {
+      return maps[position];
+    }
 
-	}
+    @Override
+    public long getItemId(int position) {
+      return position;
+    }
+  }
 
-	@Override
-	public void onStateChanged(GLMapInfo map)
-	{
-		((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
-	}
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.download);
 
+    listView = (ListView) findViewById(android.R.id.list);
+    registerForContextMenu(listView);
+    List<GLMapDownloadTask> tasks = GLMapManager.getMapDownloadTasks();
+    GLMapManager.addStateListener(this);
 
-	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-		super.onCreateContextMenu(menu, v, menuInfo);
+    Intent i = getIntent();
+    center = new MapPoint(i.getDoubleExtra("cx", 0.0), i.getDoubleExtra("cy", 0.0));
+    long collectionID = i.getLongExtra("collectionID", 0);
+    if (collectionID != 0) {
+      GLMapInfo collection = GLMapManager.GetMapWithID(collectionID);
+      if (collection != null) {
+        updateAllItems(collection.getMaps());
+      }
+    } else {
+      updateAllItems(GLMapManager.GetMaps());
+      GLMapManager.updateMapList(
+          this,
+          new Runnable() {
+            @Override
+            public void run() {
+              updateAllItems(GLMapManager.GetMaps());
+            }
+          });
+    }
+  }
 
-		if (selectedMap != null) {
-			menu.setHeaderTitle(selectedMap.getLocalizedName(localeSettings));
-			menu.add(0, ContextItems.DELETE.ordinal(), ContextItems.DELETE.ordinal(), "Delete");
-		}
-	}
+  @Override
+  protected void onDestroy() {
+    GLMapManager.removeStateListener(this);
+    super.onDestroy();
+  }
 
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-		ContextItems selected = ContextItems.values()[item.getItemId()];
-		switch (selected) {
-			case DELETE:
-				GLMapManager.DeleteDataSets(selectedMap, GLMapInfo.DataSetMask.ALL);
-				ListView listView = findViewById(android.R.id.list);
-				((MapsAdapter)listView.getAdapter()).notifyDataSetChanged();
-				break;
+  @Override
+  public void onStartDownloading(GLMapDownloadTask task) {}
 
-			default:
-				return super.onOptionsItemSelected(item);
-		}
-		return true;
-	}
-    
-    public void updateAllItems(GLMapInfo maps[]) 
-    {
-        if (maps == null)
-            return;
+  @Override
+  public void onDownloadProgress(GLMapDownloadTask task) {
+    ((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
+  }
 
-        GLMapManager.SortMaps(maps, center);
-       	final ListView listView = findViewById(android.R.id.list);
-        listView.setAdapter(new MapsAdapter(maps, this));
-        listView.setOnItemClickListener(new OnItemClickListener() {
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view,
-									int position, long id) {
-				GLMapInfo info = (GLMapInfo) listView.getAdapter().getItem(position);
-				if (info.isCollection()) {
-					Intent intent = new Intent(DownloadActivity.this, DownloadActivity.class);
-					intent.putExtra("collectionID", info.getMapID());
-					intent.putExtra("cx", center.x);
-					intent.putExtra("cy", center.y);
-					DownloadActivity.this.startActivity(intent);
-				} else {
-					GLMapDownloadTask task = GLMapManager.getDownloadTask(info);
-					if (task != null) {
-						task.cancel();
-					} else {
-						GLMapManager.DownloadDataSets(info, GLMapInfo.DataSetMask.ALL, DownloadActivity.this);
-					}
-				}
-			}
-		});
+  @Override
+  public void onFinishDownloading(GLMapDownloadTask task) {}
 
-		listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-			@Override
-			public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-				GLMapInfo info = ((MapsAdapter) listView.getAdapter()).maps[position];
-				if (isOnDevice(info))
-				{
-					selectedMap = info;
-					return false;
-				} else
-				{
-					return true;
-				}
-			}
-		});
-    }    
+  @Override
+  public void onStateChanged(GLMapInfo map) {
+    ((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
+  }
 
+  @Override
+  public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+    super.onCreateContextMenu(menu, v, menuInfo);
+
+    if (selectedMap != null) {
+      menu.setHeaderTitle(selectedMap.getLocalizedName(localeSettings));
+      menu.add(0, ContextItems.DELETE.ordinal(), ContextItems.DELETE.ordinal(), "Delete");
+    }
+  }
+
+  @Override
+  public boolean onContextItemSelected(MenuItem item) {
+    ContextItems selected = ContextItems.values()[item.getItemId()];
+    switch (selected) {
+      case DELETE:
+        GLMapManager.DeleteDataSets(selectedMap, GLMapInfo.DataSetMask.ALL);
+        ListView listView = findViewById(android.R.id.list);
+        ((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
+        break;
+
+      default:
+        return super.onOptionsItemSelected(item);
+    }
+    return true;
+  }
+
+  public void updateAllItems(GLMapInfo maps[]) {
+    if (maps == null) return;
+
+    GLMapManager.SortMaps(maps, center);
+    final ListView listView = findViewById(android.R.id.list);
+    listView.setAdapter(new MapsAdapter(maps, this));
+    listView.setOnItemClickListener(
+        new OnItemClickListener() {
+          @Override
+          public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            GLMapInfo info = (GLMapInfo) listView.getAdapter().getItem(position);
+            if (info.isCollection()) {
+              Intent intent = new Intent(DownloadActivity.this, DownloadActivity.class);
+              intent.putExtra("collectionID", info.getMapID());
+              intent.putExtra("cx", center.x);
+              intent.putExtra("cy", center.y);
+              DownloadActivity.this.startActivity(intent);
+            } else {
+              GLMapDownloadTask task = GLMapManager.getDownloadTask(info);
+              if (task != null) {
+                task.cancel();
+              } else {
+                GLMapManager.DownloadDataSets(
+                    info, GLMapInfo.DataSetMask.ALL, DownloadActivity.this);
+              }
+            }
+          }
+        });
+
+    listView.setOnItemLongClickListener(
+        new AdapterView.OnItemLongClickListener() {
+          @Override
+          public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+            GLMapInfo info = ((MapsAdapter) listView.getAdapter()).maps[position];
+            if (isOnDevice(info)) {
+              selectedMap = info;
+              return false;
+            } else {
+              return true;
+            }
+          }
+        });
+  }
 }
