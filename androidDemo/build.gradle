@@ -8,8 +8,8 @@ android {
         applicationId "com.getyourmap.androidDemo"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 907
-        versionName "0.9.7"
+        versionCode 909
+        versionName "0.9.9"
         multiDexEnabled true
     }
     buildTypes {
@@ -40,5 +40,5 @@ dependencies {
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'
-    implementation'com.getyourmap:glmap:0.9.9-SNAPSHOT'
+    implementation'com.getyourmap:glmap:0.9.9'
 }

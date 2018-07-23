@@ -21,6 +21,8 @@ import com.glmapview.GLMapInfo;
 import com.glmapview.GLMapLocaleSettings;
 import com.glmapview.GLMapManager;
 import com.glmapview.MapPoint;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -57,7 +59,6 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
     MapsAdapter(GLMapInfo[] maps, Context context) {
       this.maps = maps;
       this.context = context;
-      localeSettings = new GLMapLocaleSettings();
     }
 
     @Override
@@ -112,6 +113,8 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.download);
+
+    localeSettings = new GLMapLocaleSettings();
 
     listView = (ListView) findViewById(android.R.id.list);
     registerForContextMenu(listView);
@@ -190,7 +193,12 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
   public void updateAllItems(GLMapInfo maps[]) {
     if (maps == null) return;
 
-    GLMapManager.SortMaps(maps, center);
+    Arrays.sort(maps, new Comparator<GLMapInfo>(){
+      @Override
+      public int compare(GLMapInfo a, GLMapInfo b){
+        return a.getLocalizedName(localeSettings).compareTo(b.getLocalizedName(localeSettings));
+      }});
+    // Use GLMapManager.SortMaps(maps, center) to sort map array by distance from user location;
     final ListView listView = findViewById(android.R.id.list);
     listView.setAdapter(new MapsAdapter(maps, this));
     listView.setOnItemClickListener(
