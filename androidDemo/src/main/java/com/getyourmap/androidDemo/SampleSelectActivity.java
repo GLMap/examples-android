@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import com.glmapview.GLMapView;
+import com.getyourmap.glmap.GLMapView;
 
 public class SampleSelectActivity extends ListActivity {
   public enum Samples {

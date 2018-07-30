@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -25,37 +24,39 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.EditText;
-import com.glmapview.GLMapAnimation;
-import com.glmapview.GLMapBBox;
-import com.glmapview.GLMapDownloadTask;
-import com.glmapview.GLMapDrawable;
-import com.glmapview.GLMapError;
-import com.glmapview.GLMapImageGroup;
-import com.glmapview.GLMapImageGroupCallback;
-import com.glmapview.GLMapInfo;
-import com.glmapview.GLMapLocaleSettings;
-import com.glmapview.GLMapManager;
-import com.glmapview.GLMapMarkerImage;
-import com.glmapview.GLMapMarkerLayer;
-import com.glmapview.GLMapMarkerStyleCollection;
-import com.glmapview.GLMapMarkerStyleCollectionDataCallback;
-import com.glmapview.GLMapRasterTileSource;
-import com.glmapview.GLMapTrack;
-import com.glmapview.GLMapTrackData;
-import com.glmapview.GLMapVectorCascadeStyle;
-import com.glmapview.GLMapVectorObject;
-import com.glmapview.GLMapVectorObjectList;
-import com.glmapview.GLMapVectorStyle;
-import com.glmapview.GLMapView;
-import com.glmapview.GLMapView.GLMapPlacement;
-import com.glmapview.GLMapView.GLMapTileState;
-import com.glmapview.GLMapView.GLUnitSystem;
-import com.glmapview.GLSearchCategories;
-import com.glmapview.GLSearchCategory;
-import com.glmapview.GLSearchOffline;
-import com.glmapview.ImageManager;
-import com.glmapview.MapGeoPoint;
-import com.glmapview.MapPoint;
+
+import com.getyourmap.glmap.GLMapAnimation;
+import com.getyourmap.glmap.GLMapBBox;
+import com.getyourmap.glmap.GLMapDownloadTask;
+import com.getyourmap.glmap.GLMapDrawable;
+import com.getyourmap.glmap.GLMapError;
+import com.getyourmap.glmap.GLMapImageGroup;
+import com.getyourmap.glmap.GLMapImageGroupCallback;
+import com.getyourmap.glmap.GLMapInfo;
+import com.getyourmap.glmap.GLMapLocaleSettings;
+import com.getyourmap.glmap.GLMapManager;
+import com.getyourmap.glmap.GLMapMarkerImage;
+import com.getyourmap.glmap.GLMapMarkerLayer;
+import com.getyourmap.glmap.GLMapMarkerStyleCollection;
+import com.getyourmap.glmap.GLMapMarkerStyleCollectionDataCallback;
+import com.getyourmap.glmap.GLMapRasterTileSource;
+import com.getyourmap.glmap.GLMapTrack;
+import com.getyourmap.glmap.GLMapTrackData;
+import com.getyourmap.glmap.GLMapVectorCascadeStyle;
+import com.getyourmap.glmap.GLMapVectorObject;
+import com.getyourmap.glmap.GLMapVectorObjectList;
+import com.getyourmap.glmap.GLMapVectorStyle;
+import com.getyourmap.glmap.GLMapView;
+import com.getyourmap.glmap.GLMapView.GLMapPlacement;
+import com.getyourmap.glmap.GLMapView.GLMapTileState;
+import com.getyourmap.glmap.GLMapView.GLUnitSystem;
+import com.getyourmap.glmap.ImageManager;
+import com.getyourmap.glmap.MapGeoPoint;
+import com.getyourmap.glmap.MapPoint;
+import com.getyourmap.glsearch.GLSearch;
+import com.getyourmap.glsearch.GLSearchCategories;
+import com.getyourmap.glsearch.GLSearchCategory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -589,57 +590,22 @@ public class MapViewActivity extends Activity
     }
   }
 
-  private static GLSearchCategories searchCategories;
-  // Example how to load search categories.
-  public static GLSearchCategories getSearchCategories(Resources resources) {
-    if (searchCategories == null) {
-      byte raw[] = null;
-      byte icuData[] = null;
-      try {
-        // Read prepared categories
-        InputStream stream = resources.openRawResource(R.raw.categories);
-        raw = new byte[stream.available()];
-        stream.read(raw);
-        stream.close();
-
-        // Read icu collation data
-        stream = resources.openRawResource(R.raw.icudt60l);
-        icuData = new byte[stream.available()];
-        stream.read(icuData);
-        stream.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-
-      // Construct categories
-      searchCategories = GLSearchCategories.CreateFromBytes(raw, icuData);
-    }
-    return searchCategories;
-  }
-
   void offlineSearch() {
-    GLSearchCategories categories = getSearchCategories(getResources());
-
-    GLSearchOffline searchOffline = new GLSearchOffline();
+    GLSearchCategories categories = GLSearchCategories.getShared(getAssets());
+    GLSearch searchOffline = new GLSearch();
     searchOffline.setCategories(categories); // Set categories to use for search
-    searchOffline.setCenter(
-        MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
+    searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
     searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
-    searchOffline.setLocaleSettings(
-        mapView
-            .getLocaleSettings()); // Locale settings to give bonus for results that match to user
-                                   // language
-
-    GLSearchCategory category[] =
-        categories.getStartedWith(new String[] {"food"}, localeSettings); // find categories by name
+    searchOffline.setLocaleSettings(mapView.getLocaleSettings()); // Locale settings to give bonus for results that match to user language
+    GLSearchCategory category[] = categories.getStartedWith(new String[] {"food"}, localeSettings); // find categories by name
     if (category.length != 0) {
       searchOffline.addCategoryFilter(category[0]); // Filter results by category
     }
-    // searchOffline.addNameFilter("cali"); //Add filter by name
+    searchOffline.addNameFilter("cali"); //Add filter by name
 
     searchOffline.start(
         null,
-        new GLSearchOffline.GLMapSearchCompletion() {
+        new GLSearch.GLMapSearchCompletion() {
           @Override
           public GLSearchCategory getCustomObjectCategory(Object object) {
             return null;
@@ -685,7 +651,7 @@ public class MapViewActivity extends Activity
     final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
     style.addStyle(
         new GLMapMarkerImage(
-            "marker", mapView.imageManager.open("cluster.svgpb", 0.2f, 0xFFFF0000)));
+            "marker", mapView.imageManager.open("cluster.svgpb", 0.2f, Color.argb(0xFF,0, 0, 0xFF))));
     style.setDataCallback(new SearchStyle());
     markerLayer = new GLMapMarkerLayer(objects, style, 0, 4);
     mapView.add(markerLayer);

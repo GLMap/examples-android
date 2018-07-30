@@ -3,8 +3,8 @@ package com.getyourmap.androidDemo;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.TextureView;
-import com.glmapview.GLMapView;
-import com.glmapview.MapPoint;
+import com.getyourmap.glmap.GLMapView;
+import com.getyourmap.glmap.MapPoint;
 
 public class MapTextureViewActivity extends Activity {
   GLMapView mapView;

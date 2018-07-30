@@ -3,7 +3,9 @@ package com.getyourmap.androidDemo;
 import android.app.Activity;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import com.glmapview.GLMapRasterTileSource;
+
+import com.getyourmap.glmap.GLMapRasterTileSource;
+
 import java.io.File;
 
 /** Created by destman on 11/11/15. */

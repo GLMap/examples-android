@@ -5,7 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.widget.ImageView;
-import com.glmapview.ImageManager;
+import com.getyourmap.glmap.ImageManager;
 import java.io.FileNotFoundException;
 
 public class DisplayImageActivity extends Activity {
