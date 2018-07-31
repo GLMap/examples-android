@@ -5,7 +5,7 @@
     android:background="@color/bg_color"
     tools:context="com.getyourmap.androidDemo.SampleSelectActivity" >
 
-    <com.glmapview.GLMapView
+    <com.getyourmap.glmap.GLMapView
         android:id="@+id/map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

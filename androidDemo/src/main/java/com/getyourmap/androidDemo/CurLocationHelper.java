@@ -1,7 +1,5 @@
 package com.getyourmap.androidDemo;
 
-import static android.content.Context.LOCATION_SERVICE;
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
@@ -13,13 +11,17 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import com.glmapview.GLMapAnimation;
-import com.glmapview.GLMapDrawable;
-import com.glmapview.GLMapVectorCascadeStyle;
-import com.glmapview.GLMapVectorObject;
-import com.glmapview.GLMapView;
-import com.glmapview.MapPoint;
+
+import com.getyourmap.glmap.GLMapAnimation;
+import com.getyourmap.glmap.GLMapDrawable;
+import com.getyourmap.glmap.GLMapVectorCascadeStyle;
+import com.getyourmap.glmap.GLMapVectorObject;
+import com.getyourmap.glmap.GLMapView;
+import com.getyourmap.glmap.MapPoint;
+
 import java.util.List;
+
+import static android.content.Context.LOCATION_SERVICE;
 
 /** Created by destman on 6/1/17. */
 class CurLocationHelper implements LocationListener {
