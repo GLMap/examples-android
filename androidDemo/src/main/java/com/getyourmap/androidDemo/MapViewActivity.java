@@ -591,13 +591,13 @@ public class MapViewActivity extends Activity
   }
 
   void offlineSearch() {
-    GLSearchCategories categories = GLSearchCategories.getShared(getAssets());
+    // You should initialize GLSearch before use, to let it load ICU collation tables and categories.
+    GLSearch.Initialize(this);
     GLSearch searchOffline = new GLSearch();
-    searchOffline.setCategories(categories); // Set categories to use for search
     searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
     searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
     searchOffline.setLocaleSettings(mapView.getLocaleSettings()); // Locale settings to give bonus for results that match to user language
-    GLSearchCategory category[] = categories.getStartedWith(new String[] {"food"}, localeSettings); // find categories by name
+    GLSearchCategory category[] = GLSearchCategories.getShared().getStartedWith(new String[] {"food"}, localeSettings); // find categories by name
     if (category.length != 0) {
       searchOffline.addCategoryFilter(category[0]); // Filter results by category
     }
@@ -1168,21 +1168,20 @@ public class MapViewActivity extends Activity
         });
   }
 
-  int colorForTrack(int index) {
-    int r = Math.max(0, 255 - index);
-    int g = Math.max(0, 255 - index / 100);
-    int b = Math.max(0, 255 - index / 200);
-    return Color.argb(255, r, g, b);
+  int colorForTrack(float angle) {
+    float[] hsv = new float[]{(float)(angle * 180.f / Math.PI) % 360, 1.f, 0.5f};
+
+    return Color.HSVToColor(hsv);
   }
 
   private void recordTrack() {
-    final float rStart = 20f;
+    final float rStart = 10f;
     final float rDelta = (float) (Math.PI / 30);
     final float rDiff = 0.01f;
     final float clat = 30f, clon = 30f;
 
     // Create trackData with initial data
-    trackPointIndex = 1500;
+    trackPointIndex = 100;
     trackData =
         new GLMapTrackData(
             new GLMapTrackData.PointsCallback() {
@@ -1192,12 +1191,15 @@ public class MapViewActivity extends Activity
                     nativePoint,
                     clat + Math.sin(rDelta * index) * (rStart - rDiff * index),
                     clon + Math.cos(rDelta * index) * (rStart - rDiff * index),
-                    colorForTrack(index));
+                    colorForTrack(rDelta * index));
               }
             },
             trackPointIndex);
 
     track = new GLMapTrack(trackData, 2);
+    // To use files from style, (e.g. track-arrow.svgpb) you should create DefaultStyle.bundle inside assets and put all additional resources inside.
+    track.setStyle(GLMapVectorStyle.createStyle("{width: 7pt; fill-image:\"track-arrow.svgpb\";}"));
+
     mapView.add(track);
     mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(clat, clon));
     mapView.setMapZoom(4);
@@ -1215,7 +1217,7 @@ public class MapViewActivity extends Activity
                 trackData.copyTrackAndAddGeoPoint(
                     clat + Math.sin(rDelta * trackPointIndex) * (rStart - rDiff * trackPointIndex),
                     clon + Math.cos(rDelta * trackPointIndex) * (rStart - rDiff * trackPointIndex),
-                    colorForTrack(trackPointIndex),
+                    colorForTrack(rDelta * trackPointIndex),
                     false);
             // Set data to track
             track.setData(newData);
@@ -1227,6 +1229,7 @@ public class MapViewActivity extends Activity
             handler.postDelayed(trackRecordRunnable, 1000);
           }
         };
+    // Let's one more point every second.
     handler.postDelayed(trackRecordRunnable, 1000);
   }
 

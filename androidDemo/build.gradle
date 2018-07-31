@@ -8,8 +8,8 @@ android {
         applicationId "com.getyourmap.androidDemo"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 909
-        versionName "0.9.9"
+        versionCode 1000
+        versionName "1.0.0"
         multiDexEnabled true
     }
     buildTypes {
@@ -35,10 +35,10 @@ repositories {
 }
 
 dependencies {
-    //    compile fileTree(dir: 'libs', include: ['*.jar'])
-
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'
-    implementation'com.getyourmap:glmap:0.9.9'
+    implementation'com.getyourmap:glmap:1.0.0'
+    implementation'com.getyourmap:glroute:1.0.0'
+    implementation'com.getyourmap:glsearch:1.0.0'
 }
