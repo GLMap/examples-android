@@ -187,7 +187,7 @@ class CurLocationHelper implements LocationListener {
       GLMapVectorObject circle = GLMapVectorObject.createPolygon(new MapPoint[][] {points}, null);
 
       accuracyCircle = new GLMapDrawable(99);
-      accuracyCircle.setUseTransform(true);
+      accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom);
       accuracyCircle.setPosition(position);
       accuracyCircle.setScale(r / 2048.0f);
       accuracyCircle.setVectorObject(
