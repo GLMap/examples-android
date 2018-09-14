@@ -199,7 +199,7 @@ public class MapViewActivity extends Activity
 
     // Map list is updated, because download button depends on available map list and during first
     // launch this list is empty
-    GLMapManager.updateMapList(this, null);
+    GLMapManager.UpdateMapList(null);
 
     btnDownloadMap = this.findViewById(R.id.button_dl_map);
     btnDownloadMap.setOnClickListener(
@@ -1036,20 +1036,20 @@ public class MapViewActivity extends Activity
     MapGeoPoint[] outerRing = new MapGeoPoint[pointCount];
     MapGeoPoint[] innerRing = new MapGeoPoint[pointCount];
 
-    float rOuter = 20, rInner = 10;
-    float cx = 30, cy = 30;
+    float rOuter = 10, rInner = 5;
+    MapGeoPoint centerPoint = new MapGeoPoint(53, 27);
 
     // let's display circle
     for (int i = 0; i < pointCount; i++) {
       outerRing[i] =
           new MapGeoPoint(
-              cx + Math.sin(2 * Math.PI / pointCount * i) * rOuter,
-              cy + Math.cos(2 * Math.PI / pointCount * i) * rOuter);
+              centerPoint.lat + Math.sin(2 * Math.PI / pointCount * i) * rOuter,
+              centerPoint.lon + Math.cos(2 * Math.PI / pointCount * i) * rOuter);
 
       innerRing[i] =
           new MapGeoPoint(
-              cx + Math.sin(2 * Math.PI / pointCount * i) * rInner,
-              cy + Math.cos(2 * Math.PI / pointCount * i) * rInner);
+                  centerPoint.lat + Math.sin(2 * Math.PI / pointCount * i) * rInner,
+                  centerPoint.lon + Math.cos(2 * Math.PI / pointCount * i) * rInner);
     }
 
     MapGeoPoint[][] outerRings = {outerRing};
@@ -1064,6 +1064,8 @@ public class MapViewActivity extends Activity
             "area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"),
         null); // #RRGGBBAA format
     mapView.add(drawable);
+
+    mapView.setMapGeoCenter(centerPoint);
   }
 
   private void bulkDownload() {
