@@ -199,7 +199,7 @@ public class MapViewActivity extends Activity
 
     // Map list is updated, because download button depends on available map list and during first
     // launch this list is empty
-    GLMapManager.updateMapList(this, null);
+    GLMapManager.UpdateMapList(null);
 
     btnDownloadMap = this.findViewById(R.id.button_dl_map);
     btnDownloadMap.setOnClickListener(
