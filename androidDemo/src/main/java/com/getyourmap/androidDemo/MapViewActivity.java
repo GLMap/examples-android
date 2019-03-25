@@ -1,6 +1,7 @@
 package com.getyourmap.androidDemo;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -12,20 +13,15 @@ import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.getyourmap.glmap.GLMapAnimation;
 import com.getyourmap.glmap.GLMapBBox;
 import com.getyourmap.glmap.GLMapDownloadTask;
 import com.getyourmap.glmap.GLMapDrawable;
@@ -56,6 +52,7 @@ import com.getyourmap.glmap.MapPoint;
 import com.getyourmap.glsearch.GLSearch;
 import com.getyourmap.glsearch.GLSearchCategories;
 import com.getyourmap.glsearch.GLSearchCategory;
+import com.getyourmap.glsearch.GLSearchFilter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -70,6 +67,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+
+@ParametersAreNonnullByDefault
+@SuppressLint({"ClickableViewAccessibility", "StaticFieldLeak", "SetTextI18n"})
 public class MapViewActivity extends Activity
     implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener {
 
@@ -131,7 +136,7 @@ public class MapViewActivity extends Activity
 
     @Override
     public MapPoint getImageVariantOffset(int i) {
-      return new MapPoint(images[i].getWidth() / 2, 0);
+      return new MapPoint(images[i].getWidth() / 2.0, 0);
     }
 
     int size() {
@@ -192,7 +197,7 @@ public class MapViewActivity extends Activity
   private Runnable trackRecordRunnable;
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.map);
     mapView = this.findViewById(R.id.map_view);
@@ -202,29 +207,25 @@ public class MapViewActivity extends Activity
     GLMapManager.UpdateMapList(null);
 
     btnDownloadMap = this.findViewById(R.id.button_dl_map);
-    btnDownloadMap.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            if (mapToDownload != null) {
-              GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-              if (task != null) {
-                task.cancel();
-              } else {
-                GLMapManager.DownloadDataSets(
-                    mapToDownload, GLMapInfo.DataSetMask.ALL, MapViewActivity.this);
-              }
-              updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
-            } else {
-              Intent i = new Intent(v.getContext(), DownloadActivity.class);
+    btnDownloadMap.setOnClickListener(v -> {
+      if (mapToDownload != null) {
+        GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
+        if (task != null) {
+          task.cancel();
+        } else {
+          GLMapManager.DownloadDataSets(
+              mapToDownload, GLMapInfo.DataSetMask.ALL, MapViewActivity.this);
+        }
+        updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+      } else {
+        Intent i = new Intent(v.getContext(), DownloadActivity.class);
 
-              MapPoint pt = mapView.getMapCenter();
-              i.putExtra("cx", pt.x);
-              i.putExtra("cy", pt.y);
-              v.getContext().startActivity(i);
-            }
-          }
-        });
+        MapPoint pt = mapView.getMapCenter();
+        i.putExtra("cx", pt.x);
+        i.putExtra("cy", pt.y);
+        v.getContext().startActivity(i);
+      }
+    });
 
     GLMapManager.addStateListener(this);
 
@@ -258,32 +259,24 @@ public class MapViewActivity extends Activity
           mapView.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353));
           mapView.setMapZoom(14);
 
-          final Button btn = (Button) this.findViewById(R.id.button_action);
+          Button btn = this.findViewById(R.id.button_action);
           btn.setVisibility(View.VISIBLE);
           btn.setText("Fly");
-          btn.setOnClickListener(
-              new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                  double min_lat = 33;
-                  double max_lat = 48;
-                  double min_lon = -118;
-                  double max_lon = -85;
+          btn.setOnClickListener(v -> {
+            double min_lat = 33;
+            double max_lat = 48;
+            double min_lon = -118;
+            double max_lon = -85;
 
-                  double lat = min_lat + (max_lat - min_lat) * Math.random();
-                  double lon = min_lon + (max_lon - min_lon) * Math.random();
+            double lat = min_lat + (max_lat - min_lat) * Math.random();
+            double lon = min_lon + (max_lon - min_lon) * Math.random();
 
-                  final MapPoint point = MapPoint.CreateFromGeoCoordinates(lat, lon);
-                  mapView.animate(
-                      new GLMapView.AnimateCallback() {
-                        @Override
-                        public void run(GLMapAnimation animation) {
-                          mapView.setMapZoom(15);
-                          animation.flyToPoint(point);
-                        }
-                      });
-                }
-              });
+            final MapPoint point = MapPoint.CreateFromGeoCoordinates(lat, lon);
+            mapView.animate(animation -> {
+              mapView.setMapZoom(15);
+              animation.flyToPoint(point);
+            });
+          });
           GLMapManager.SetTileDownloadingAllowed(true);
           break;
         }
@@ -311,13 +304,7 @@ public class MapViewActivity extends Activity
                   }
                 });
 
-        mapView.setOnTouchListener(
-            new OnTouchListener() {
-              @Override
-              public boolean onTouch(View arg0, MotionEvent ev) {
-                return gestureDetector.onTouchEvent(ev);
-              }
-            });
+        mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
 
         addMarkers();
         GLMapManager.SetTileDownloadingAllowed(true);
@@ -341,13 +328,7 @@ public class MapViewActivity extends Activity
                   }
                 });
 
-        mapView.setOnTouchListener(
-            new OnTouchListener() {
-              @Override
-              public boolean onTouch(View arg0, MotionEvent ev) {
-                return gestureDetector.onTouchEvent(ev);
-              }
-            });
+        mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
 
         GLMapManager.SetTileDownloadingAllowed(true);
         break;
@@ -387,13 +368,7 @@ public class MapViewActivity extends Activity
                   }
                 });
 
-        mapView.setOnTouchListener(
-            new OnTouchListener() {
-              @Override
-              public boolean onTouch(View arg0, MotionEvent ev) {
-                return gestureDetector.onTouchEvent(ev);
-              }
-            });
+        mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
         break;
       case GEO_JSON:
         loadGeoJSON();
@@ -409,24 +384,14 @@ public class MapViewActivity extends Activity
         break;
     }
 
-    mapView.setCenterTileStateChangedCallback(
-        new Runnable() {
-          @Override
-          public void run() {
-            updateMapDownloadButton(mapView, btnDownloadMap, mapToDownload, localeSettings);
-          }
-        });
+    mapView.setCenterTileStateChangedCallback(() -> updateMapDownloadButton(mapView, btnDownloadMap, mapToDownload, localeSettings));
 
-    mapView.setMapDidMoveCallback(
-        new Runnable() {
-          @Override
-          public void run() {
-            if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
-              Log.w("GLMapView", "Did move");
-            }
-            updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
-          }
-        });
+    mapView.setMapDidMoveCallback(() -> {
+      if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
+        Log.w("GLMapView", "Did move");
+      }
+      updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+    });
   }
 
   public void checkAndRequestLocationPermission() {
@@ -492,13 +457,7 @@ public class MapViewActivity extends Activity
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
-    mapView.animate(
-        new GLMapView.AnimateCallback() {
-          @Override
-          public void run(GLMapAnimation animation) {
-            mapView.setMapZoom(mapView.getMapZoom() - 1);
-          }
-        });
+    mapView.animate(animation -> mapView.setMapZoom(mapView.getMapZoom() - 1));
     return false;
   }
 
@@ -521,10 +480,10 @@ public class MapViewActivity extends Activity
   }
 
   public static void updateMapDownloadButtonText(
-      GLMapView mapView,
-      Button btnDownloadMap,
-      GLMapInfo mapToDownload,
-      GLMapLocaleSettings localeSettings) {
+          GLMapView mapView,
+          Button btnDownloadMap,
+          GLMapInfo mapToDownload,
+          GLMapLocaleSettings localeSettings) {
     if (btnDownloadMap.getVisibility() == View.VISIBLE) {
       MapPoint center = mapView.getMapCenter();
 
@@ -536,17 +495,17 @@ public class MapViewActivity extends Activity
         if (task != null && task.total != 0) {
           int progress = task.downloaded * 100 / task.total;
           text =
-              String.format(
-                  Locale.getDefault(),
-                  "Downloading %s %d%%",
-                  mapToDownload.getLocalizedName(localeSettings),
-                  progress);
+                  String.format(
+                          Locale.getDefault(),
+                          "Downloading %s %d%%",
+                          mapToDownload.getLocalizedName(localeSettings),
+                          progress);
         } else {
           text =
-              String.format(
-                  Locale.getDefault(),
-                  "Download %s",
-                  mapToDownload.getLocalizedName(localeSettings));
+                  String.format(
+                          Locale.getDefault(),
+                          "Download %s",
+                          mapToDownload.getLocalizedName(localeSettings));
         }
         btnDownloadMap.setText(text);
       } else {
@@ -598,14 +557,14 @@ public class MapViewActivity extends Activity
     searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
     searchOffline.setLocaleSettings(mapView.getLocaleSettings()); // Locale settings to give bonus for results that match to user language
     GLSearchCategory category[] = GLSearchCategories.getShared().getStartedWith(new String[] {"food"}, localeSettings); // find categories by name
-    if (category.length != 0) {
-      searchOffline.addCategoryFilter(category[0]); // Filter results by category
+    if (category != null && category.length != 0) {
+      searchOffline.addFilter(GLSearchFilter.Category(category[0])); // Filter results by category
     }
-    searchOffline.addNameFilter("cali"); //Add filter by name
+    searchOffline.addFilter(GLSearchFilter.Name("cali", localeSettings, false)); //Add filter by name
 
     searchOffline.start(
         null,
-        new GLSearch.GLMapSearchCompletion() {
+        new GLSearch.GLSearchCallback() {
           @Override
           public GLSearchCategory getCustomObjectCategory(Object object) {
             return null;
@@ -618,13 +577,7 @@ public class MapViewActivity extends Activity
 
           @Override
           public void onResults(final Object[] objects) {
-            runOnUiThread(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    displaySearchResults(objects);
-                  }
-                });
+            runOnUiThread(() -> displaySearchResults(objects));
           }
         });
   }
@@ -674,19 +627,15 @@ public class MapViewActivity extends Activity
   // Example how to calculate zoom level for some bbox
   void zoomToBBox() {
     // When surface will be created - getWidth and getHeight will have valid values
-    mapView.doWhenSurfaceCreated(
-        new Runnable() {
-          @Override
-          public void run() {
-            GLMapBBox bbox = new GLMapBBox();
-            bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
-            bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
+    mapView.doWhenSurfaceCreated(() -> {
+      GLMapBBox bbox = new GLMapBBox();
+      bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
+      bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
 
-            mapView.setMapCenter(bbox.center());
-            mapView.setMapZoom(
-                mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
-          }
-        });
+      mapView.setMapCenter(bbox.center());
+      mapView.setMapZoom(
+          mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+    });
   }
 
   void zoomToPoint() {
@@ -738,13 +687,7 @@ public class MapViewActivity extends Activity
             null,
             Collections.singleton(markersToRemove[0]),
             null,
-            true,
-            new Runnable() {
-              @Override
-              public void run() {
-                Log.d("MarkerLayer", "Marker deleted");
-              }
-            });
+            true, () -> Log.d("MarkerLayer", "Marker deleted"));
       }
     }
   }
@@ -758,13 +701,7 @@ public class MapViewActivity extends Activity
           newMarkers,
           null,
           null,
-          true,
-          new Runnable() {
-            @Override
-            public void run() {
-              Log.d("MarkerLayer", "Marker added");
-            }
-          });
+          true, () -> Log.d("MarkerLayer", "Marker added"));
     }
   }
 
@@ -778,13 +715,7 @@ public class MapViewActivity extends Activity
           newMarkers,
           null,
           null,
-          true,
-          new Runnable() {
-            @Override
-            public void run() {
-              Log.d("MarkerLayer", "Marker added");
-            }
-          });
+          true, () -> Log.d("MarkerLayer", "Marker added"));
     }
   }
 
@@ -823,6 +754,7 @@ public class MapViewActivity extends Activity
                 + "node[count>=128]{icon-image:\"uni7\";}");
 
     new AsyncTask<Void, Void, GLMapMarkerLayer>() {
+      private GLMapBBox bbox;
       @Override
       protected GLMapMarkerLayer doInBackground(Void... voids) {
         GLMapMarkerLayer rv;
@@ -832,16 +764,7 @@ public class MapViewActivity extends Activity
               GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
-          final GLMapBBox bbox = objects.getBBox();
-          runOnUiThread(
-              new Runnable() {
-                @Override
-                public void run() {
-                  mapView.setMapCenter(bbox.center());
-                  mapView.setMapZoom(
-                      mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
-                }
-              });
+          bbox = objects.getBBox();
 
           Log.w("GLMapView", "Start creating layer");
           rv = new GLMapMarkerLayer(objects, style, styleCollection, 35, 3);
@@ -858,6 +781,9 @@ public class MapViewActivity extends Activity
         if (layer != null) {
           markerLayer = layer;
           mapView.add(layer);
+          mapView.setMapCenter(bbox.center());
+          mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+
         }
       }
     }.execute();
@@ -908,6 +834,7 @@ public class MapViewActivity extends Activity
 
   void addMarkers() {
     new AsyncTask<Void, Void, GLMapMarkerLayer>() {
+      private GLMapBBox bbox;
       @Override
       protected GLMapMarkerLayer doInBackground(Void... voids) {
         GLMapMarkerLayer rv;
@@ -927,16 +854,7 @@ public class MapViewActivity extends Activity
               GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
-          final GLMapBBox bbox = objects.getBBox();
-          runOnUiThread(
-              new Runnable() {
-                @Override
-                public void run() {
-                  mapView.setMapCenter(bbox.center());
-                  mapView.setMapZoom(
-                      mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
-                }
-              });
+          bbox = objects.getBBox();
 
           Log.w("GLMapView", "Start creating layer");
           rv = new GLMapMarkerLayer(objects.toArray(), style, 35, 3);
@@ -953,6 +871,8 @@ public class MapViewActivity extends Activity
         if (layer != null) {
           markerLayer = layer;
           mapView.add(layer);
+          mapView.setMapCenter(bbox.center());
+          mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
         }
       }
     }.execute();
@@ -968,25 +888,13 @@ public class MapViewActivity extends Activity
     mapView.add(image);
 
     btn.setText("Move image");
-    btn.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            moveImage(btn);
-          }
-        });
+    btn.setOnClickListener(v -> moveImage(btn));
   }
 
   void moveImage(final Button btn) {
     image.setPosition(mapView.getMapCenter());
     btn.setText("Remove image");
-    btn.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            delImage(btn);
-          }
-        });
+    btn.setOnClickListener(v -> delImage(btn));
   }
 
   void delImage(final Button btn) {
@@ -996,13 +904,7 @@ public class MapViewActivity extends Activity
       image = null;
     }
     btn.setText("Add image");
-    btn.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            addImage(btn);
-          }
-        });
+    btn.setOnClickListener(v -> addImage(btn));
   }
 
   void addMultiline() {
@@ -1023,11 +925,7 @@ public class MapViewActivity extends Activity
     // style applied to all lines added. Style is string with mapcss rules. Read more in manual.
 
     GLMapDrawable drawable = new GLMapDrawable();
-    drawable.setVectorObject(
-        mapView,
-        obj,
-        GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"),
-        null);
+    drawable.setVectorObject(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null);
     mapView.add(drawable);
   }
 
@@ -1057,12 +955,9 @@ public class MapViewActivity extends Activity
 
     GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
     GLMapDrawable drawable = new GLMapDrawable();
-    drawable.setVectorObject(
-        mapView,
-        obj,
-        GLMapVectorCascadeStyle.createStyle(
-            "area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"),
-        null); // #RRGGBBAA format
+    drawable.setVectorObject(obj,
+            GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"),
+            null); // #RRGGBBAA format
     mapView.add(drawable);
 
     mapView.setMapGeoCenter(centerPoint);
@@ -1075,33 +970,29 @@ public class MapViewActivity extends Activity
     final Button btn = this.findViewById(R.id.button_action);
     btn.setVisibility(View.VISIBLE);
     btn.setText("Download");
-    btn.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(View view) {
-            long allTiles[] = GLMapManager.VectorTilesAtBBox(mapView.getBBox());
-            Log.i("BulkDownload", String.format("tilesCount = %d", allTiles.length));
-            GLMapManager.CacheTiles(
-                allTiles,
-                new GLMapManager.TileDownloadProgress() {
-                  @Override
-                  public boolean onSuccess(long tile) {
-                    Log.i("BulkDownloadSuccess", String.format("tile = %d", tile));
-                    return true;
-                  }
+    btn.setOnClickListener(view -> {
+      long allTiles[] = GLMapManager.VectorTilesAtBBox(mapView.getBBox());
+      Log.i("BulkDownload", String.format("tilesCount = %d", allTiles.length));
+      GLMapManager.CacheTiles(
+          allTiles,
+          new GLMapManager.TileDownloadProgress() {
+            @Override
+            public boolean onSuccess(long tile) {
+              Log.i("BulkDownloadSuccess", String.format("tile = %d", tile));
+              return true;
+            }
 
-                  @Override
-                  public boolean onError(long tile, GLMapError errorCode) {
-                    Log.i(
-                        "BulkDownloadError",
-                        String.format(
-                            "tile = %d, domain = %s, errorCode = %d",
-                            tile, errorCode.getErrorDomain(), errorCode.getErrorCode()));
-                    return true;
-                  }
-                });
-          }
-        });
+            @Override
+            public boolean onError(long tile, GLMapError errorCode) {
+              Log.i(
+                  "BulkDownloadError",
+                  String.format(
+                      "tile = %d, domain = %s, errorCode = %d",
+                      tile, errorCode.getErrorDomain(), errorCode.getErrorCode()));
+              return true;
+            }
+          });
+    });
   }
 
   private void styleLiveReload() {
@@ -1111,63 +1002,53 @@ public class MapViewActivity extends Activity
     final Button btn = this.findViewById(R.id.button_action);
     btn.setVisibility(View.VISIBLE);
     btn.setText("Reload");
-    btn.setOnClickListener(
-        new OnClickListener() {
-          @Override
-          public void onClick(View view) {
-            new AsyncTask<String, String, byte[]>() {
-              @Override
-              protected byte[] doInBackground(String... strings) {
-                byte rv[];
-                try {
-                  URLConnection connection = new URL(strings[0]).openConnection();
-                  connection.connect();
-                  InputStream inputStream = connection.getInputStream();
+    btn.setOnClickListener(view -> new AsyncTask<String, String, byte[]>() {
+      @Override
+      protected byte[] doInBackground(String... strings) {
+        byte rv[];
+        try {
+          URLConnection connection = new URL(strings[0]).openConnection();
+          connection.connect();
+          InputStream inputStream = connection.getInputStream();
 
-                  ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                  int nRead;
-                  byte[] data = new byte[16384];
-                  while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-                    buffer.write(data, 0, nRead);
-                  }
-                  buffer.flush();
-                  rv = buffer.toByteArray();
-                  buffer.close();
-                  inputStream.close();
-                } catch (Exception ignore) {
-                  rv = null;
-                }
-                return rv;
-              }
-
-              @Override
-              protected void onPostExecute(final byte newStyleData[]) {
-                mapView.loadStyle(
-                    new GLMapView.ResourceLoadCallback() {
-                      @Override
-                      public byte[] loadResource(String name) {
-                        byte rv[];
-                        if (name.equals("Style.mapcss")) {
-                          rv = newStyleData;
-                        } else {
-                          try {
-                            InputStream stream = getAssets().open("DefaultStyle.bundle/" + name);
-                            rv = new byte[stream.available()];
-                            if (stream.read(rv) < rv.length) {
-                              rv = null;
-                            }
-                            stream.close();
-                          } catch (IOException ignore) {
-                            rv = null;
-                          }
-                        }
-                        return rv;
-                      }
-                    });
-              }
-            }.execute(editText.getText().toString());
+          ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+          int nRead;
+          byte[] data = new byte[16384];
+          while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
           }
+          buffer.flush();
+          rv = buffer.toByteArray();
+          buffer.close();
+          inputStream.close();
+        } catch (Exception ignore) {
+          rv = null;
+        }
+        return rv;
+      }
+
+      @Override
+      protected void onPostExecute(final byte newStyleData[]) {
+        mapView.loadStyle(name -> {
+          byte rv[];
+          if (name.equals("Style.mapcss")) {
+            rv = newStyleData;
+          } else {
+            try {
+              InputStream stream = getAssets().open("DefaultStyle.bundle/" + name);
+              rv = new byte[stream.available()];
+              if (stream.read(rv) < rv.length) {
+                rv = null;
+              }
+              stream.close();
+            } catch (IOException ignore) {
+              rv = null;
+            }
+          }
+          return rv;
         });
+      }
+    }.execute(editText.getText().toString()));
   }
 
   int colorForTrack(float angle) {
@@ -1185,17 +1066,11 @@ public class MapViewActivity extends Activity
     // Create trackData with initial data
     trackPointIndex = 100;
     trackData =
-        new GLMapTrackData(
-            new GLMapTrackData.PointsCallback() {
-              @Override
-              public void fillData(int index, long nativePoint) {
-                GLMapTrackData.setPointDataGeo(
-                    nativePoint,
-                    clat + Math.sin(rDelta * index) * (rStart - rDiff * index),
-                    clon + Math.cos(rDelta * index) * (rStart - rDiff * index),
-                    colorForTrack(rDelta * index));
-              }
-            },
+        new GLMapTrackData((index, nativePoint) -> GLMapTrackData.setPointDataGeo(
+            nativePoint,
+            clat + Math.sin(rDelta * index) * (rStart - rDiff * index),
+            clon + Math.cos(rDelta * index) * (rStart - rDiff * index),
+            colorForTrack(rDelta * index)),
             trackPointIndex);
 
     track = new GLMapTrack(trackData, 2);
@@ -1210,27 +1085,23 @@ public class MapViewActivity extends Activity
       handler = new Handler();
     }
 
-    trackRecordRunnable =
-        new Runnable() {
-          @Override
-          public void run() {
-            // Create new trackData with additional point
-            GLMapTrackData newData =
-                trackData.copyTrackAndAddGeoPoint(
-                    clat + Math.sin(rDelta * trackPointIndex) * (rStart - rDiff * trackPointIndex),
-                    clon + Math.cos(rDelta * trackPointIndex) * (rStart - rDiff * trackPointIndex),
-                    colorForTrack(rDelta * trackPointIndex),
-                    false);
-            // Set data to track
-            track.setData(newData);
+    trackRecordRunnable = () -> {
+      // Create new trackData with additional point
+      GLMapTrackData newData =
+          trackData.copyTrackAndAddGeoPoint(
+              clat + Math.sin(rDelta * trackPointIndex) * (rStart - rDiff * trackPointIndex),
+              clon + Math.cos(rDelta * trackPointIndex) * (rStart - rDiff * trackPointIndex),
+              colorForTrack(rDelta * trackPointIndex),
+              false);
+      // Set data to track
+      track.setData(newData);
 
-            trackData.dispose(); // Release native data before GC will occur
-            trackData = newData;
+      trackData.dispose(); // Release native data before GC will occur
+      trackData = newData;
 
-            trackPointIndex++;
-            handler.postDelayed(trackRecordRunnable, 1000);
-          }
-        };
+      trackPointIndex++;
+      handler.postDelayed(trackRecordRunnable, 1000);
+    };
     // Let's one more point every second.
     handler.postDelayed(trackRecordRunnable, 1000);
   }
@@ -1250,9 +1121,10 @@ public class MapViewActivity extends Activity
                 + "line{linecap: round; width: 5pt; color:blue;}"
                 + "area{fill-color:green; width:1pt; color:red;}");
 
-    for (long i = 0; i < objects.size(); ++i) {
+    if(objects != null)
+    {
       GLMapDrawable drawable = new GLMapDrawable();
-      drawable.setVectorObject(mapView, objects.get(i), style, null);
+      drawable.setVectorObjects(objects, style, null);
       mapView.add(drawable);
     }
   }
@@ -1264,31 +1136,27 @@ public class MapViewActivity extends Activity
 
   @Override
   public void screenCaptured(final Bitmap bmp) {
-    this.runOnUiThread(
-        new Runnable() {
-          @Override
-          public void run() {
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, bytes);
-            try {
-              FileOutputStream fo = openFileOutput("screenCapture", Context.MODE_PRIVATE);
-              fo.write(bytes.toByteArray());
-              fo.close();
+    this.runOnUiThread(() -> {
+      ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+      bmp.compress(Bitmap.CompressFormat.PNG, 100, bytes);
+      try {
+        FileOutputStream fo = openFileOutput("screenCapture", Context.MODE_PRIVATE);
+        fo.write(bytes.toByteArray());
+        fo.close();
 
-              File file = new File(getExternalFilesDir(null), "Test.jpg");
-              fo = new FileOutputStream(file);
-              fo.write(bytes.toByteArray());
-              fo.close();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
+        File file = new File(getExternalFilesDir(null), "Test.jpg");
+        fo = new FileOutputStream(file);
+        fo.write(bytes.toByteArray());
+        fo.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
 
-            Intent intent = new Intent(MapViewActivity.this, DisplayImageActivity.class);
-            Bundle b = new Bundle();
-            b.putString("imageName", "screenCapture");
-            intent.putExtras(b);
-            startActivity(intent);
-          }
-        });
+      Intent intent = new Intent(MapViewActivity.this, DisplayImageActivity.class);
+      Bundle b = new Bundle();
+      b.putString("imageName", "screenCapture");
+      intent.putExtras(b);
+      startActivity(intent);
+    });
   }
 }
