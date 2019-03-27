@@ -1,15 +1,20 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
     buildToolsVersion "28.0.3"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 
     defaultConfig {
         applicationId "com.getyourmap.androidDemo"
         minSdkVersion 16
-        targetSdkVersion 27
-        versionCode 1004
-        versionName "1.0.4"
+        targetSdkVersion 28
+        versionCode 1010
+        versionName "1.1.0"
         multiDexEnabled true
     }
     buildTypes {
@@ -35,10 +40,12 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.android.support:multidex:1.0.3'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'com.getyourmap:glmap:1.0.4'
-    implementation 'com.getyourmap:glroute:1.0.4'
-    implementation 'com.getyourmap:glsearch:1.0.4'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.google.android.material:material:1.0.0'
+
+    implementation 'com.getyourmap:glmap:1.1.0'
+    implementation 'com.getyourmap:glroute:1.1.0'
+    implementation 'com.getyourmap:glsearch:1.1.0'
 }
