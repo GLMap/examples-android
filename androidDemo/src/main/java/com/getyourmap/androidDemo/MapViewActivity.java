@@ -182,7 +182,7 @@ public class MapViewActivity extends Activity
   private GLMapImageGroup imageGroup;
   private Pins pins;
   private GestureDetector gestureDetector;
-  private GLMapView mapView;
+  protected GLMapView mapView;
   private GLMapInfo mapToDownload;
   private Button btnDownloadMap;
 
@@ -199,7 +199,7 @@ public class MapViewActivity extends Activity
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.map);
+    setContentView(getLayoutID());
     mapView = this.findViewById(R.id.map_view);
 
     // Map list is updated, because download button depends on available map list and during first
@@ -216,7 +216,7 @@ public class MapViewActivity extends Activity
           GLMapManager.DownloadDataSets(
               mapToDownload, GLMapInfo.DataSetMask.ALL, MapViewActivity.this);
         }
-        updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+        updateMapDownloadButtonText();
       } else {
         Intent i = new Intent(v.getContext(), DownloadActivity.class);
 
@@ -238,6 +238,17 @@ public class MapViewActivity extends Activity
         GLUnitSystem.International, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
     mapView.setAttributionPosition(GLMapPlacement.TopCenter);
 
+    mapView.setCenterTileStateChangedCallback(this::updateMapDownloadButton);
+    mapView.setMapDidMoveCallback(this::updateMapDownloadButtonText);
+
+    runTest();
+  }
+
+  protected int getLayoutID() {
+    return R.layout.map;
+  }
+
+  protected void runTest() {
     Bundle b = getIntent().getExtras();
     final SampleSelectActivity.Samples example =
         SampleSelectActivity.Samples.values()[b.getInt("example")];
@@ -384,13 +395,11 @@ public class MapViewActivity extends Activity
         break;
     }
 
-    mapView.setCenterTileStateChangedCallback(() -> updateMapDownloadButton(mapView, btnDownloadMap, mapToDownload, localeSettings));
-
     mapView.setMapDidMoveCallback(() -> {
       if (example == SampleSelectActivity.Samples.CALLBACK_TEST) {
         Log.w("GLMapView", "Did move");
       }
-      updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+      updateMapDownloadButtonText();
     });
   }
 
@@ -466,7 +475,7 @@ public class MapViewActivity extends Activity
 
   @Override
   public void onDownloadProgress(GLMapDownloadTask task) {
-    updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+    updateMapDownloadButtonText();
   }
 
   @Override
@@ -476,14 +485,10 @@ public class MapViewActivity extends Activity
 
   @Override
   public void onStateChanged(GLMapInfo map) {
-    updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+    updateMapDownloadButtonText();
   }
 
-  public static void updateMapDownloadButtonText(
-          GLMapView mapView,
-          Button btnDownloadMap,
-          GLMapInfo mapToDownload,
-          GLMapLocaleSettings localeSettings) {
+  private void updateMapDownloadButtonText() {
     if (btnDownloadMap.getVisibility() == View.VISIBLE) {
       MapPoint center = mapView.getMapCenter();
 
@@ -493,19 +498,12 @@ public class MapViewActivity extends Activity
         String text;
         GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
         if (task != null && task.total != 0) {
-          int progress = task.downloaded * 100 / task.total;
-          text =
-                  String.format(
-                          Locale.getDefault(),
-                          "Downloading %s %d%%",
-                          mapToDownload.getLocalizedName(localeSettings),
-                          progress);
+          long progress = (long)task.downloaded * 100 / task.total;
+          text = String.format(Locale.getDefault(), "Downloading %s %d%%",
+                  mapToDownload.getLocalizedName(localeSettings), progress);
         } else {
-          text =
-                  String.format(
-                          Locale.getDefault(),
-                          "Download %s",
-                          mapToDownload.getLocalizedName(localeSettings));
+          text = String.format(Locale.getDefault(), "Download %s",
+                  mapToDownload.getLocalizedName(localeSettings));
         }
         btnDownloadMap.setText(text);
       } else {
@@ -521,18 +519,14 @@ public class MapViewActivity extends Activity
     zoomToPoint();
   }
 
-  public static void updateMapDownloadButton(
-      GLMapView mapView,
-      Button btnDownloadMap,
-      GLMapInfo mapToDownload,
-      GLMapLocaleSettings localeSettings) {
+  public void updateMapDownloadButton() {
     switch (mapView.getCenterTileState()) {
       case GLMapTileState.NoData:
         {
           if (btnDownloadMap.getVisibility() == View.INVISIBLE) {
             btnDownloadMap.setVisibility(View.VISIBLE);
             btnDownloadMap.getParent().requestLayout();
-            updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
+            updateMapDownloadButtonText();
           }
           break;
         }
@@ -633,8 +627,7 @@ public class MapViewActivity extends Activity
       bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
 
       mapView.setMapCenter(bbox.center());
-      mapView.setMapZoom(
-          mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+      mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
     });
   }
 
@@ -760,8 +753,7 @@ public class MapViewActivity extends Activity
         GLMapMarkerLayer rv;
         try {
           Log.w("GLMapView", "Start parsing");
-          GLMapVectorObjectList objects =
-              GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+          GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
           bbox = objects.getBBox();
@@ -1106,7 +1098,37 @@ public class MapViewActivity extends Activity
     handler.postDelayed(trackRecordRunnable, 1000);
   }
 
-  private void loadGeoJSON() {
+  private void zoomToObjects(GLMapVectorObjectList objects) {
+    // Zoom to bbox
+    GLMapBBox bbox = objects.getBBox();
+    mapView.doWhenSurfaceCreated(() -> {
+      mapView.setMapCenter(bbox.center());
+      mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+    });
+  }
+
+  private void loadGeoJSONPostcode()
+  {
+    GLMapVectorObjectList objects = null;
+    try
+    {
+      objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("uk_postcodes.geojson"));
+    } catch (IOException e)
+    {
+      e.printStackTrace();
+    }
+    if (objects!=null)
+    {
+      GLMapVectorCascadeStyle style = GLMapVectorCascadeStyle.createStyle("area{fill-color:green; width:1pt; color:red;}");
+      GLMapDrawable drawable = new GLMapDrawable();
+      drawable.setVectorObjects(objects, style, null);
+      mapView.add(drawable);
+      zoomToObjects(objects);
+    }
+  }
+
+  private void loadGeoJSONWithCSSStyle()
+  {
     GLMapVectorObjectList objects =
         GLMapVectorObject.createFromGeoJSON(
             "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
@@ -1126,7 +1148,15 @@ public class MapViewActivity extends Activity
       GLMapDrawable drawable = new GLMapDrawable();
       drawable.setVectorObjects(objects, style, null);
       mapView.add(drawable);
+      zoomToObjects(objects);
     }
+  }
+
+
+  private void loadGeoJSON()
+  {
+    //loadGeoJSONWithCSSStyle();
+    loadGeoJSONPostcode();
   }
 
   void captureScreen() {
