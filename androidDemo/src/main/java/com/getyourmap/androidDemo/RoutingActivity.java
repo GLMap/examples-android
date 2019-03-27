@@ -1,27 +1,16 @@
 package com.getyourmap.androidDemo;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.TabLayout;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.getyourmap.androidDemo.utils.ActionItem;
 import com.getyourmap.androidDemo.utils.QuickAction;
 import com.getyourmap.glmap.GLMapBBox;
-import com.getyourmap.glmap.GLMapDownloadTask;
 import com.getyourmap.glmap.GLMapError;
-import com.getyourmap.glmap.GLMapInfo;
-import com.getyourmap.glmap.GLMapLocaleSettings;
-import com.getyourmap.glmap.GLMapManager;
 import com.getyourmap.glmap.GLMapTrack;
 import com.getyourmap.glmap.GLMapTrackData;
 import com.getyourmap.glmap.GLMapView;
@@ -29,14 +18,18 @@ import com.getyourmap.glmap.MapGeoPoint;
 import com.getyourmap.glmap.MapPoint;
 import com.getyourmap.glroute.GLRoute;
 import com.getyourmap.glroute.GLRoutePoint;
+import com.google.android.material.tabs.TabLayout;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 //import com.getyourmap.glroute.GLRoute;
 
-public class RoutingActivity extends Activity implements GLMapManager.StateListener {
+@ParametersAreNonnullByDefault
+public class RoutingActivity extends MapViewActivity {
 
     private enum NetworkMode {
         Online,
@@ -46,39 +39,47 @@ public class RoutingActivity extends Activity implements GLMapManager.StateListe
     private static final int ID_DEPARTURE = 0;
     private static final int ID_DESTINATION = 1;
 
-    private GestureDetector gestureDetector;
     private QuickAction quickAction;
-    private GLMapView mapView;
     private int routingMode = GLRoute.Mode.DRIVE;
     private NetworkMode networkMode = NetworkMode.Online;
     private TabLayout onlineOfflineSwitch, routeTypeSwitch;
     private MapGeoPoint departure, destination;
     private static String valhallaConfig;
-    private Button btnDownloadMap;
-    private GLMapInfo mapToDownload;
-    private GLMapLocaleSettings localeSettings;
     private GLMapTrack track;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.routing);
-        setMapView();
-        setMapDownloadButton();
+    protected int getLayoutID()
+    {
+        return R.layout.routing;
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    protected void runTest()
+    {
+        GestureDetector gestureDetector = new GestureDetector(
+                this,
+                new GestureDetector.SimpleOnGestureListener() {
+                    @Override
+                    public boolean onSingleTapConfirmed(MotionEvent e) {
+                        showDefaultPopupMenu(e.getX(), e.getY());
+                        return true;
+                    }
+
+                    @Override
+                    public void onLongPress(MotionEvent e) {}
+                });
+        mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
+
         departure = new MapGeoPoint(53.844720, 27.482352);
         destination = new MapGeoPoint(53.931935, 27.583995);
-        mapView.doWhenSurfaceCreated(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        GLMapBBox bbox = new GLMapBBox();
-                        bbox.addPoint(new MapPoint(departure));
-                        bbox.addPoint(new MapPoint(destination));
-                        mapView.setMapCenter(bbox.center());
-                        mapView.setMapZoom(
-                                mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()) - 1);
-                    }
-                });
+        mapView.doWhenSurfaceCreated(() -> {
+            GLMapBBox bbox = new GLMapBBox();
+            bbox.addPoint(new MapPoint(departure));
+            bbox.addPoint(new MapPoint(destination));
+            mapView.setMapCenter(bbox.center());
+            mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()) - 1);
+        });
         updateRoute();
         setTabSwitches();
     }
@@ -135,40 +136,6 @@ public class RoutingActivity extends Activity implements GLMapManager.StateListe
         }
     }
 
-    private void setMapDownloadButton() {
-        // Map list is updated, because download button depends on available map list and during first
-        // launch this list is empty
-        GLMapManager.UpdateMapList(null);
-
-        btnDownloadMap = this.findViewById(R.id.button_dl_map);
-        btnDownloadMap.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (mapToDownload != null) {
-                            GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-                            if (task != null) {
-                                task.cancel();
-                            } else {
-                                GLMapManager.DownloadDataSets(
-                                        mapToDownload, GLMapInfo.DataSetMask.ALL, RoutingActivity.this);
-                            }
-                            MapViewActivity.updateMapDownloadButtonText(
-                                    mapView, btnDownloadMap, mapToDownload, localeSettings);
-                        } else {
-                            Intent i = new Intent(v.getContext(), DownloadActivity.class);
-
-                            MapPoint pt = mapView.getMapCenter();
-                            i.putExtra("cx", pt.x);
-                            i.putExtra("cy", pt.y);
-                            v.getContext().startActivity(i);
-                        }
-                    }
-                });
-
-        GLMapManager.addStateListener(this);
-    }
-
     public static String getValhallaConfig(Resources resources) {
         if (valhallaConfig == null) {
             byte raw[] = null;
@@ -202,76 +169,19 @@ public class RoutingActivity extends Activity implements GLMapManager.StateListe
         quickAction.addActionItem(new ActionItem(ID_DEPARTURE, "Departure"));
         quickAction.addActionItem(new ActionItem(ID_DESTINATION, "Destination"));
 
-        quickAction.setonActionItemClickListener(
-                new QuickAction.OnActionItemClickListener() {
-                    @Override
-                    public void onItemClick(QuickAction source, int actionId) {
-                        final MapPoint mapPoint = new MapPoint(x, y);
-                        switch (actionId) {
-                            case ID_DEPARTURE:
-                                departure = new MapGeoPoint(mapView.convertDisplayToInternal(mapPoint));
-                                break;
-                            case ID_DESTINATION:
-                                destination = new MapGeoPoint(mapView.convertDisplayToInternal(mapPoint));
-                                break;
-                        }
-                        if (departure != null && destination != null) updateRoute();
-                    }
-                });
+        quickAction.setonActionItemClickListener((source, actionId) -> {
+            final MapPoint mapPoint = new MapPoint(x, y);
+            switch (actionId) {
+                case ID_DEPARTURE:
+                    departure = new MapGeoPoint(mapView.convertDisplayToInternal(mapPoint));
+                    break;
+                case ID_DESTINATION:
+                    destination = new MapGeoPoint(mapView.convertDisplayToInternal(mapPoint));
+                    break;
+            }
+            if (departure != null && destination != null) updateRoute();
+        });
         quickAction.show(mapView, x, y);
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private void setMapView() {
-        mapView = this.findViewById(R.id.map_view);
-        localeSettings = new GLMapLocaleSettings();
-        mapView.setLocaleSettings(localeSettings);
-        mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
-        mapView.setScaleRulerStyle(
-                GLMapView.GLUnitSystem.International,
-                GLMapView.GLMapPlacement.BottomCenter,
-                new MapPoint(10, 10),
-                200);
-        mapView.setAttributionPosition(GLMapView.GLMapPlacement.TopCenter);
-        gestureDetector =
-                new GestureDetector(
-                        this,
-                        new GestureDetector.SimpleOnGestureListener() {
-                            @Override
-                            public boolean onSingleTapConfirmed(MotionEvent e) {
-                                showDefaultPopupMenu(e.getX(), e.getY());
-                                return true;
-                            }
-
-                            @Override
-                            public void onLongPress(MotionEvent e) {}
-                        });
-
-        mapView.setOnTouchListener(
-                new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View arg0, MotionEvent ev) {
-                        return gestureDetector.onTouchEvent(ev);
-                    }
-                });
-
-        mapView.setCenterTileStateChangedCallback(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        MapViewActivity.updateMapDownloadButton(
-                                mapView, btnDownloadMap, mapToDownload, localeSettings);
-                    }
-                });
-
-        mapView.setMapDidMoveCallback(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        MapViewActivity.updateMapDownloadButtonText(
-                                mapView, btnDownloadMap, mapToDownload, localeSettings);
-                    }
-                });
     }
 
     private void setTabSwitches() {
@@ -324,21 +234,5 @@ public class RoutingActivity extends Activity implements GLMapManager.StateListe
                     @Override
                     public void onTabReselected(TabLayout.Tab tab) {}
                 });
-    }
-
-    @Override
-    public void onStartDownloading(GLMapDownloadTask glMapDownloadTask) {}
-
-    @Override
-    public void onDownloadProgress(GLMapDownloadTask glMapDownloadTask) {
-        MapViewActivity.updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
-    }
-
-    @Override
-    public void onFinishDownloading(GLMapDownloadTask glMapDownloadTask) {}
-
-    @Override
-    public void onStateChanged(GLMapInfo glMapInfo) {
-        MapViewActivity.updateMapDownloadButtonText(mapView, btnDownloadMap, mapToDownload, localeSettings);
     }
 }

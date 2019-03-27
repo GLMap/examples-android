@@ -9,7 +9,6 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.getyourmap.glmap.GLMapAnimation;
@@ -20,6 +19,8 @@ import com.getyourmap.glmap.GLMapView;
 import com.getyourmap.glmap.MapPoint;
 
 import java.util.List;
+
+import androidx.core.app.ActivityCompat;
 
 import static android.content.Context.LOCATION_SERVICE;
 
@@ -125,13 +126,7 @@ class CurLocationHelper implements LocationListener {
     final MapPoint position =
         MapPoint.CreateFromGeoCoordinates(location.getLatitude(), location.getLongitude());
     if (isFollowLocationEnabled) {
-      mapView.animate(
-          new GLMapView.AnimateCallback() {
-            @Override
-            public void run(GLMapAnimation animation) {
-              animation.flyToPoint(position);
-            }
-          });
+      mapView.animate(animation -> animation.flyToPoint(position));
     }
 
     // Create drawables if not exist and set initial positions.
@@ -190,28 +185,21 @@ class CurLocationHelper implements LocationListener {
       accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom);
       accuracyCircle.setPosition(position);
       accuracyCircle.setScale(r / 2048.0f);
-      accuracyCircle.setVectorObject(
-          mapView,
-          circle,
-          GLMapVectorCascadeStyle.createStyle(
-              "area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"),
+      accuracyCircle.setVectorObject(circle,
+          GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"),
           null);
       mapView.add(accuracyCircle);
     }
 
-    mapView.animate(
-        new GLMapView.AnimateCallback() {
-          @Override
-          public void run(GLMapAnimation animation) {
-            animation.setTransition(GLMapAnimation.Linear);
-            animation.setDuration(1);
-            userMovementImage.setPosition(position);
-            userLocationImage.setPosition(position);
-            accuracyCircle.setPosition(position);
-            accuracyCircle.setScale(r / 2048.0f);
-            if (location.hasBearing()) userLocationImage.setAngle(-location.getBearing());
-          }
-        });
+    mapView.animate(animation -> {
+      animation.setTransition(GLMapAnimation.Linear);
+      animation.setDuration(1);
+      userMovementImage.setPosition(position);
+      userLocationImage.setPosition(position);
+      accuracyCircle.setPosition(position);
+      accuracyCircle.setScale(r / 2048.0f);
+      if (location.hasBearing()) userLocationImage.setAngle(-location.getBearing());
+    });
   }
 
   @Override

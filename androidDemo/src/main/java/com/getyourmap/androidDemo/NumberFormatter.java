@@ -2,10 +2,10 @@ package com.getyourmap.androidDemo;
 
 import java.util.Locale;
 
-public class NumberFormatter {
+class NumberFormatter {
   static Locale locale = Locale.getDefault();
 
-  public static String NiceDoubleToString(double val) {
+  private static String NiceDoubleToString(double val) {
     if (Double.isNaN(val)) {
       return "---";
     }
@@ -18,7 +18,7 @@ public class NumberFormatter {
     return String.format(locale, "%.0f", val);
   }
 
-  public static String FormatSize(long val) {
+  static String FormatSize(long val) {
     double sizeInMB = (double) val / (1000 * 1000);
     return String.format("%s %s", NiceDoubleToString(sizeInMB), "MB");
   }

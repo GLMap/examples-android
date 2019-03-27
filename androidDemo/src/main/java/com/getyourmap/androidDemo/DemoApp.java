@@ -1,6 +1,6 @@
 package com.getyourmap.androidDemo;
 
-import android.support.multidex.MultiDexApplication;
+import androidx.multidex.MultiDexApplication;
 import com.getyourmap.glmap.GLMapManager;
 
 /** Created by destman on 10/18/17. */
