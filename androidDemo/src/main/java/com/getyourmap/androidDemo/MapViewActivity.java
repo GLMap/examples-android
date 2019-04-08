@@ -550,11 +550,30 @@ public class MapViewActivity extends Activity
     searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
     searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
     searchOffline.setLocaleSettings(mapView.getLocaleSettings()); // Locale settings to give bonus for results that match to user language
-    GLSearchCategory category[] = GLSearchCategories.getShared().getStartedWith(new String[] {"food"}, localeSettings); // find categories by name
-    if (category != null && category.length != 0) {
-      searchOffline.addFilter(GLSearchFilter.Category(category[0])); // Filter results by category
-    }
-    searchOffline.addFilter(GLSearchFilter.Name("cali", localeSettings, false)); //Add filter by name
+    GLSearchCategory category[] = GLSearchCategories.getShared().getStartedWith(new String[] {"restaurant"}, new GLMapLocaleSettings(new String[]{"en", "native"})); // find categories by name
+    if (category == null || category.length == 0)
+      return;
+
+    // Logical operations between filters is AND
+    //
+    // Let's find all restaurants
+    searchOffline.addFilter(GLSearchFilter.Category(category[0])); // Filter results by category
+
+    // Additionally search for objects with
+    // word beginning "Baj" in name or alt_name,
+    // "Crno" as word beginning in name, alt_name or andd:* tags,
+    // and exact "60/1" in name, alt_name or addr:* tags.
+    //
+    // Logical operation between words in filter is OR, so we have to create one filter per word.
+    //
+    // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1 ( https://www.openstreetmap.org/node/4397752292 )
+    searchOffline.addFilter(GLSearchFilter.Name("Baj", localeSettings, false));
+    searchOffline.addFilter(GLSearchFilter.Name("Crno", localeSettings, true));
+
+    GLSearchFilter filter = GLSearchFilter.Name("60/1", localeSettings, true);
+    // Default match type is WordStart. But we could change it to Exact or Word.
+    filter.setMatchType(GLSearch.MatchType.Exact);
+    searchOffline.addFilter(filter);
 
     searchOffline.start(
         null,
