@@ -557,22 +557,20 @@ public class MapViewActivity extends Activity
     // Logical operations between filters is AND
     //
     // Let's find all restaurants
-    searchOffline.addFilter(GLSearchFilter.Category(category[0])); // Filter results by category
+    searchOffline.addFilter(GLSearchFilter.createWithCategory(category[0])); // Filter results by category
 
     // Additionally search for objects with
     // word beginning "Baj" in name or alt_name,
-    // "Crno" as word beginning in name, alt_name or andd:* tags,
-    // and exact "60/1" in name, alt_name or addr:* tags.
-    //
-    // Logical operation between words in filter is OR, so we have to create one filter per word.
+    // "Crno" as word beginning in addr:* tags,
+    // and exact "60/1" in addr:* tags.
     //
     // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1 ( https://www.openstreetmap.org/node/4397752292 )
-    searchOffline.addFilter(GLSearchFilter.Name("Baj", localeSettings, false));
-    searchOffline.addFilter(GLSearchFilter.Name("Crno", localeSettings, true));
+    searchOffline.addFilter(GLSearchFilter.createWithQuery("Baj", GLSearch.TagSetMask.NAME | GLSearch.TagSetMask.ALT_NAME));
+    searchOffline.addFilter(GLSearchFilter.createWithQuery("Crno", GLSearch.TagSetMask.ADDRESS));
 
-    GLSearchFilter filter = GLSearchFilter.Name("60/1", localeSettings, true);
+    GLSearchFilter filter = GLSearchFilter.createWithQuery("60/1", GLSearch.TagSetMask.ADDRESS);
     // Default match type is WordStart. But we could change it to Exact or Word.
-    filter.setMatchType(GLSearch.MatchType.Exact);
+    filter.setMatchType(GLSearch.MatchType.EXACT);
     searchOffline.addFilter(filter);
 
     searchOffline.start(
