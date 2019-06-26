@@ -561,10 +561,8 @@ public class MapViewActivity extends Activity
 
     // Additionally search for objects with
     // word beginning "Baj" in name or alt_name,
-    // "Crno" as word beginning in name, alt_name or andd:* tags,
-    // and exact "60/1" in name, alt_name or addr:* tags.
-    //
-    // Logical operation between words in filter is OR, so we have to create one filter per word.
+    // "Crno" as word beginning in addr:* tags,
+    // and exact "60/1" in addr:* tags.
     //
     // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1 ( https://www.openstreetmap.org/node/4397752292 )
     searchOffline.addFilter(GLSearchFilter.createWithQuery("Baj", GLSearch.TagSetMask.NAME | GLSearch.TagSetMask.ALT_NAME));
