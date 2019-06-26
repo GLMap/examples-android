@@ -85,7 +85,7 @@ public class MapViewActivity extends Activity
 
   private static class Pins implements GLMapImageGroupCallback {
     private ReentrantLock lock;
-    private Bitmap images[];
+    private Bitmap[] images;
     private List<Pin> pins;
 
     Pins(ImageManager imageManager) {
@@ -550,14 +550,14 @@ public class MapViewActivity extends Activity
     searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
     searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
     searchOffline.setLocaleSettings(mapView.getLocaleSettings()); // Locale settings to give bonus for results that match to user language
-    GLSearchCategory category[] = GLSearchCategories.getShared().getStartedWith(new String[] {"restaurant"}, new GLMapLocaleSettings(new String[]{"en", "native"})); // find categories by name
+    GLSearchCategory[] category = GLSearchCategories.getShared().getStartedWith(new String[]{"restaurant"}, new GLMapLocaleSettings(new String[]{"en", "native"})); // find categories by name
     if (category == null || category.length == 0)
       return;
 
     // Logical operations between filters is AND
     //
     // Let's find all restaurants
-    searchOffline.addFilter(GLSearchFilter.Category(category[0])); // Filter results by category
+    searchOffline.addFilter(GLSearchFilter.createWithCategory(category[0])); // Filter results by category
 
     // Additionally search for objects with
     // word beginning "Baj" in name or alt_name,
@@ -567,32 +567,15 @@ public class MapViewActivity extends Activity
     // Logical operation between words in filter is OR, so we have to create one filter per word.
     //
     // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1 ( https://www.openstreetmap.org/node/4397752292 )
-    searchOffline.addFilter(GLSearchFilter.Name("Baj", localeSettings, false));
-    searchOffline.addFilter(GLSearchFilter.Name("Crno", localeSettings, true));
+    searchOffline.addFilter(GLSearchFilter.createWithQuery("Baj", GLSearch.TagSetMask.NAME | GLSearch.TagSetMask.ALT_NAME));
+    searchOffline.addFilter(GLSearchFilter.createWithQuery("Crno", GLSearch.TagSetMask.ADDRESS));
 
-    GLSearchFilter filter = GLSearchFilter.Name("60/1", localeSettings, true);
+    GLSearchFilter filter = GLSearchFilter.createWithQuery("60/1", GLSearch.TagSetMask.ADDRESS);
     // Default match type is WordStart. But we could change it to Exact or Word.
-    filter.setMatchType(GLSearch.MatchType.Exact);
+    filter.setMatchType(GLSearch.MatchType.EXACT);
     searchOffline.addFilter(filter);
 
-    searchOffline.start(
-        null,
-        new GLSearch.GLSearchCallback() {
-          @Override
-          public GLSearchCategory getCustomObjectCategory(Object object) {
-            return null;
-          }
-
-          @Override
-          public MapPoint getCustomObjectLocation(Object object) {
-            return null;
-          }
-
-          @Override
-          public void onResults(final Object[] objects) {
-            runOnUiThread(() -> displaySearchResults(objects));
-          }
-        });
+    searchOffline.searchAsync(objects -> runOnUiThread(() -> displaySearchResults(objects.toArray())));
   }
 
   static class SearchStyle extends GLMapMarkerStyleCollectionDataCallback {
@@ -691,9 +674,7 @@ public class MapViewActivity extends Activity
 
   void deleteMarker(float x, float y) {
     if (markerLayer != null) {
-      Object markersToRemove[] =
-          markerLayer.objectsNearPoint(
-              mapView, mapView.convertDisplayToInternal(new MapPoint(x, y)), 30);
+      Object[] markersToRemove = markerLayer.objectsNearPoint(mapView, mapView.convertDisplayToInternal(new MapPoint(x, y)), 30);
       if (markersToRemove != null && markersToRemove.length == 1) {
         markerLayer.modify(
             null,
@@ -706,7 +687,7 @@ public class MapViewActivity extends Activity
 
   void addMarker(float x, float y) {
     if (markerLayer != null) {
-      MapPoint newMarkers[] = new MapPoint[1];
+      MapPoint[] newMarkers = new MapPoint[1];
       newMarkers[0] = mapView.convertDisplayToInternal(new MapPoint(x, y));
 
       markerLayer.modify(
@@ -719,7 +700,7 @@ public class MapViewActivity extends Activity
 
   void addMarkerAsVectorObject(float x, float y) {
     if (markerLayer != null) {
-      GLMapVectorObject newMarkers[] = new GLMapVectorObject[1];
+      GLMapVectorObject[] newMarkers = new GLMapVectorObject[1];
       newMarkers[0] =
           GLMapVectorObject.createPoint(mapView.convertDisplayToInternal(new MapPoint(x, y)));
 
@@ -731,16 +712,14 @@ public class MapViewActivity extends Activity
     }
   }
 
-  private static int unionColours[] = {
-    Color.argb(255, 33, 0, 255),
-    Color.argb(255, 68, 195, 255),
-    Color.argb(255, 63, 237, 198),
-    Color.argb(255, 15, 228, 36),
-    Color.argb(255, 168, 238, 25),
-    Color.argb(255, 214, 234, 25),
-    Color.argb(255, 223, 180, 19),
-    Color.argb(255, 255, 0, 0)
-  };
+  private static int[] unionColours = {Color.argb(255, 33, 0, 255),
+          Color.argb(255, 68, 195, 255),
+          Color.argb(255, 63, 237, 198),
+          Color.argb(255, 15, 228, 36),
+          Color.argb(255, 168, 238, 25),
+          Color.argb(255, 214, 234, 25),
+          Color.argb(255, 223, 180, 19),
+          Color.argb(255, 255, 0, 0)};
 
   void addMarkersWithMapcss() {
     final GLMapMarkerStyleCollection styleCollection = new GLMapMarkerStyleCollection();
@@ -794,7 +773,6 @@ public class MapViewActivity extends Activity
           mapView.add(layer);
           mapView.setMapCenter(bbox.center());
           mapView.setMapZoom(mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
-
         }
       }
     }.execute();
@@ -982,7 +960,7 @@ public class MapViewActivity extends Activity
     btn.setVisibility(View.VISIBLE);
     btn.setText("Download");
     btn.setOnClickListener(view -> {
-      long allTiles[] = GLMapManager.VectorTilesAtBBox(mapView.getBBox());
+      long[] allTiles = GLMapManager.VectorTilesAtBBox(mapView.getBBox());
       Log.i("BulkDownload", String.format("tilesCount = %d", allTiles.length));
       GLMapManager.CacheTiles(
           allTiles,
@@ -1016,7 +994,7 @@ public class MapViewActivity extends Activity
     btn.setOnClickListener(view -> new AsyncTask<String, String, byte[]>() {
       @Override
       protected byte[] doInBackground(String... strings) {
-        byte rv[];
+        byte[] rv;
         try {
           URLConnection connection = new URL(strings[0]).openConnection();
           connection.connect();
@@ -1039,9 +1017,9 @@ public class MapViewActivity extends Activity
       }
 
       @Override
-      protected void onPostExecute(final byte newStyleData[]) {
+      protected void onPostExecute(final byte[] newStyleData) {
         mapView.loadStyle(name -> {
-          byte rv[];
+          byte[] rv;
           if (name.equals("Style.mapcss")) {
             rv = newStyleData;
           } else {

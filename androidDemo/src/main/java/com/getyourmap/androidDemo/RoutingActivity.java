@@ -18,6 +18,7 @@ import com.getyourmap.glmap.MapGeoPoint;
 import com.getyourmap.glmap.MapPoint;
 import com.getyourmap.glroute.GLRoute;
 import com.getyourmap.glroute.GLRoutePoint;
+import com.getyourmap.glroute.GLRouteRequest;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.IOException;
@@ -97,48 +98,41 @@ public class RoutingActivity extends MapViewActivity {
     }
 
     private void updateRoute() {
-        GLRoutePoint pts[] = {
-                new GLRoutePoint(departure, Float.NaN, true), new GLRoutePoint(destination, Float.NaN, true)
-        };
 
-        GLRoute.ResultsCallback callback =
-                new GLRoute.ResultsCallback() {
-                    @Override
-                    public void onResult(GLRoute route) {
-                        GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
-                        if (track != null) {
-                            track.setData(trackData);
-                        } else {
-                            track = new GLMapTrack(trackData, 5);
-                            mapView.add(track);
-                        }
-                    }
+        GLRouteRequest request = new GLRouteRequest();
+        request.addPoint(new GLRoutePoint(departure, Float.NaN, true));
+        request.addPoint(new GLRoutePoint(destination, Float.NaN, true));
+        request.setLocale("en");
+        request.setUnitSystem(GLMapView.GLUnitSystem.International);
 
-                    @Override
-                    public void onError(GLMapError glMapError) {
-                        Toast.makeText(RoutingActivity.this, glMapError.message, Toast.LENGTH_LONG).show();
-                    }
-                };
+        if(networkMode == NetworkMode.Offline)
+            request.setOfflineWithConfig(getValhallaConfig(getResources()));
 
-        switch (networkMode) {
-            case Online:
-                GLRoute.requestOnlineRouteData(pts, routingMode, "en", GLMapView.GLUnitSystem.International, callback);
-                break;
-            case Offline:
-                GLRoute.requestOfflineRouteData(
-                        getValhallaConfig(getResources()),
-                        pts,
-                        routingMode,
-                        "en",
-                        GLMapView.GLUnitSystem.International,
-                        callback);
-                break;
-        }
+        request.start(new GLRouteRequest.ResultsCallback()
+        {
+            @Override
+            public void onResult(GLRoute route)
+            {
+                GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
+                if (track != null) {
+                    track.setData(trackData);
+                } else {
+                    track = new GLMapTrack(trackData, 5);
+                    mapView.add(track);
+                }
+            }
+
+            @Override
+            public void onError(GLMapError error)
+            {
+                Toast.makeText(RoutingActivity.this, error.message, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     public static String getValhallaConfig(Resources resources) {
         if (valhallaConfig == null) {
-            byte raw[] = null;
+            byte[] raw = null;
             try {
                 // Read prepared categories
                 InputStream stream = resources.openRawResource(R.raw.valhalla);
