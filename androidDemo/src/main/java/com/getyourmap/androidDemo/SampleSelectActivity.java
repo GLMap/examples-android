@@ -33,7 +33,6 @@ public class SampleSelectActivity extends ListActivity {
     RECORD_TRACK,
     DOWNLOAD_MAP,
     SVG_TEST,
-    CRASH_NDK,
   }
 
   @Override
@@ -66,7 +65,6 @@ public class SampleSelectActivity extends ListActivity {
           "Recording track",
           "Download Map",
           "SVG Test",
-          "Crash NDK",
         };
     ArrayAdapter<String> adapter =
         new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, values);
@@ -100,10 +98,6 @@ public class SampleSelectActivity extends ListActivity {
     if (position == Samples.SVG_TEST.ordinal()) {
       Intent intent = new Intent(this, DisplayImageActivity.class);
       this.startActivity(intent);
-      return;
-    }
-    if (position == Samples.CRASH_NDK.ordinal()) {
-      GLMapView.crashNDK2();
       return;
     }
 
