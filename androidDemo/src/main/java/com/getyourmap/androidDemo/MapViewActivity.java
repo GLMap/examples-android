@@ -209,12 +209,12 @@ public class MapViewActivity extends Activity
     btnDownloadMap = this.findViewById(R.id.button_dl_map);
     btnDownloadMap.setOnClickListener(v -> {
       if (mapToDownload != null) {
-        GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-        if (task != null) {
-          task.cancel();
+        List<GLMapDownloadTask> tasks = GLMapManager.getDownloadTasks(mapToDownload.getMapID(), GLMapInfo.DataSetMask.ALL);
+        if (tasks != null && !tasks.isEmpty()) {
+          for(GLMapDownloadTask task : tasks)
+            task.cancel();
         } else {
-          GLMapManager.DownloadDataSets(
-              mapToDownload, GLMapInfo.DataSetMask.ALL, MapViewActivity.this);
+          GLMapManager.DownloadDataSets(mapToDownload, GLMapInfo.DataSetMask.ALL);
         }
         updateMapDownloadButtonText();
       } else {
@@ -250,8 +250,11 @@ public class MapViewActivity extends Activity
 
   protected void runTest() {
     Bundle b = getIntent().getExtras();
-    final SampleSelectActivity.Samples example =
-        SampleSelectActivity.Samples.values()[b.getInt("example")];
+    SampleSelectActivity.Samples example;
+    if(b != null)
+      example = SampleSelectActivity.Samples.values()[b.getInt("example")];
+    else
+      example = SampleSelectActivity.Samples.MAP;
     switch (example) {
       case MAP_EMBEDDED:
         showEmbedded();
@@ -495,13 +498,22 @@ public class MapViewActivity extends Activity
       mapToDownload = GLMapManager.MapAtPoint(center);
 
       if (mapToDownload != null) {
+        long total = 0;
+        long downloaded = 0;
         String text;
-        GLMapDownloadTask task = GLMapManager.getDownloadTask(mapToDownload);
-        if (task != null && task.total != 0) {
-          long progress = (long)task.downloaded * 100 / task.total;
+        List<GLMapDownloadTask> tasks = GLMapManager.getDownloadTasks(mapToDownload.getMapID(), GLMapInfo.DataSetMask.ALL);
+        if (tasks != null && !tasks.isEmpty()) {
+          for(GLMapDownloadTask task : tasks) {
+            total += task.total;
+            downloaded += task.downloaded;
+          }
+        }
+
+        if(total != 0) {
+          long progress = downloaded * 100 / total;
           text = String.format(Locale.getDefault(), "Downloading %s %d%%",
                   mapToDownload.getLocalizedName(localeSettings), progress);
-        } else {
+        }else {
           text = String.format(Locale.getDefault(), "Download %s",
                   mapToDownload.getLocalizedName(localeSettings));
         }

@@ -22,6 +22,7 @@ import com.getyourmap.glmap.GLMapManager;
 import com.getyourmap.glmap.MapPoint;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import javax.annotation.Nullable;
@@ -75,10 +76,16 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
 
       txtHeaderName.setText(map.getLocalizedName(localeSettings));
 
-      GLMapDownloadTask task = GLMapManager.getDownloadTask(map);
-      if (task != null) {
+      List<GLMapDownloadTask> tasks = GLMapManager.getDownloadTasks(map.getMapID(), GLMapInfo.DataSetMask.ALL);
+      if (tasks != null && !tasks.isEmpty()) {
+        long total = 0;
+        long downloaded = 0;
+        for(GLMapDownloadTask task : tasks) {
+          total += task.total;
+          downloaded += task.downloaded;
+        }
         float progress;
-        if (task.total != 0) progress = 100.0f * task.downloaded / task.total;
+        if (total != 0) progress = 100.0f * downloaded / total;
         else progress = 0;
         txtDescription.setText(String.format(Locale.ENGLISH, "Download %.2f%%", progress));
       } else if (map.isCollection()) {
@@ -200,12 +207,12 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
         intent.putExtra("cy", center.y);
         DownloadActivity.this.startActivity(intent);
       } else {
-        GLMapDownloadTask task = GLMapManager.getDownloadTask(info);
-        if (task != null) {
-          task.cancel();
+        List<GLMapDownloadTask> tasks = GLMapManager.getDownloadTasks(info.getMapID(), GLMapInfo.DataSetMask.ALL);
+        if (tasks != null && !tasks.isEmpty()) {
+          for(GLMapDownloadTask task : tasks)
+            task.cancel();
         } else {
-          GLMapManager.DownloadDataSets(
-              info, GLMapInfo.DataSetMask.ALL, DownloadActivity.this);
+          GLMapManager.DownloadDataSets(info, GLMapInfo.DataSetMask.ALL);
         }
       }
     });
