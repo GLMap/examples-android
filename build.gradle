@@ -8,16 +8,15 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.1'
+        classpath 'com.android.tools.build:gradle:3.6.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 allprojects {
     repositories {
-        maven { url 'http://maven.getyourmap.com/artifactory/snapshots' }
-        maven { url 'http://maven.getyourmap.com/artifactory/libs' }
-        flatDir { dirs '../aars' }
+        maven { url 'https://maven.globus.software/artifactory/snapshots' }
+        maven { url 'https://maven.globus.software/artifactory/libs' }
         google()
         jcenter()
     }

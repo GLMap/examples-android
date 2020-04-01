@@ -1,2 +1,2 @@
-include ':androidDemo'
+include ':javaDemo'
 include ':kotlinDemo'

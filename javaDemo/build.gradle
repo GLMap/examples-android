@@ -1,6 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 29
@@ -13,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.getyourmap.kotlindemo"
+        applicationId "com.getyourmap.javaDemo"
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1202
@@ -25,14 +23,6 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    sourceSets {
-        main {
-            manifest.srcFile '../../Examples/javaDemo/src/main/AndroidManifest.xml'
-            assets.srcDirs = ["../../Examples/javaDemo/src/main/assets", "../../../Resources/framework"]
-            res.srcDirs = ["../../Examples/javaDemo/src/main/res"]
         }
     }
 
@@ -49,7 +39,7 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.google.android.material:material:1.1.0'
@@ -58,3 +48,10 @@ dependencies {
     implementation "globus:glroute:$glmap_version"
     implementation "globus:glsearch:$glmap_version"
 }
+
+//Uncomment if snapshots used
+/*
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 1, 'minutes'
+}
+*/
