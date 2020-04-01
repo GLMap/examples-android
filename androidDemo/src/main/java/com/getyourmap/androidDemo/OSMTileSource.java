@@ -10,7 +10,7 @@ import java.io.File;
 
 /** Created by destman on 11/11/15. */
 class OSMTileSource extends GLMapRasterTileSource {
-  private String mirrors[];
+  private String[] mirrors;
 
   OSMTileSource(Activity activity) throws OutOfMemoryError {
     super(CachePath(activity));

@@ -256,6 +256,9 @@ public class MapViewActivity extends Activity
     else
       example = SampleSelectActivity.Samples.MAP;
     switch (example) {
+      case DARK_THEME:
+        loadDarkTheme();
+        break;
       case MAP_EMBEDDED:
         showEmbedded();
         break;
@@ -422,7 +425,7 @@ public class MapViewActivity extends Activity
 
   @Override
   public void onRequestPermissionsResult(
-      int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     switch (requestCode) {
       case 0:
         {
@@ -991,6 +994,34 @@ public class MapViewActivity extends Activity
               return true;
             }
           });
+    });
+  }
+
+  private void loadDarkTheme() {
+    mapView.loadStyle(name -> {
+      String finalName;
+      switch (name) {
+        case "colors.mapcss":
+          finalName = "colors_dark.mapcss";
+          break;
+        case "noData.png":
+          finalName = "noData_dark.png";
+          break;
+        default:
+          finalName = name;
+      }
+      byte[] rv;
+      try {
+        InputStream stream = getAssets().open("DefaultStyle.bundle/" + finalName);
+        rv = new byte[stream.available()];
+        if (stream.read(rv) < rv.length) {
+          rv = null;
+        }
+        stream.close();
+      } catch (IOException ignore) {
+        rv = null;
+      }
+      return rv;
     });
   }
 

@@ -11,6 +11,7 @@ import com.getyourmap.glmap.GLMapView;
 public class SampleSelectActivity extends ListActivity {
   public enum Samples {
     MAP,
+    DARK_THEME,
     MAP_EMBEDDED,
     MAP_ONLINE,
     MAP_ONLINE_RASTER,
@@ -43,6 +44,7 @@ public class SampleSelectActivity extends ListActivity {
     String[] values =
         new String[] {
           "Open offline map",
+          "Dark Theme",
           "Open embedded map",
           "Open online map",
           "Open online raster map",
