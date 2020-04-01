@@ -1,7 +1,10 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 29
+    ndkVersion "21.0.6113669"
     buildToolsVersion "29.0.3"
 
     compileOptions {
@@ -10,7 +13,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.getyourmap.androidDemo"
+        applicationId "com.getyourmap.kotlindemo"
         minSdkVersion 16
         targetSdkVersion 29
         versionCode 1202
@@ -22,6 +25,14 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile '../../Examples/androidDemo/src/main/AndroidManifest.xml'
+            assets.srcDirs = ["../../Examples/androidDemo/src/main/assets", "../../../Resources/framework"]
+            res.srcDirs = ["../../Examples/androidDemo/src/main/res"]
         }
     }
 
@@ -37,15 +48,8 @@ android {
     }
 }
 
-repositories {
-    jcenter()
-    google()
-    maven { url 'https://maven.getyourmap.com/artifactory/snapshots' }
-    maven { url 'http://maven.getyourmap.com/artifactory/libs' }
-}
-
 dependencies {
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.google.android.material:material:1.1.0'
@@ -54,10 +58,3 @@ dependencies {
     implementation "com.getyourmap:glroute:$glmap_version"
     implementation "com.getyourmap:glsearch:$glmap_version"
 }
-
-//Uncomment if snapshots used
-/*
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 1, 'minutes'
-}
-*/
