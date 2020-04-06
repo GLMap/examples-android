@@ -1,0 +1,42 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_color"
+    tools:context="globus.demo.SampleSelectActivity" >
+
+    <globus.glmap.GLMapView
+        android:id="@+id/map_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:keepScreenOn="true"
+        />
+
+    <Button
+        android:id="@+id/button_action"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add image"
+        android:visibility="invisible" />
+
+    <EditText
+        android:id="@+id/edit_text"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:layout_marginLeft="40pt"
+        android:layout_marginStart="40pt"
+        android:inputType="textUri"
+        android:hint="Enter style URL"
+        tools:visibility="visible"/>
+
+    <Button
+        android:id="@+id/button_dl_map"
+        android:visibility="invisible"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New Button"
+        android:layout_gravity="center"/>
+
+</FrameLayout>

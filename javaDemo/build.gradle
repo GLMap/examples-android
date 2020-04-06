@@ -1,0 +1,57 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
+    ndkVersion "21.0.6113669"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        applicationId "com.getyourmap.javaDemo"
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode 1202
+        versionName "1.2.2"
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    //If world and font files are compressed - GLMap will decompress and cache them while initialization.
+    //This will take some time and space on device.
+    //You can disable compression for them in resulting apk file to speedup loading time.
+    aaptOptions {
+        noCompress 'vm', 'ttf', 'otf'
+    }
+
+    dexOptions {
+        javaMaxHeapSize "4g"
+    }
+}
+
+dependencies {
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'com.google.android.material:material:1.1.0'
+
+    implementation "globus:glmap:$glmap_version"
+    implementation "globus:glroute:$glmap_version"
+    implementation "globus:glsearch:$glmap_version"
+}
+
+//Uncomment if snapshots used
+/*
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 1, 'minutes'
+}
+*/
