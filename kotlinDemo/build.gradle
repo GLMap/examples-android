@@ -3,9 +3,9 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.3"
-    ndkVersion "21.0.6113669"
+    compileSdkVersion 30
+    buildToolsVersion build_tools_version
+    ndkVersion ndk_version
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -15,9 +15,9 @@ android {
     defaultConfig {
         applicationId "com.getyourmap.kotlindemo"
         minSdkVersion 16
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 1202
-        versionName "1.2.2"
+        versionName app_version
         multiDexEnabled true
     }
 

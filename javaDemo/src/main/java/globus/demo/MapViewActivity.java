@@ -266,7 +266,7 @@ public class MapViewActivity extends Activity
         GLMapManager.SetTileDownloadingAllowed(true);
         break;
       case MAP_ONLINE_RASTER:
-        mapView.setRasterTileSources(new GLMapRasterTileSource[] {new OSMTileSource(this)});
+        mapView.setTileSources(new GLMapRasterTileSource[] {new OSMTileSource(this)});
         break;
       case ZOOM_BBOX:
         zoomToBBox();
@@ -764,7 +764,7 @@ public class MapViewActivity extends Activity
         GLMapMarkerLayer rv;
         try {
           Log.w("GLMapView", "Start parsing");
-          GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+          GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
           bbox = objects.getBBox();
@@ -853,7 +853,7 @@ public class MapViewActivity extends Activity
 
           Log.w("GLMapView", "Start parsing");
           GLMapVectorObjectList objects =
-              GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+              GLMapVectorObject.createFromGeoJSONStreamOrThrow(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
           bbox = objects.getBBox();
@@ -1150,8 +1150,8 @@ public class MapViewActivity extends Activity
     GLMapVectorObjectList objects = null;
     try
     {
-      objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("uk_postcodes.geojson"));
-    } catch (IOException e)
+      objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(getAssets().open("uk_postcodes.geojson"));
+    } catch (Exception e)
     {
       e.printStackTrace();
     }
@@ -1167,12 +1167,17 @@ public class MapViewActivity extends Activity
 
   private void loadGeoJSONWithCSSStyle()
   {
-    GLMapVectorObjectList objects =
-        GLMapVectorObject.createFromGeoJSON(
-            "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
-                + "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
-                + "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
-                + "{\"type\":\"Polygon\",\"coordinates\":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]");
+    GLMapVectorObjectList objects;
+    try {
+      objects = GLMapVectorObject.createFromGeoJSONOrThrow(
+              "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
+                      + "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
+                      + "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
+                      + "{\"type\":\"Polygon\",\"coordinates\":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]");
+    }catch (Exception e) {
+      objects = null;
+      e.printStackTrace();
+    }
 
     GLMapVectorCascadeStyle style =
         GLMapVectorCascadeStyle.createStyle(
