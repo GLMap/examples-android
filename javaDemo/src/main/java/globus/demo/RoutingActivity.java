@@ -99,8 +99,8 @@ public class RoutingActivity extends MapViewActivity {
 
     private void updateRoute() {
         GLRouteRequest request = new GLRouteRequest();
-        request.addPoint(new GLRoutePoint(departure, Float.NaN, true));
-        request.addPoint(new GLRoutePoint(destination, Float.NaN, true));
+        request.addPoint(new GLRoutePoint(departure, Float.NaN, true, true));
+        request.addPoint(new GLRoutePoint(destination, Float.NaN, true, true));
         request.locale = "en";
         request.unitSystem = GLMapView.GLUnitSystem.International;
         request.mode = routingMode;
@@ -125,7 +125,12 @@ public class RoutingActivity extends MapViewActivity {
             @Override
             public void onError(GLMapError error)
             {
-                Toast.makeText(RoutingActivity.this, error.message, Toast.LENGTH_LONG).show();
+                String message;
+                if(error.message != null)
+                    message = error.message;
+                else
+                    message = error.toString();
+                Toast.makeText(RoutingActivity.this, message, Toast.LENGTH_LONG).show();
             }
         });
     }

@@ -36,6 +36,7 @@ import globus.glmap.GLMapMarkerLayer;
 import globus.glmap.GLMapMarkerStyleCollection;
 import globus.glmap.GLMapMarkerStyleCollectionDataCallback;
 import globus.glmap.GLMapRasterTileSource;
+import globus.glmap.GLMapStyleParser;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
 import globus.glmap.GLMapVectorCascadeStyle;
@@ -62,7 +63,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
@@ -231,7 +235,9 @@ public class MapViewActivity extends Activity
 
     localeSettings = new GLMapLocaleSettings();
     mapView.setLocaleSettings(localeSettings);
-    mapView.loadStyle(getAssets(), "DefaultStyle.bundle");
+
+    GLMapStyleParser parser = new GLMapStyleParser(getAssets(), "DefaultStyle.bundle");
+    mapView.setStyle(parser.parseFromResources());
     checkAndRequestLocationPermission();
 
     mapView.setScaleRulerStyle(
@@ -266,7 +272,7 @@ public class MapViewActivity extends Activity
         GLMapManager.SetTileDownloadingAllowed(true);
         break;
       case MAP_ONLINE_RASTER:
-        mapView.setRasterTileSources(new GLMapRasterTileSource[] {new OSMTileSource(this)});
+        mapView.setTileSources(new GLMapRasterTileSource[] {new OSMTileSource(this)});
         break;
       case ZOOM_BBOX:
         zoomToBBox();
@@ -498,7 +504,11 @@ public class MapViewActivity extends Activity
     if (btnDownloadMap.getVisibility() == View.VISIBLE) {
       MapPoint center = mapView.getMapCenter();
 
-      mapToDownload = GLMapManager.MapAtPoint(center);
+      GLMapInfo[] maps = GLMapManager.MapsAtPoint(center);
+      if(maps == null || maps.length == 0)
+        mapToDownload = null;
+      else
+        mapToDownload = maps[0];
 
       if (mapToDownload != null) {
         long total = 0;
@@ -764,7 +774,7 @@ public class MapViewActivity extends Activity
         GLMapMarkerLayer rv;
         try {
           Log.w("GLMapView", "Start parsing");
-          GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+          GLMapVectorObjectList objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
           bbox = objects.getBBox();
@@ -853,7 +863,7 @@ public class MapViewActivity extends Activity
 
           Log.w("GLMapView", "Start parsing");
           GLMapVectorObjectList objects =
-              GLMapVectorObject.createFromGeoJSONStream(getAssets().open("cluster_data.json"));
+              GLMapVectorObject.createFromGeoJSONStreamOrThrow(getAssets().open("cluster_data.json"));
           Log.w("GLMapView", "Finish parsing");
 
           bbox = objects.getBBox();
@@ -998,31 +1008,9 @@ public class MapViewActivity extends Activity
   }
 
   private void loadDarkTheme() {
-    mapView.loadStyle(name -> {
-      String finalName;
-      switch (name) {
-        case "colors.mapcss":
-          finalName = "colors_dark.mapcss";
-          break;
-        case "noData.png":
-          finalName = "noData_dark.png";
-          break;
-        default:
-          finalName = name;
-      }
-      byte[] rv;
-      try {
-        InputStream stream = getAssets().open("DefaultStyle.bundle/" + finalName);
-        rv = new byte[stream.available()];
-        if (stream.read(rv) < rv.length) {
-          rv = null;
-        }
-        stream.close();
-      } catch (IOException ignore) {
-        rv = null;
-      }
-      return rv;
-    });
+    GLMapStyleParser parser = new GLMapStyleParser(getAssets(), "DefaultStyle.bundle");
+    parser.setOptions(Collections.singletonMap("Theme", "Dark"), true);
+    mapView.setStyle(parser.parseFromResources());
   }
 
   private void styleLiveReload() {
@@ -1059,7 +1047,7 @@ public class MapViewActivity extends Activity
 
       @Override
       protected void onPostExecute(final byte[] newStyleData) {
-        mapView.loadStyle(name -> {
+        GLMapStyleParser parser = new GLMapStyleParser(name -> {
           byte[] rv;
           if (name.equals("Style.mapcss")) {
             rv = newStyleData;
@@ -1077,6 +1065,7 @@ public class MapViewActivity extends Activity
           }
           return rv;
         });
+        mapView.setStyle(parser.parseFromResources());
       }
     }.execute(editText.getText().toString()));
   }
@@ -1150,8 +1139,8 @@ public class MapViewActivity extends Activity
     GLMapVectorObjectList objects = null;
     try
     {
-      objects = GLMapVectorObject.createFromGeoJSONStream(getAssets().open("uk_postcodes.geojson"));
-    } catch (IOException e)
+      objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(getAssets().open("uk_postcodes.geojson"));
+    } catch (Exception e)
     {
       e.printStackTrace();
     }
@@ -1167,12 +1156,17 @@ public class MapViewActivity extends Activity
 
   private void loadGeoJSONWithCSSStyle()
   {
-    GLMapVectorObjectList objects =
-        GLMapVectorObject.createFromGeoJSON(
-            "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
-                + "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
-                + "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
-                + "{\"type\":\"Polygon\",\"coordinates\":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]");
+    GLMapVectorObjectList objects;
+    try {
+      objects = GLMapVectorObject.createFromGeoJSONOrThrow(
+              "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
+                      + "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
+                      + "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
+                      + "{\"type\":\"Polygon\",\"coordinates\":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]");
+    }catch (Exception e) {
+      objects = null;
+      e.printStackTrace();
+    }
 
     GLMapVectorCascadeStyle style =
         GLMapVectorCascadeStyle.createStyle(

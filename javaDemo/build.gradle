@@ -1,9 +1,9 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.3"
-    ndkVersion "21.0.6113669"
+    compileSdkVersion 30
+    buildToolsVersion build_tools_version
+    ndkVersion ndk_version
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -13,9 +13,9 @@ android {
     defaultConfig {
         applicationId "com.getyourmap.javaDemo"
         minSdkVersion 16
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 1202
-        versionName "1.2.2"
+        versionName app_version
         multiDexEnabled true
     }
 
@@ -41,8 +41,8 @@ android {
 dependencies {
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.2.1'
 
     implementation "globus:glmap:$glmap_version"
     implementation "globus:glroute:$glmap_version"
@@ -50,8 +50,7 @@ dependencies {
 }
 
 //Uncomment if snapshots used
-/*
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 1, 'minutes'
 }
-*/
+

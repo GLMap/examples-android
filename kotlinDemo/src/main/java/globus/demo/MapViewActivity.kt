@@ -45,7 +45,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
 
     private data class Pin(val pos: MapPoint, val imageVariant: Int)
 
-    private class Pins internal constructor(imageManager: ImageManager) : GLMapImageGroupCallback {
+    private class Pins(imageManager: ImageManager) : GLMapImageGroupCallback {
         private val lock = ReentrantLock()
         private val images = arrayOf(
                 imageManager.open("1.svgpb", 1f, -0x10000)!!,
@@ -177,7 +177,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
         }
         GLMapManager.addStateListener(this)
         mapView.localeSettings = localeSettings
-        mapView.loadStyle(assets, "DefaultStyle.bundle")
+        mapView.setStyle(GLMapStyleParser(assets, "DefaultStyle.bundle").parseFromResources()!!)
         checkAndRequestLocationPermission()
         mapView.setScaleRulerStyle(GLUnitSystem.International, GLMapPlacement.BottomCenter, MapPoint(10.0, 10.0), 200.0)
         mapView.setAttributionPosition(GLMapPlacement.TopCenter)
@@ -195,7 +195,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             Samples.DARK_THEME -> loadDarkTheme()
             Samples.MAP_EMBEDDED -> showEmbedded()
             Samples.MAP_ONLINE -> GLMapManager.SetTileDownloadingAllowed(true)
-            Samples.MAP_ONLINE_RASTER -> mapView.rasterTileSources = arrayOf(OSMTileSource(this))
+            Samples.MAP_ONLINE_RASTER -> mapView.tileSources = arrayOf(OSMTileSource(this))
             Samples.ZOOM_BBOX -> zoomToBBox()
             Samples.FLY_TO -> {
                 mapView.mapCenter = MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353)
@@ -358,7 +358,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private fun updateMapDownloadButtonText() {
         if (btnDownloadMap.visibility == View.VISIBLE) {
             val center = mapView.mapCenter
-            mapToDownload = GLMapManager.MapAtPoint(center)
+            val maps = GLMapManager.MapsAtPoint(center)
+            mapToDownload = if (maps.isNullOrEmpty()) null else maps[0]
             val mapToDownload = mapToDownload
             if (mapToDownload != null) {
                 var total: Long = 0
@@ -546,7 +547,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                         + "node[count>=16]{icon-image:\"uni4\";}"
                         + "node[count>=32]{icon-image:\"uni5\";}"
                         + "node[count>=64]{icon-image:\"uni6\";}"
-                        + "node[count>=128]{icon-image:\"uni7\";}")
+                        + "node[count>=128]{icon-image:\"uni7\";}")!!
 
         object : AsyncTask<Void, Void, GLMapMarkerLayer?>() {
             private var bbox: GLMapBBox? = null
@@ -554,9 +555,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                 var rv: GLMapMarkerLayer?
                 try {
                     Log.w("GLMapView", "Start parsing")
-                    val objects = GLMapVectorObject.createFromGeoJSONStream(assets.open("cluster_data.json"))
+                    val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("cluster_data.json"))
                     Log.w("GLMapView", "Finish parsing")
-                    bbox = objects!!.bBox
+                    bbox = objects.bBox
                     Log.w("GLMapView", "Start creating layer")
                     rv = GLMapMarkerLayer(objects, style, styleCollection, 35.0, 3)
                     Log.w("GLMapView", "Finish creating layer")
@@ -631,9 +632,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                     }
                     style.setDataCallback(MarkersStyle())
                     Log.w("GLMapView", "Start parsing")
-                    val objects = GLMapVectorObject.createFromGeoJSONStream(assets.open("cluster_data.json"))
+                    val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("cluster_data.json"))
                     Log.w("GLMapView", "Finish parsing")
-                    bbox = objects!!.bBox
+                    bbox = objects.bBox
                     Log.w("GLMapView", "Start creating layer")
                     rv = GLMapMarkerLayer(objects.toArray(), style, 35.0, 3)
                     Log.w("GLMapView", "Finish creating layer")
@@ -703,7 +704,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
         val obj = GLMapVectorObject.createMultiline(arrayOf(line1, line2))
         // style applied to all lines added. Style is string with mapcss rules. Read more in manual.
         val drawable = GLMapDrawable()
-        drawable.setVectorObject(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}"), null)
+        drawable.setVectorObject(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}")!!, null)
         mapView.add(drawable)
     }
 
@@ -729,7 +730,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
         val obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings)
         val drawable = GLMapDrawable()
         drawable.setVectorObject(obj,
-                GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"),
+                GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}")!!,
                 null) // #RRGGBBAA format
         mapView.add(drawable)
         mapView.mapGeoCenter = centerPoint
@@ -749,6 +750,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                             Log.i("BulkDownloadSuccess", String.format("tile = %d", tile))
                             return true
                         }
+
                         override fun onError(tile: Long, errorCode: GLMapError): Boolean {
                             Log.i("BulkDownloadError", "tile = $tile, domain = ${errorCode.errorDomain}, errorCode = ${errorCode.errorCode}")
                             return true
@@ -758,25 +760,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     }
 
     private fun loadDarkTheme() {
-        mapView.loadStyle { name: String ->
-            val finalName = when (name) {
-                "colors.mapcss" -> "colors_dark.mapcss"
-                "noData.png" -> "noData_dark.png"
-                else -> name
-            }
-            var rv: ByteArray?
-            try {
-                val stream = assets.open("DefaultStyle.bundle/$finalName")
-                rv = ByteArray(stream.available())
-                if (stream.read(rv) < rv.size) {
-                    rv = null
-                }
-                stream.close()
-            } catch (ignore: IOException) {
-                rv = null
-            }
-            rv
-        }
+        val parser = GLMapStyleParser(assets, "DefaultStyle.bundle")
+        parser.setOptions(mapOf("Theme" to "Dark"), true)
+        mapView.setStyle(parser.parseFromResources()!!)
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -810,7 +796,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                 }
 
                 override fun onPostExecute(newStyleData: ByteArray?) {
-                    mapView.loadStyle { name: String ->
+                    val parser = GLMapStyleParser { name: String ->
                         if (name == "Style.mapcss") {
                             newStyleData
                         } else {
@@ -828,6 +814,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                             result
                         }
                     }
+                    val style = parser.parseFromResources()
+                    if(style != null)
+                        mapView.setStyle(style)
                 }
             }.execute(editText.text.toString())
         }
@@ -894,12 +883,12 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private fun loadGeoJSONPostcode() {
         var objects: GLMapVectorObjectList? = null
         try {
-            objects = GLMapVectorObject.createFromGeoJSONStream(assets.open("uk_postcodes.geojson"))
+            objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("uk_postcodes.geojson"))
         } catch (e: IOException) {
             e.printStackTrace()
         }
         if (objects != null) {
-            val style = GLMapVectorCascadeStyle.createStyle("area{fill-color:green; width:1pt; color:red;}")
+            val style = GLMapVectorCascadeStyle.createStyle("area{fill-color:green; width:1pt; color:red;}")!!
             val drawable = GLMapDrawable()
             drawable.setVectorObjects(objects, style, null)
             mapView.add(drawable)
@@ -908,7 +897,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     }
 
     private fun loadGeoJSONWithCSSStyle() {
-        val objects = GLMapVectorObject.createFromGeoJSON(
+        val objects = GLMapVectorObject.createFromGeoJSONOrThrow(
                 "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
                         + "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
                         + "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
@@ -917,7 +906,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                 "node[id=1]{icon-image:\"bus.svgpb\";icon-scale:0.5;icon-tint:green;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
                         + "node|z-9[id=2]{icon-image:\"bus.svgpb\";icon-scale:0.7;icon-tint:blue;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
                         + "line{linecap: round; width: 5pt; color:blue;}"
-                        + "area{fill-color:green; width:1pt; color:red;}")
+                        + "area{fill-color:green; width:1pt; color:red;}")!!
         if (objects != null) {
             val drawable = GLMapDrawable()
             drawable.setVectorObjects(objects, style, null)
