@@ -114,8 +114,8 @@ class RoutingActivity : MapViewActivity() {
 
     private fun updateRoute() {
         val request = GLRouteRequest()
-        request.addPoint(GLRoutePoint(departure, Double.NaN, true))
-        request.addPoint(GLRoutePoint(destination, Double.NaN, true))
+        request.addPoint(GLRoutePoint(departure, Double.NaN, true, true))
+        request.addPoint(GLRoutePoint(destination, Double.NaN, true, true))
         request.locale = "en"
         request.unitSystem = GLMapView.GLUnitSystem.International
         request.mode = routingMode

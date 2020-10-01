@@ -125,7 +125,12 @@ public class RoutingActivity extends MapViewActivity {
             @Override
             public void onError(GLMapError error)
             {
-                Toast.makeText(RoutingActivity.this, error.message, Toast.LENGTH_LONG).show();
+                String message;
+                if(error.message != null)
+                    message = error.message;
+                else
+                    message = error.toString();
+                Toast.makeText(RoutingActivity.this, message, Toast.LENGTH_LONG).show();
             }
         });
     }

@@ -23,7 +23,11 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
     var isFollowLocationEnabled = false
         set(value) {
             field = value
-            if (field) onLocationChanged(lastLocation)
+            if (field) {
+                val lastLocation = lastLocation
+                if (lastLocation != null)
+                    onLocationChanged(lastLocation)
+            }
         }
     private var locationManager: LocationManager? = null
     private var lastLocation: Location? = null
@@ -82,7 +86,9 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
                     }
                 }
                 // Update location to current best
-                onLocationChanged(lastLocation)
+                val lastLocation = lastLocation
+                if(lastLocation != null)
+                    onLocationChanged(lastLocation)
                 // Request location updates
                 locationManager.requestLocationUpdates(
                         MIN_TIME_BW_UPDATES,
@@ -99,8 +105,7 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
         return true
     }
 
-    override fun onLocationChanged(location: Location?) {
-        if (location == null) return
+    override fun onLocationChanged(location: Location) {
         lastLocation = location
         val position = MapPoint.CreateFromGeoCoordinates(location.latitude, location.longitude)
         if (isFollowLocationEnabled)
@@ -163,7 +168,7 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
             accuracyCircle.position = position
             accuracyCircle.scale = r / 2048.0f.toDouble()
             accuracyCircle.setVectorObject(circle,
-                    GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"),
+                    GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")!!,
                     null)
             mapView.add(accuracyCircle)
         }

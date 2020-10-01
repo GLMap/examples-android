@@ -3,6 +3,7 @@ package globus.demo
 import android.app.Activity
 import android.os.Bundle
 import android.view.TextureView
+import globus.glmap.GLMapStyleParser
 import globus.glmap.GLMapView
 import globus.glmap.MapPoint
 
@@ -13,7 +14,7 @@ class MapTextureViewActivity : Activity() {
         setContentView(R.layout.texture_view_map)
         val textureView = findViewById<TextureView>(R.id.texture_view)
         val mapView = GLMapView(this, textureView)
-        mapView.loadStyle(assets, "DefaultStyle.bundle")
+        mapView.setStyle(GLMapStyleParser(assets, "DefaultStyle.bundle").parseFromResources()!!)
         mapView.setScaleRulerStyle(
                 GLMapView.GLUnitSystem.International,
                 GLMapView.GLMapPlacement.BottomCenter,
