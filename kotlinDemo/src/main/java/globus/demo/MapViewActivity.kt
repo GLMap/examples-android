@@ -539,15 +539,47 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             val index = styleCollection.addStyle(GLMapMarkerImage("marker$scale", mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])!!))
             styleCollection.setStyleName(i, "uni$index")
         }
-        val style = GLMapVectorCascadeStyle.createStyle(
-                "node{icon-image:\"uni0\"; text:eval(tag(\"name\")); text-color:#2E2D2B; font-size:12; font-stroke-width:1pt; font-stroke-color:#FFFFFFEE;}"
-                        + "node[count>=2]{icon-image:\"uni1\"; text:eval(tag(\"count\"));}"
-                        + "node[count>=4]{icon-image:\"uni2\";}"
-                        + "node[count>=8]{icon-image:\"uni3\";}"
-                        + "node[count>=16]{icon-image:\"uni4\";}"
-                        + "node[count>=32]{icon-image:\"uni5\";}"
-                        + "node[count>=64]{icon-image:\"uni6\";}"
-                        + "node[count>=128]{icon-image:\"uni7\";}")!!
+        val style = GLMapVectorCascadeStyle.createStyle("""
+node {
+    icon-image:"uni0";
+    text-priority: 100;
+    text:eval(tag("name"));
+    text-color:#2E2D2B;
+    font-size:12;
+    font-stroke-width:1pt;
+    font-stroke-color:#FFFFFFEE;
+}
+node[count>=2]{
+    icon-image:"uni1";
+    text-priority: 101;
+    text:eval(tag("count"));
+}
+node[count>=4]{
+    icon-image:"uni2";
+    text-priority: 102;
+}
+node[count>=8]{
+    icon-image:"uni3";
+    text-priority: 103;
+}
+node[count>=16]{
+    icon-image:"uni4";
+    text-priority: 104;
+}
+node[count>=32]{
+    icon-image:"uni5";
+    text-priority: 105;
+}
+node[count>=64]{
+    icon-image:"uni6";
+    text-priority: 106;
+}
+node[count>=128]{
+    icon-image:"uni7";
+    text-priority: 107;
+}                  
+                """
+        )!!
 
         object : AsyncTask<Void, Void, GLMapMarkerLayer?>() {
             private var bbox: GLMapBBox? = null
@@ -897,16 +929,44 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     }
 
     private fun loadGeoJSONWithCSSStyle() {
-        val objects = GLMapVectorObject.createFromGeoJSONOrThrow(
-                "[{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [30.5186, 50.4339]}, \"properties\": {\"id\": \"1\", \"text\": \"test1\"}},"
-                        + "{\"type\": \"Feature\", \"geometry\": {\"type\": \"Point\", \"coordinates\": [27.7151, 53.8869]}, \"properties\": {\"id\": \"2\", \"text\": \"test2\"}},"
-                        + "{\"type\":\"LineString\",\"coordinates\": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},"
-                        + "{\"type\":\"Polygon\",\"coordinates\":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]")
-        val style = GLMapVectorCascadeStyle.createStyle(
-                "node[id=1]{icon-image:\"bus.svgpb\";icon-scale:0.5;icon-tint:green;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
-                        + "node|z-9[id=2]{icon-image:\"bus.svgpb\";icon-scale:0.7;icon-tint:blue;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
-                        + "line{linecap: round; width: 5pt; color:blue;}"
-                        + "area{fill-color:green; width:1pt; color:red;}")!!
+        val objects = GLMapVectorObject.createFromGeoJSONOrThrow("""
+[{"type": "Feature", "geometry": {"type": "Point", "coordinates": [30.5186, 50.4339]}, "properties": {"id": "1", "text": "test1"}},
+{"type": "Feature", "geometry": {"type": "Point", "coordinates": [27.7151, 53.8869]}, "properties": {"id": "2", "text": "test2"}},
+{"type":"LineString", "coordinates": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},
+{"type":"Polygon", "coordinates":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]            
+        """)
+        val style = GLMapVectorCascadeStyle.createStyle("""
+node[id=1] {
+    icon-image:"bus.svgpb";
+    icon-scale:0.5;
+    icon-tint:green;
+    text:eval(tag('text'));
+    text-color:red;
+    font-size:12;
+    // add priority to this text over map objects
+    text-priority: 20;
+}
+node|z-9[id=2] {
+    icon-image:"bus.svgpb";
+    icon-scale:0.7;
+    icon-tint:blue;
+    text:eval(tag('text'));
+    text-color:red;
+    font-size:12;
+    // add priority to this text over map objects
+    text-priority: 20;
+}
+line {
+    linecap: round;
+    width: 5pt;
+    color:blue;
+}
+area {
+    fill-color:green;
+    width:1pt;
+    color:red;
+}            
+        """)!!
         if (objects != null) {
             val drawable = GLMapDrawable()
             drawable.setVectorObjects(objects, style, null)
