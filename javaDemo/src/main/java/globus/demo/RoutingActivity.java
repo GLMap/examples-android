@@ -99,8 +99,8 @@ public class RoutingActivity extends MapViewActivity {
 
     private void updateRoute() {
         GLRouteRequest request = new GLRouteRequest();
-        request.addPoint(new GLRoutePoint(departure, Float.NaN, true));
-        request.addPoint(new GLRoutePoint(destination, Float.NaN, true));
+        request.addPoint(new GLRoutePoint(departure, Float.NaN, true, true));
+        request.addPoint(new GLRoutePoint(destination, Float.NaN, true, true));
         request.locale = "en";
         request.unitSystem = GLMapView.GLUnitSystem.International;
         request.mode = routingMode;
