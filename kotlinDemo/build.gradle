@@ -17,7 +17,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 1202
-        versionName app_version
+        versionName glmap_version
         multiDexEnabled true
     }
 
