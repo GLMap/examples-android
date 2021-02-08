@@ -272,7 +272,7 @@ public class MapViewActivity extends Activity
         GLMapManager.SetTileDownloadingAllowed(true);
         break;
       case MAP_ONLINE_RASTER:
-        mapView.setTileSources(new GLMapRasterTileSource[] {new OSMTileSource(this)});
+        mapView.setBase(new OSMTileSource(this));
         break;
       case ZOOM_BBOX:
         zoomToBBox();

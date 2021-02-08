@@ -195,7 +195,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             Samples.DARK_THEME -> loadDarkTheme()
             Samples.MAP_EMBEDDED -> showEmbedded()
             Samples.MAP_ONLINE -> GLMapManager.SetTileDownloadingAllowed(true)
-            Samples.MAP_ONLINE_RASTER -> mapView.tileSources = arrayOf(OSMTileSource(this))
+            Samples.MAP_ONLINE_RASTER -> mapView.base = OSMTileSource(this)
             Samples.ZOOM_BBOX -> zoomToBBox()
             Samples.FLY_TO -> {
                 mapView.mapCenter = MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353)
