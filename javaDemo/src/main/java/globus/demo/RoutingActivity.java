@@ -11,6 +11,7 @@ import globus.demo.utils.ActionItem;
 import globus.demo.utils.QuickAction;
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapError;
+import globus.glmap.GLMapLocaleSettings;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
 import globus.glmap.GLMapView;
@@ -45,7 +46,7 @@ public class RoutingActivity extends MapViewActivity {
     private NetworkMode networkMode = NetworkMode.Online;
     private TabLayout onlineOfflineSwitch, routeTypeSwitch;
     private MapGeoPoint departure, destination;
-    private static String valhallaConfig;
+    private static String valhallaConfig, valhallaLegacyConfig;
     private GLMapTrack track;
 
     @Override
@@ -102,11 +103,13 @@ public class RoutingActivity extends MapViewActivity {
         request.addPoint(new GLRoutePoint(departure, Float.NaN, true, true));
         request.addPoint(new GLRoutePoint(destination, Float.NaN, true, true));
         request.locale = "en";
-        request.unitSystem = GLMapView.GLUnitSystem.International;
+        request.unitSystem = GLMapLocaleSettings.UnitSystem.International;
         request.mode = routingMode;
 
-        if(networkMode == NetworkMode.Offline)
+        if(networkMode == NetworkMode.Offline) {
             request.setOfflineWithConfig(getValhallaConfig(getResources()));
+            request.setOfflineWithLegacyConfig(getValhallaLegacyConfig(getResources()));
+        }
 
         request.start(new GLRouteRequest.ResultsCallback()
         {
@@ -140,7 +143,7 @@ public class RoutingActivity extends MapViewActivity {
             byte[] raw = null;
             try {
                 // Read prepared categories
-                InputStream stream = resources.openRawResource(R.raw.valhalla);
+                InputStream stream = resources.openRawResource(R.raw.valhalla3);
                 raw = new byte[stream.available()];
                 stream.read(raw);
                 stream.close();
@@ -151,6 +154,24 @@ public class RoutingActivity extends MapViewActivity {
             valhallaConfig = new String(raw, Charset.defaultCharset());
         }
         return valhallaConfig;
+    }
+
+    public static String getValhallaLegacyConfig(Resources resources) {
+        if (valhallaLegacyConfig == null) {
+            byte[] raw = null;
+            try {
+                // Read prepared categories
+                InputStream stream = resources.openRawResource(R.raw.valhalla2);
+                raw = new byte[stream.available()];
+                stream.read(raw);
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // Construct categories
+            valhallaLegacyConfig = new String(raw, Charset.defaultCharset());
+        }
+        return valhallaLegacyConfig;
     }
 
     private void setSwitchesValues() {

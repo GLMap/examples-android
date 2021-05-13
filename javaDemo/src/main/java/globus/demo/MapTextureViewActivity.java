@@ -19,11 +19,7 @@ public class MapTextureViewActivity extends Activity {
     mapView = new GLMapView(this, textureView);
 
     mapView.setStyle(new GLMapStyleParser(getAssets(), "DefaultStyle.bundle").parseFromResources());
-    mapView.setScaleRulerStyle(
-        GLMapView.GLUnitSystem.International,
-        GLMapView.GLMapPlacement.BottomCenter,
-        new MapPoint(10, 10),
-        200);
+    mapView.setScaleRulerStyle(GLMapView.GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
     mapView.setAttributionPosition(GLMapView.GLMapPlacement.TopCenter);
   }
 }

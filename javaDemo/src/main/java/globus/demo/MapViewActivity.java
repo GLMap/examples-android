@@ -22,6 +22,25 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.locks.ReentrantLock;
+
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapDownloadTask;
 import globus.glmap.GLMapDrawable;
@@ -35,7 +54,6 @@ import globus.glmap.GLMapMarkerImage;
 import globus.glmap.GLMapMarkerLayer;
 import globus.glmap.GLMapMarkerStyleCollection;
 import globus.glmap.GLMapMarkerStyleCollectionDataCallback;
-import globus.glmap.GLMapRasterTileSource;
 import globus.glmap.GLMapStyleParser;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
@@ -46,7 +64,6 @@ import globus.glmap.GLMapVectorStyle;
 import globus.glmap.GLMapView;
 import globus.glmap.GLMapView.GLMapPlacement;
 import globus.glmap.GLMapView.GLMapTileState;
-import globus.glmap.GLMapView.GLUnitSystem;
 import globus.glmap.ImageManager;
 import globus.glmap.MapGeoPoint;
 import globus.glmap.MapPoint;
@@ -54,28 +71,6 @@ import globus.glsearch.GLSearch;
 import globus.glsearch.GLSearchCategories;
 import globus.glsearch.GLSearchCategory;
 import globus.glsearch.GLSearchFilter;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.locks.ReentrantLock;
-
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 
 @ParametersAreNonnullByDefault
 @SuppressLint({"ClickableViewAccessibility", "StaticFieldLeak", "SetTextI18n"})
@@ -88,9 +83,9 @@ public class MapViewActivity extends Activity
   }
 
   private static class Pins implements GLMapImageGroupCallback {
-    private ReentrantLock lock;
-    private Bitmap[] images;
-    private List<Pin> pins;
+    private final ReentrantLock lock;
+    private final Bitmap[] images;
+    private final List<Pin> pins;
 
     Pins(ImageManager imageManager) {
       lock = new ReentrantLock();
@@ -240,8 +235,7 @@ public class MapViewActivity extends Activity
     mapView.setStyle(parser.parseFromResources());
     checkAndRequestLocationPermission();
 
-    mapView.setScaleRulerStyle(
-        GLUnitSystem.International, GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
+    mapView.setScaleRulerStyle(GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
     mapView.setAttributionPosition(GLMapPlacement.TopCenter);
 
     mapView.setCenterTileStateChangedCallback(this::updateMapDownloadButton);
@@ -430,18 +424,12 @@ public class MapViewActivity extends Activity
   }
 
   @Override
-  public void onRequestPermissionsResult(
-      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    switch (requestCode) {
-      case 0:
-        {
-          if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-            curLocationHelper.initLocationManager(this);
-          break;
-        }
-      default:
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        break;
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    if (requestCode == 0) {
+      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        curLocationHelper.initLocationManager(this);
+    } else {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
   }
 
@@ -575,7 +563,8 @@ public class MapViewActivity extends Activity
     searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
     searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
     searchOffline.setLocaleSettings(mapView.getLocaleSettings()); // Locale settings to give bonus for results that match to user language
-    GLSearchCategory[] category = GLSearchCategories.getShared().getStartedWith(new String[]{"restaurant"}, new GLMapLocaleSettings(new String[]{"en", "native"})); // find categories by name
+    GLMapLocaleSettings localeSettingsEN = new GLMapLocaleSettings(new String[]{"en", "native"}, GLMapLocaleSettings.UnitSystem.International);
+    GLSearchCategory[] category = GLSearchCategories.getShared().getStartedWith(new String[]{"restaurant"}, localeSettingsEN); // find categories by name
     if (category == null || category.length == 0)
       return;
 
@@ -735,7 +724,7 @@ public class MapViewActivity extends Activity
     }
   }
 
-  private static int[] unionColours = {Color.argb(255, 33, 0, 255),
+  private static final int[] unionColours = {Color.argb(255, 33, 0, 255),
           Color.argb(255, 68, 195, 255),
           Color.argb(255, 63, 237, 198),
           Color.argb(255, 15, 228, 36),
@@ -951,15 +940,10 @@ public class MapViewActivity extends Activity
 
     // let's display circle
     for (int i = 0; i < pointCount; i++) {
-      outerRing[i] =
-          new MapGeoPoint(
-              centerPoint.lat + Math.sin(2 * Math.PI / pointCount * i) * rOuter,
-              centerPoint.lon + Math.cos(2 * Math.PI / pointCount * i) * rOuter);
-
-      innerRing[i] =
-          new MapGeoPoint(
-                  centerPoint.lat + Math.sin(2 * Math.PI / pointCount * i) * rInner,
-                  centerPoint.lon + Math.cos(2 * Math.PI / pointCount * i) * rInner);
+      double sin = Math.sin(2 * Math.PI / pointCount * i);
+      double cos = Math.cos(2 * Math.PI / pointCount * i);
+      outerRing[i] = new MapGeoPoint(centerPoint.lat + sin * rOuter, centerPoint.lon + cos * rOuter);
+      innerRing[i] = new MapGeoPoint(centerPoint.lat + sin * rInner, centerPoint.lon + cos * rInner);
     }
 
     MapGeoPoint[][] outerRings = {outerRing};
