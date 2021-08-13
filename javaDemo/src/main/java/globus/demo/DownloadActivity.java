@@ -25,11 +25,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 @SuppressLint("InflateParams")
-@ParametersAreNonnullByDefault
 public class DownloadActivity extends ListActivity implements GLMapManager.StateListener {
   private enum ContextItems {
     DELETE

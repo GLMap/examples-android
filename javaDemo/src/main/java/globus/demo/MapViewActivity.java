@@ -38,8 +38,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapDownloadTask;
@@ -72,7 +72,6 @@ import globus.glsearch.GLSearchCategories;
 import globus.glsearch.GLSearchCategory;
 import globus.glsearch.GLSearchFilter;
 
-@ParametersAreNonnullByDefault
 @SuppressLint({"ClickableViewAccessibility", "StaticFieldLeak", "SetTextI18n"})
 public class MapViewActivity extends Activity
     implements GLMapView.ScreenCaptureCallback, GLMapManager.StateListener {
@@ -235,7 +234,7 @@ public class MapViewActivity extends Activity
     mapView.setStyle(parser.parseFromResources());
     checkAndRequestLocationPermission();
 
-    mapView.setScaleRulerStyle(GLMapPlacement.BottomCenter, new MapPoint(10, 10), 200);
+    mapView.setScaleRulerStyle(GLMapPlacement.BottomCenter, 10, 10, 200);
     mapView.setAttributionPosition(GLMapPlacement.TopCenter);
 
     mapView.setCenterTileStateChangedCallback(this::updateMapDownloadButton);
@@ -823,7 +822,7 @@ public class MapViewActivity extends Activity
       if (marker instanceof MapPoint) {
         GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0, 0), textStyle);
       } else if (marker instanceof GLMapVectorObject) {
-        String name = ((GLMapVectorObject) marker).valueForKey("name");
+        String name = ((GLMapVectorObject) marker).valueForKey("name").getString();
         if (name != null) {
           GLMapMarkerStyleCollection.setMarkerText(
               nativeMarker, name, new Point(0, 15 / 2), textStyle);

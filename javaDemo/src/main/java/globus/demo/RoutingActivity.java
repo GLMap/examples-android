@@ -26,11 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import androidx.annotation.NonNull;
 
-//import globus.glroute.GLRoute;
-
-@ParametersAreNonnullByDefault
 public class RoutingActivity extends MapViewActivity {
 
     private enum NetworkMode {
