@@ -57,6 +57,7 @@ import globus.glmap.GLMapMarkerStyleCollectionDataCallback;
 import globus.glmap.GLMapStyleParser;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
+import globus.glmap.GLMapValue;
 import globus.glmap.GLMapVectorCascadeStyle;
 import globus.glmap.GLMapVectorObject;
 import globus.glmap.GLMapVectorObjectList;
@@ -470,15 +471,15 @@ public class MapViewActivity extends Activity
   }
 
   @Override
-  public void onStartDownloading(GLMapDownloadTask task) {}
+  public void onStartDownloading(@NonNull GLMapDownloadTask task) {}
 
   @Override
-  public void onDownloadProgress(GLMapDownloadTask task) {
+  public void onDownloadProgress(@NonNull GLMapDownloadTask task) {
     updateMapDownloadButtonText();
   }
 
   @Override
-  public void onFinishDownloading(GLMapDownloadTask task) {
+  public void onFinishDownloading(@NonNull GLMapDownloadTask task) {
     mapView.reloadTiles();
   }
 
@@ -822,10 +823,13 @@ public class MapViewActivity extends Activity
       if (marker instanceof MapPoint) {
         GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0, 0), textStyle);
       } else if (marker instanceof GLMapVectorObject) {
-        String name = ((GLMapVectorObject) marker).valueForKey("name").getString();
-        if (name != null) {
-          GLMapMarkerStyleCollection.setMarkerText(
-              nativeMarker, name, new Point(0, 15 / 2), textStyle);
+        GLMapValue nameValue = ((GLMapVectorObject) marker).valueForKey("name");
+        if (nameValue != null) {
+          String name = nameValue.getString();
+          if(name != null) {
+            GLMapMarkerStyleCollection.setMarkerText(
+                    nativeMarker, name, new Point(0, 15 / 2), textStyle);
+          }
         }
       }
       GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0);
@@ -978,7 +982,7 @@ public class MapViewActivity extends Activity
             }
 
             @Override
-            public boolean onError(long tile, GLMapError errorCode) {
+            public boolean onError(long tile, @NonNull GLMapError errorCode) {
               Log.i(
                   "BulkDownloadError",
                   String.format(

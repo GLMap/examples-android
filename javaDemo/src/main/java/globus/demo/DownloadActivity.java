@@ -149,15 +149,15 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
   }
 
   @Override
-  public void onStartDownloading(GLMapDownloadTask task) {}
+  public void onStartDownloading(@NonNull GLMapDownloadTask task) {}
 
   @Override
-  public void onDownloadProgress(GLMapDownloadTask task) {
+  public void onDownloadProgress(@NonNull GLMapDownloadTask task) {
     ((MapsAdapter) listView.getAdapter()).notifyDataSetChanged();
   }
 
   @Override
-  public void onFinishDownloading(GLMapDownloadTask task) {}
+  public void onFinishDownloading(@NonNull GLMapDownloadTask task) {}
 
   @Override
   public void onStateChanged(GLMapInfo map) {
