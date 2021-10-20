@@ -133,7 +133,7 @@ class CurLocationHelper implements LocationListener {
         // Create drawables if not exist and set initial positions.
         if (userLocationImage == null) {
             Bitmap locationImage =
-                    mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1, 0);
+                    mapView.imageManager.open("DefaultStyle.bundle/circle-new.svg", 1, 0);
             if (locationImage != null) {
                 userLocationImage = new GLMapDrawable(locationImage, 100);
                 userLocationImage.setHidden(true);
@@ -147,7 +147,7 @@ class CurLocationHelper implements LocationListener {
 
         if (userMovementImage == null) {
             Bitmap movementImage =
-                    mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1, 0);
+                    mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svg", 1, 0);
             if (movementImage != null) {
                 userMovementImage = new GLMapDrawable(movementImage, 100);
                 userMovementImage.setHidden(true);

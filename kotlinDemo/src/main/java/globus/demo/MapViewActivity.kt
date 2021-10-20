@@ -48,9 +48,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private class Pins(imageManager: ImageManager) : GLMapImageGroupCallback {
         private val lock = ReentrantLock()
         private val images = arrayOf(
-            imageManager.open("1.svgpb", 1f, -0x10000)!!,
-            imageManager.open("2.svgpb", 1f, -0xff0100)!!,
-            imageManager.open("3.svgpb", 1f, -0xffff01)!!
+                imageManager.open("1.svg", 1f, -0x10000)!!,
+                imageManager.open("2.svg", 1f, -0xff0100)!!,
+                imageManager.open("3.svg", 1f, -0xffff01)!!
         )
 
         private val pins = mutableListOf<Pin>()
@@ -450,7 +450,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
 
     private fun displaySearchResults(objects: Array<GLMapVectorObject>) {
         val style = GLMapMarkerStyleCollection()
-        style.addStyle(GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svgpb", 0.2f, Color.BLUE)!!))
+        style.addStyle(GLMapMarkerImage("marker", mapView.imageManager.open("cluster.svg", 0.2f, Color.BLUE)!!))
         style.setDataCallback(SearchStyle())
         val markerLayer = GLMapMarkerLayer(objects, style, 0.0, 4)
         this.markerLayer = markerLayer
@@ -465,7 +465,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             }
             // Zoom to bbox
             mapView.mapCenter = bbox.center()
-            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height)
+            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight)
         }
     }
 
@@ -477,7 +477,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)) // Berlin
             bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)) // Minsk
             mapView.mapCenter = bbox.center()
-            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height)
+            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight)
         }
     }
 
@@ -546,7 +546,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
         val styleCollection = GLMapMarkerStyleCollection()
         for (i in unionColours.indices) {
             val scale = (0.2 + 0.1 * i).toFloat()
-            val index = styleCollection.addStyle(GLMapMarkerImage("marker$scale", mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])!!))
+            val index = styleCollection.addStyle(GLMapMarkerImage("marker$scale", mapView.imageManager.open("cluster.svg", scale, unionColours[i])!!))
             styleCollection.setStyleName(i, "uni$index")
         }
         val style = GLMapVectorCascadeStyle.createStyle(
@@ -617,7 +617,7 @@ node[count>=128]{
                     markerLayer = layer
                     mapView.add(layer)
                     mapView.mapCenter = bbox.center()
-                    mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height)
+                    mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight)
                 }
             }
         }.execute()
@@ -673,7 +673,7 @@ node[count>=128]{
                     val style = GLMapMarkerStyleCollection()
                     for (i in MarkersStyle.unionCounts.indices) {
                         val scale = (0.2 + 0.1 * i).toFloat()
-                        style.addStyle(GLMapMarkerImage("marker$scale", mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])!!))
+                        style.addStyle(GLMapMarkerImage("marker$scale", mapView.imageManager.open("cluster.svg", scale, unionColours[i])!!))
                     }
                     style.setDataCallback(MarkersStyle())
                     Log.w("GLMapView", "Start parsing")
@@ -696,14 +696,14 @@ node[count>=128]{
                     markerLayer = layer
                     mapView.add(layer)
                     mapView.mapCenter = bbox.center()
-                    mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height)
+                    mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight)
                 }
             }
         }.execute()
     }
 
     private fun addImage() {
-        val bmp = mapView.imageManager.open("arrow-maphint.svgpb", 1f, 0)!!
+        val bmp = mapView.imageManager.open("arrow-maphint.svg", 1f, 0)!!
         val image = GLMapDrawable(bmp, 2)
         this.image = image
         image.setOffset(bmp.width, bmp.height / 2)
@@ -902,8 +902,8 @@ node[count>=128]{
 
         val track = GLMapTrack(trackData, 2)
         this.track = track
-        // To use files from style, (e.g. track-arrow.svgpb) you should create DefaultStyle.bundle inside assets and put all additional resources inside.
-        track.setStyle(GLMapVectorStyle.createStyle("{width: 7pt; fill-image:\"track-arrow.svgpb\";}"))
+        // To use files from style, (e.g. track-arrow.svg) you should create DefaultStyle.bundle inside assets and put all additional resources inside.
+        track.setStyle(GLMapVectorStyle.createStyle("{width: 7pt; fill-image:\"track-arrow.svg\";}"))
         mapView.add(track)
         mapView.mapCenter = MapPoint.CreateFromGeoCoordinates(clat.toDouble(), clon.toDouble())
         mapView.mapZoom = 4.0
@@ -933,7 +933,7 @@ node[count>=128]{
         val bbox = objects.bBox
         mapView.doWhenSurfaceCreated {
             mapView.mapCenter = bbox.center()
-            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height)
+            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight)
         }
     }
 
@@ -965,7 +965,7 @@ node[count>=128]{
         val style = GLMapVectorCascadeStyle.createStyle(
             """
 node[id=1] {
-    icon-image:"bus.svgpb";
+    icon-image:"bus.svg";
     icon-scale:0.5;
     icon-tint:green;
     text:eval(tag('text'));
@@ -975,7 +975,7 @@ node[id=1] {
     text-priority: 20;
 }
 node|z-9[id=2] {
-    icon-image:"bus.svgpb";
+    icon-image:"bus.svg";
     icon-scale:0.7;
     icon-tint:blue;
     text:eval(tag('text'));

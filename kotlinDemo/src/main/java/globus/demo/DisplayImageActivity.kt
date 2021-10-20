@@ -26,8 +26,8 @@ class DisplayImageActivity : Activity() {
             }
         } else {
             val mgr = ImageManager(this.assets, 1f)
-            val bmp = mgr.open("DefaultStyle.bundle/theme_park.svgpb", 4f, -0x800000)!!
-            // Bitmap bmp = mgr.open("star.svgpb", 4, 0xFFFFFFFF);
+            val bmp = mgr.open("DefaultStyle.bundle/theme_park.svg", 4f, -0x800000)!!
+            // Bitmap bmp = mgr.open("star.svg", 4, 0xFFFFFFFF);
             val imageView = findViewById<ImageView>(R.id.image_view)
             imageView.minimumWidth = bmp.width * 2
             imageView.minimumHeight = bmp.height * 2

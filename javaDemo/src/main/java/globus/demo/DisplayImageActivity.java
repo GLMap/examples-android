@@ -31,7 +31,7 @@ public class DisplayImageActivity extends Activity {
             }
         } else {
             ImageManager mgr = new ImageManager(this.getAssets(), 1);
-            Bitmap bmp = mgr.open("DefaultStyle.bundle/theme_park.svgpb", 4, 0xFF800000);
+            Bitmap bmp = mgr.open("DefaultStyle.bundle/theme_park.svg", 4, 0xFF800000);
             // Bitmap bmp = mgr.open("star.svgpb", 4, 0xFFFFFFFF);
             ImageView imageView = findViewById(R.id.image_view);
             imageView.setMinimumWidth(bmp.getWidth() * 2);

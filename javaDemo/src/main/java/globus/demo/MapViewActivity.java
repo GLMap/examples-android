@@ -89,9 +89,9 @@ public class MapViewActivity extends Activity
             lock = new ReentrantLock();
             images = new Bitmap[3];
             pins = new ArrayList<>();
-            images[0] = imageManager.open("1.svgpb", 1, 0xFFFF0000);
-            images[1] = imageManager.open("2.svgpb", 1, 0xFF00FF00);
-            images[2] = imageManager.open("3.svgpb", 1, 0xFF0000FF);
+            images[0] = imageManager.open("1.svg", 1, 0xFFFF0000);
+            images[1] = imageManager.open("2.svg", 1, 0xFF00FF00);
+            images[2] = imageManager.open("3.svg", 1, 0xFF0000FF);
         }
 
         @Override

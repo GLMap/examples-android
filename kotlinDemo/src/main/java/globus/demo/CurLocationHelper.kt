@@ -116,7 +116,7 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
         // Create drawables if not exist and set initial positions.
         var userLocationImage = userLocationImage
         if (userLocationImage == null) {
-            val locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1f, 0)!!
+            val locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svg", 1f, 0)!!
             userLocationImage = GLMapDrawable(locationImage, 100)
             this.userLocationImage = userLocationImage
             userLocationImage.isHidden = true
@@ -128,7 +128,7 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
 
         var userMovementImage = userMovementImage
         if (userMovementImage == null) {
-            val movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1f, 0)!!
+            val movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svg", 1f, 0)!!
             userMovementImage = GLMapDrawable(movementImage, 100)
             this.userMovementImage = userMovementImage
             userMovementImage.isHidden = true

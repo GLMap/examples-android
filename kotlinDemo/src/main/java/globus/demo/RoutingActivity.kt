@@ -72,7 +72,7 @@ class RoutingActivity : MapViewActivity() {
             bbox.addPoint(MapPoint(departure))
             bbox.addPoint(MapPoint(destination))
             mapView.mapCenter = bbox.center()
-            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height) - 1
+            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight) - 1
         }
         updateRoute()
 
