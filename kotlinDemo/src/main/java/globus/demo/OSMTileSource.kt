@@ -9,9 +9,10 @@ import java.io.File
 /** Created by destman on 11/11/15.  */
 internal class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cachePath(activity)) {
     private val mirrors: Array<String> = arrayOf(
-            "https://a.tile.openstreetmap.org/%d/%d/%d.png",
-            "https://b.tile.openstreetmap.org/%d/%d/%d.png",
-            "https://c.tile.openstreetmap.org/%d/%d/%d.png")
+        "https://a.tile.openstreetmap.org/%d/%d/%d.png",
+        "https://b.tile.openstreetmap.org/%d/%d/%d.png",
+        "https://c.tile.openstreetmap.org/%d/%d/%d.png"
+    )
 
     init {
         setValidZoomMask((1 shl 20) - 1) // Set as valid zooms all levels from 0 to 19

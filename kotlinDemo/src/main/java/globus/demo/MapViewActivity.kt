@@ -48,9 +48,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private class Pins(imageManager: ImageManager) : GLMapImageGroupCallback {
         private val lock = ReentrantLock()
         private val images = arrayOf(
-                imageManager.open("1.svgpb", 1f, -0x10000)!!,
-                imageManager.open("2.svgpb", 1f, -0xff0100)!!,
-                imageManager.open("3.svgpb", 1f, -0xffff01)!!
+            imageManager.open("1.svgpb", 1f, -0x10000)!!,
+            imageManager.open("2.svgpb", 1f, -0xff0100)!!,
+            imageManager.open("3.svgpb", 1f, -0xffff01)!!
         )
 
         private val pins = mutableListOf<Pin>()
@@ -129,7 +129,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private val localeSettings = GLMapLocaleSettings()
     private var image: GLMapDrawable? = null
     private var imageGroup: GLMapImageGroup? = null
-    private val pins : Pins by lazy { Pins(mapView.imageManager) }
+    private val pins: Pins by lazy { Pins(mapView.imageManager) }
     private var mapToDownload: GLMapInfo? = null
     private var markerLayer: GLMapMarkerLayer? = null
     private var curLocationHelper: CurLocationHelper? = null
@@ -225,17 +225,18 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             Samples.MARKERS -> {
                 mapView.isLongClickable = true
                 val gestureDetector = GestureDetector(
-                        this,
-                        object : SimpleOnGestureListener() {
-                            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                deleteMarker(e.x.toDouble(), e.y.toDouble())
-                                return true
-                            }
+                    this,
+                    object : SimpleOnGestureListener() {
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            deleteMarker(e.x.toDouble(), e.y.toDouble())
+                            return true
+                        }
 
-                            override fun onLongPress(e: MotionEvent) {
-                                addMarker(e.x.toDouble(), e.y.toDouble())
-                            }
-                        })
+                        override fun onLongPress(e: MotionEvent) {
+                            addMarker(e.x.toDouble(), e.y.toDouble())
+                        }
+                    }
+                )
                 mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
                 addMarkers()
                 GLMapManager.SetTileDownloadingAllowed(true)
@@ -243,17 +244,18 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             Samples.MARKERS_MAPCSS -> {
                 addMarkersWithMapcss()
                 val gestureDetector = GestureDetector(
-                        this,
-                        object : SimpleOnGestureListener() {
-                            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                deleteMarker(e.x.toDouble(), e.y.toDouble())
-                                return true
-                            }
+                    this,
+                    object : SimpleOnGestureListener() {
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            deleteMarker(e.x.toDouble(), e.y.toDouble())
+                            return true
+                        }
 
-                            override fun onLongPress(e: MotionEvent) {
-                                addMarkerAsVectorObject(e.x.toDouble(), e.y.toDouble())
-                            }
-                        })
+                        override fun onLongPress(e: MotionEvent) {
+                            addMarkerAsVectorObject(e.x.toDouble(), e.y.toDouble())
+                        }
+                    }
+                )
                 mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
                 GLMapManager.SetTileDownloadingAllowed(true)
             }
@@ -270,17 +272,18 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             Samples.IMAGE_MULTI -> {
                 mapView.isLongClickable = true
                 val gestureDetector = GestureDetector(
-                        this,
-                        object : SimpleOnGestureListener() {
-                            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                                deletePin(e.x, e.y)
-                                return true
-                            }
+                    this,
+                    object : SimpleOnGestureListener() {
+                        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                            deletePin(e.x, e.y)
+                            return true
+                        }
 
-                            override fun onLongPress(e: MotionEvent) {
-                                addPin(e.x, e.y)
-                            }
-                        })
+                        override fun onLongPress(e: MotionEvent) {
+                            addPin(e.x, e.y)
+                        }
+                    }
+                )
                 mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
             }
             Samples.GEO_JSON -> loadGeoJSON()
@@ -306,7 +309,10 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     }
 
     override fun onRequestPermissionsResult(
-            requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
         when (requestCode) {
             0 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 curLocationHelper?.initLocationManager(this)
@@ -374,11 +380,15 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                 }
                 text = if (total != 0L) {
                     val progress = downloaded * 100 / total
-                    String.format(Locale.getDefault(), "Downloading %s %d%%",
-                            mapToDownload.getLocalizedName(localeSettings), progress)
+                    String.format(
+                        Locale.getDefault(), "Downloading %s %d%%",
+                        mapToDownload.getLocalizedName(localeSettings), progress
+                    )
                 } else {
-                    String.format(Locale.getDefault(), "Download %s",
-                            mapToDownload.getLocalizedName(localeSettings))
+                    String.format(
+                        Locale.getDefault(), "Download %s",
+                        mapToDownload.getLocalizedName(localeSettings)
+                    )
                 }
                 btnDownloadMap.text = text
             } else {
@@ -539,7 +549,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             val index = styleCollection.addStyle(GLMapMarkerImage("marker$scale", mapView.imageManager.open("cluster.svgpb", scale, unionColours[i])!!))
             styleCollection.setStyleName(i, "uni$index")
         }
-        val style = GLMapVectorCascadeStyle.createStyle("""
+        val style = GLMapVectorCascadeStyle.createStyle(
+            """
 node {
     icon-image:"uni0";
     text-priority: 100;
@@ -614,7 +625,8 @@ node[count>=128]{
 
     internal class MarkersStyle : GLMapMarkerStyleCollectionDataCallback() {
         private var textStyle: GLMapVectorStyle = GLMapVectorStyle.createStyle(
-                "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}")
+            "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}"
+        )
 
         override fun getLocation(marker: Any) = when (marker) {
             is MapPoint -> marker
@@ -639,7 +651,8 @@ node[count>=128]{
                 val name = marker.valueForKey("name")
                 if (name != null) {
                     GLMapMarkerStyleCollection.setMarkerText(
-                            nativeMarker, name, Point(0, 15 / 2), textStyle)
+                        nativeMarker, name, Point(0, 15 / 2), textStyle
+                    )
                 }
             }
             GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0)
@@ -721,17 +734,17 @@ node[count>=128]{
 
     private fun addMultiline() {
         val line1 = arrayOf(
-                MapPoint.CreateFromGeoCoordinates(53.8869, 27.7151), // Minsk
-                MapPoint.CreateFromGeoCoordinates(50.4339, 30.5186), // Kiev
-                MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103), // Warsaw
-                MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102), // Berlin
-                MapPoint.CreateFromGeoCoordinates(48.8505, 2.3343) // Paris
+            MapPoint.CreateFromGeoCoordinates(53.8869, 27.7151), // Minsk
+            MapPoint.CreateFromGeoCoordinates(50.4339, 30.5186), // Kiev
+            MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103), // Warsaw
+            MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102), // Berlin
+            MapPoint.CreateFromGeoCoordinates(48.8505, 2.3343) // Paris
         )
 
         val line2 = arrayOf(
-                MapPoint.CreateFromGeoCoordinates(52.3690, 4.9021), // Amsterdam
-                MapPoint.CreateFromGeoCoordinates(50.8263, 4.3458), // Brussel
-                MapPoint.CreateFromGeoCoordinates(49.6072, 6.1296) // Luxembourg
+            MapPoint.CreateFromGeoCoordinates(52.3690, 4.9021), // Amsterdam
+            MapPoint.CreateFromGeoCoordinates(50.8263, 4.3458), // Brussel
+            MapPoint.CreateFromGeoCoordinates(49.6072, 6.1296) // Luxembourg
         )
         val obj = GLMapVectorObject.createMultiline(arrayOf(line1, line2))
         // style applied to all lines added. Style is string with mapcss rules. Read more in manual.
@@ -751,19 +764,23 @@ node[count>=128]{
         // let's display circle
         for (i in 0 until pointCount) {
             outerRing[i] = MapGeoPoint(
-                    centerPoint.lat + sin(2 * Math.PI / pointCount * i) * rOuter,
-                    centerPoint.lon + cos(2 * Math.PI / pointCount * i) * rOuter)
+                centerPoint.lat + sin(2 * Math.PI / pointCount * i) * rOuter,
+                centerPoint.lon + cos(2 * Math.PI / pointCount * i) * rOuter
+            )
             innerRing[i] = MapGeoPoint(
-                    centerPoint.lat + sin(2 * Math.PI / pointCount * i) * rInner,
-                    centerPoint.lon + cos(2 * Math.PI / pointCount * i) * rInner)
+                centerPoint.lat + sin(2 * Math.PI / pointCount * i) * rInner,
+                centerPoint.lon + cos(2 * Math.PI / pointCount * i) * rInner
+            )
         }
         val outerRings = arrayOf(outerRing)
         val innerRings = arrayOf(innerRing)
         val obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings)
         val drawable = GLMapDrawable()
-        drawable.setVectorObject(obj,
-                GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}")!!,
-                null) // #RRGGBBAA format
+        drawable.setVectorObject(
+            obj,
+            GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}")!!,
+            null
+        ) // #RRGGBBAA format
         mapView.add(drawable)
         mapView.mapGeoCenter = centerPoint
     }
@@ -776,18 +793,20 @@ node[count>=128]{
         actionButton.setOnClickListener {
             val allTiles = GLMapManager.VectorTilesAtBBox(mapView.bBox)
             Log.i("BulkDownload", "tilesCount = ${allTiles.size}")
-            GLMapManager.CacheTiles(allTiles,
-                    object : TileDownloadProgress {
-                        override fun onSuccess(tile: Long): Boolean {
-                            Log.i("BulkDownloadSuccess", String.format("tile = %d", tile))
-                            return true
-                        }
+            GLMapManager.CacheTiles(
+                allTiles,
+                object : TileDownloadProgress {
+                    override fun onSuccess(tile: Long): Boolean {
+                        Log.i("BulkDownloadSuccess", String.format("tile = %d", tile))
+                        return true
+                    }
 
-                        override fun onError(tile: Long, errorCode: GLMapError): Boolean {
-                            Log.i("BulkDownloadError", "tile = $tile, domain = ${errorCode.errorDomain}, errorCode = ${errorCode.errorCode}")
-                            return true
-                        }
-                    })
+                    override fun onError(tile: Long, errorCode: GLMapError): Boolean {
+                        Log.i("BulkDownloadError", "tile = $tile, domain = ${errorCode.errorDomain}, errorCode = ${errorCode.errorCode}")
+                        return true
+                    }
+                }
+            )
         }
     }
 
@@ -847,7 +866,7 @@ node[count>=128]{
                         }
                     }
                     val style = parser.parseFromResources()
-                    if(style != null)
+                    if (style != null)
                         mapView.setStyle(style)
                 }
             }.execute(editText.text.toString())
@@ -868,12 +887,17 @@ node[count>=128]{
 
         // Create trackData with initial data
         trackPointIndex = 100
-        val trackData = GLMapTrackData(PointsCallback { index, nativePoint ->
-            GLMapTrackData.setPointDataGeo(nativePoint,
+        val trackData = GLMapTrackData(
+            PointsCallback { index, nativePoint ->
+                GLMapTrackData.setPointDataGeo(
+                    nativePoint,
                     clat + sin(rDelta * index.toDouble()) * (rStart - rDiff * index),
                     clon + cos(rDelta * index.toDouble()) * (rStart - rDiff * index),
-                    colorForTrack(rDelta * index))
-        }, trackPointIndex)
+                    colorForTrack(rDelta * index)
+                )
+            },
+            trackPointIndex
+        )
         this.trackData = trackData
 
         val track = GLMapTrack(trackData, 2)
@@ -886,10 +910,11 @@ node[count>=128]{
         val trackRecordRunnable = Runnable {
             // Create new trackData with additional point
             val newData = this.trackData?.copyTrackAndAddGeoPoint(
-                    clat + sin(rDelta * trackPointIndex.toDouble()) * (rStart - rDiff * trackPointIndex),
-                    clon + cos(rDelta * trackPointIndex.toDouble()) * (rStart - rDiff * trackPointIndex),
-                    colorForTrack(rDelta * trackPointIndex),
-                    false) ?: return@Runnable
+                clat + sin(rDelta * trackPointIndex.toDouble()) * (rStart - rDiff * trackPointIndex),
+                clon + cos(rDelta * trackPointIndex.toDouble()) * (rStart - rDiff * trackPointIndex),
+                colorForTrack(rDelta * trackPointIndex),
+                false
+            ) ?: return@Runnable
             // Set data to track
             track.setData(newData)
             trackData.dispose() // Release native data before GC will occur
@@ -929,13 +954,16 @@ node[count>=128]{
     }
 
     private fun loadGeoJSONWithCSSStyle() {
-        val objects = GLMapVectorObject.createFromGeoJSONOrThrow("""
+        val objects = GLMapVectorObject.createFromGeoJSONOrThrow(
+            """
 [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [30.5186, 50.4339]}, "properties": {"id": "1", "text": "test1"}},
 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [27.7151, 53.8869]}, "properties": {"id": "2", "text": "test2"}},
 {"type":"LineString", "coordinates": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},
 {"type":"Polygon", "coordinates":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]            
-        """)
-        val style = GLMapVectorCascadeStyle.createStyle("""
+        """
+        )
+        val style = GLMapVectorCascadeStyle.createStyle(
+            """
 node[id=1] {
     icon-image:"bus.svgpb";
     icon-scale:0.5;
@@ -966,7 +994,8 @@ area {
     width:1pt;
     color:red;
 }            
-        """)!!
+        """
+        )!!
         if (objects != null) {
             val drawable = GLMapDrawable()
             drawable.setVectorObjects(objects, style, null)
@@ -976,7 +1005,7 @@ area {
     }
 
     private fun loadGeoJSON() {
-        //loadGeoJSONWithCSSStyle();
+        // loadGeoJSONWithCSSStyle();
         loadGeoJSONPostcode()
     }
 
@@ -1028,13 +1057,15 @@ area {
     }
 
     companion object {
-        private val unionColours = intArrayOf(Color.argb(255, 33, 0, 255),
-                Color.argb(255, 68, 195, 255),
-                Color.argb(255, 63, 237, 198),
-                Color.argb(255, 15, 228, 36),
-                Color.argb(255, 168, 238, 25),
-                Color.argb(255, 214, 234, 25),
-                Color.argb(255, 223, 180, 19),
-                Color.argb(255, 255, 0, 0))
+        private val unionColours = intArrayOf(
+            Color.argb(255, 33, 0, 255),
+            Color.argb(255, 68, 195, 255),
+            Color.argb(255, 63, 237, 198),
+            Color.argb(255, 15, 228, 36),
+            Color.argb(255, 168, 238, 25),
+            Color.argb(255, 214, 234, 25),
+            Color.argb(255, 223, 180, 19),
+            Color.argb(255, 255, 0, 0)
+        )
     }
 }

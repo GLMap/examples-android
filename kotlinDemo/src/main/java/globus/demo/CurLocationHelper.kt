@@ -42,9 +42,10 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
 
     fun initLocationManager(activity: Activity): Boolean {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) return false
+            != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) return false
         var locationManager = locationManager
         if (locationManager == null) {
             try {
@@ -87,15 +88,16 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
                 }
                 // Update location to current best
                 val lastLocation = lastLocation
-                if(lastLocation != null)
+                if (lastLocation != null)
                     onLocationChanged(lastLocation)
                 // Request location updates
                 locationManager.requestLocationUpdates(
-                        MIN_TIME_BW_UPDATES,
-                        MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(),
-                        criteria,
-                        this,
-                        activity.mainLooper)
+                    MIN_TIME_BW_UPDATES,
+                    MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(),
+                    criteria,
+                    this,
+                    activity.mainLooper
+                )
             } catch (e: Exception) {
                 locationManager = null
             } finally {
@@ -167,9 +169,11 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
             accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom)
             accuracyCircle.position = position
             accuracyCircle.scale = r / 2048.0f.toDouble()
-            accuracyCircle.setVectorObject(circle,
-                    GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")!!,
-                    null)
+            accuracyCircle.setVectorObject(
+                circle,
+                GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")!!,
+                null
+            )
             mapView.add(accuracyCircle)
         }
         mapView.animate {

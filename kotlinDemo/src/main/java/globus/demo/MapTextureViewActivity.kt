@@ -16,10 +16,11 @@ class MapTextureViewActivity : Activity() {
         val mapView = GLMapView(this, textureView)
         mapView.setStyle(GLMapStyleParser(assets, "DefaultStyle.bundle").parseFromResources()!!)
         mapView.setScaleRulerStyle(
-                GLMapView.GLUnitSystem.International,
-                GLMapView.GLMapPlacement.BottomCenter,
-                MapPoint(10.0, 10.0), 200.0)
+            GLMapView.GLUnitSystem.International,
+            GLMapView.GLMapPlacement.BottomCenter,
+            MapPoint(10.0, 10.0), 200.0
+        )
         mapView.setAttributionPosition(GLMapView.GLMapPlacement.TopCenter)
-        this.mapView = mapView //Save mapView to keep map rendering after gc
+        this.mapView = mapView // Save mapView to keep map rendering after gc
     }
 }
