@@ -7,6 +7,8 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.material.tabs.TabLayout;
 
 import globus.demo.utils.ActionItem;
@@ -16,6 +18,7 @@ import globus.glmap.GLMapError;
 import globus.glmap.GLMapLocaleSettings;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
+import globus.glmap.GLMapViewRenderer;
 import globus.glmap.MapGeoPoint;
 import globus.glmap.MapPoint;
 import globus.glroute.GLRoute;
@@ -69,15 +72,14 @@ public class RoutingActivity extends MapViewActivity {
 
         departure = new MapGeoPoint(53.844720, 27.482352);
         destination = new MapGeoPoint(53.931935, 27.583995);
-        mapView.doWhenSurfaceCreated(
+        GLMapViewRenderer renderer = mapView.renderer;
+        renderer.doWhenSurfaceCreated(
                 () -> {
                     GLMapBBox bbox = new GLMapBBox();
                     bbox.addPoint(new MapPoint(departure));
                     bbox.addPoint(new MapPoint(destination));
-                    mapView.setMapCenter(bbox.center());
-                    mapView.setMapZoom(
-                            mapView.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight())
-                                    - 1);
+                    renderer.setMapCenter(bbox.center());
+                    renderer.setMapZoom(renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight) - 1);
                 });
         updateRoute();
         setTabSwitches();
@@ -108,18 +110,18 @@ public class RoutingActivity extends MapViewActivity {
         request.start(
                 new GLRouteRequest.ResultsCallback() {
                     @Override
-                    public void onResult(GLRoute route) {
+                    public void onResult(@NonNull GLRoute route) {
                         GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
                         if (track != null) {
                             track.setData(trackData);
                         } else {
                             track = new GLMapTrack(trackData, 5);
-                            mapView.add(track);
+                            mapView.renderer.add(track);
                         }
                     }
 
                     @Override
-                    public void onError(GLMapError error) {
+                    public void onError(@NonNull GLMapError error) {
                         String message;
                         if (error.message != null) message = error.message;
                         else message = error.toString();
@@ -184,11 +186,11 @@ public class RoutingActivity extends MapViewActivity {
                     final MapPoint mapPoint = new MapPoint(x, y);
                     switch (actionId) {
                         case ID_DEPARTURE:
-                            departure = new MapGeoPoint(mapView.convertDisplayToInternal(mapPoint));
+                            departure = new MapGeoPoint(mapView.renderer.convertDisplayToInternal(mapPoint));
                             break;
                         case ID_DESTINATION:
                             destination =
-                                    new MapGeoPoint(mapView.convertDisplayToInternal(mapPoint));
+                                    new MapGeoPoint(mapView.renderer.convertDisplayToInternal(mapPoint));
                             break;
                     }
                     if (departure != null && destination != null) updateRoute();

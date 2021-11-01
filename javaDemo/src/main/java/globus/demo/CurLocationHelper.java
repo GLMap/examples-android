@@ -20,9 +20,12 @@ import globus.glmap.GLMapDrawable;
 import globus.glmap.GLMapVectorCascadeStyle;
 import globus.glmap.GLMapVectorObject;
 import globus.glmap.GLMapView;
+import globus.glmap.GLMapViewRenderer;
+import globus.glmap.ImageManager;
 import globus.glmap.MapPoint;
 
 import java.util.List;
+import java.util.Objects;
 
 /** Created by destman on 6/1/17. */
 class CurLocationHelper implements LocationListener {
@@ -33,10 +36,12 @@ class CurLocationHelper implements LocationListener {
     private boolean isFollowLocationEnabled = false;
     private LocationManager locationManager;
     private Location lastLocation;
-    private GLMapView mapView;
+    private final GLMapViewRenderer renderer;
+    private final ImageManager imageManager;
 
-    CurLocationHelper(GLMapView mapView) {
-        this.mapView = mapView;
+    CurLocationHelper(GLMapViewRenderer renderer, ImageManager imageManager) {
+        this.renderer = renderer;
+        this.imageManager = imageManager;
     }
 
     void onDestroy() {
@@ -127,27 +132,25 @@ class CurLocationHelper implements LocationListener {
         final MapPoint position =
                 MapPoint.CreateFromGeoCoordinates(location.getLatitude(), location.getLongitude());
         if (isFollowLocationEnabled) {
-            mapView.animate(animation -> animation.flyToPoint(position));
+            renderer.animate(animation -> animation.flyToPoint(position));
         }
 
         // Create drawables if not exist and set initial positions.
         if (userLocationImage == null) {
-            Bitmap locationImage =
-                    mapView.imageManager.open("DefaultStyle.bundle/circle-new.svg", 1, 0);
+            Bitmap locationImage = imageManager.open("DefaultStyle.bundle/circle-new.svg", 1, 0);
             if (locationImage != null) {
                 userLocationImage = new GLMapDrawable(locationImage, 100);
                 userLocationImage.setHidden(true);
                 userLocationImage.setOffset(
                         locationImage.getWidth() / 2, locationImage.getHeight() / 2);
                 userLocationImage.setPosition(position);
-                mapView.add(userLocationImage);
+                renderer.add(userLocationImage);
                 locationImage.recycle();
             }
         }
 
         if (userMovementImage == null) {
-            Bitmap movementImage =
-                    mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svg", 1, 0);
+            Bitmap movementImage = imageManager.open("DefaultStyle.bundle/arrow-new.svg", 1, 0);
             if (movementImage != null) {
                 userMovementImage = new GLMapDrawable(movementImage, 100);
                 userMovementImage.setHidden(true);
@@ -156,7 +159,7 @@ class CurLocationHelper implements LocationListener {
                 userMovementImage.setRotatesWithMap(true);
                 userMovementImage.setPosition(position);
                 if (location.hasBearing()) userLocationImage.setAngle(-location.getBearing());
-                mapView.add(userMovementImage);
+                renderer.add(userMovementImage);
                 movementImage.recycle();
             }
         }
@@ -171,7 +174,7 @@ class CurLocationHelper implements LocationListener {
         }
 
         // Calculate radius of accuracy circle
-        final float r = (float) mapView.convertMetersToInternal(location.getAccuracy());
+        final float r = (float) renderer.convertMetersToInternal(location.getAccuracy());
         // If accuracy circle drawable not exits - create it and set initial position
         if (accuracyCircle == null) {
             final int pointCount = 100;
@@ -192,13 +195,12 @@ class CurLocationHelper implements LocationListener {
             accuracyCircle.setScale(r / 2048.0f);
             accuracyCircle.setVectorObject(
                     circle,
-                    GLMapVectorCascadeStyle.createStyle(
-                            "area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"),
+                    Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")),
                     null);
-            mapView.add(accuracyCircle);
+            renderer.add(accuracyCircle);
         }
 
-        mapView.animate(
+        renderer.animate(
                 animation -> {
                     animation.setTransition(GLMapAnimation.Linear);
                     animation.setDuration(1);
