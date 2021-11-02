@@ -19,7 +19,6 @@ import globus.glmap.GLMapAnimation;
 import globus.glmap.GLMapDrawable;
 import globus.glmap.GLMapVectorCascadeStyle;
 import globus.glmap.GLMapVectorObject;
-import globus.glmap.GLMapView;
 import globus.glmap.GLMapViewRenderer;
 import globus.glmap.ImageManager;
 import globus.glmap.MapPoint;
@@ -137,31 +136,28 @@ class CurLocationHelper implements LocationListener {
 
         // Create drawables if not exist and set initial positions.
         if (userLocationImage == null) {
-            Bitmap locationImage = imageManager.open("DefaultStyle.bundle/circle-new.svg", 1, 0);
-            if (locationImage != null) {
-                userLocationImage = new GLMapDrawable(locationImage, 100);
-                userLocationImage.setHidden(true);
-                userLocationImage.setOffset(
-                        locationImage.getWidth() / 2, locationImage.getHeight() / 2);
-                userLocationImage.setPosition(position);
-                renderer.add(userLocationImage);
-                locationImage.recycle();
-            }
+            Bitmap locationImage =
+                    Objects.requireNonNull(imageManager.open("circle_new.svg", 1, 0));
+            userLocationImage = new GLMapDrawable(locationImage, 100);
+            userLocationImage.setHidden(true);
+            userLocationImage.setOffset(
+                    locationImage.getWidth() / 2, locationImage.getHeight() / 2);
+            userLocationImage.setPosition(position);
+            renderer.add(userLocationImage);
+            locationImage.recycle();
         }
 
         if (userMovementImage == null) {
-            Bitmap movementImage = imageManager.open("DefaultStyle.bundle/arrow-new.svg", 1, 0);
-            if (movementImage != null) {
-                userMovementImage = new GLMapDrawable(movementImage, 100);
-                userMovementImage.setHidden(true);
-                userMovementImage.setOffset(
-                        movementImage.getWidth() / 2, movementImage.getHeight() / 2);
-                userMovementImage.setRotatesWithMap(true);
-                userMovementImage.setPosition(position);
-                if (location.hasBearing()) userLocationImage.setAngle(-location.getBearing());
-                renderer.add(userMovementImage);
-                movementImage.recycle();
-            }
+            Bitmap movementImage = Objects.requireNonNull(imageManager.open("arrow_new.svg", 1, 0));
+            userMovementImage = new GLMapDrawable(movementImage, 100);
+            userMovementImage.setHidden(true);
+            userMovementImage.setOffset(
+                    movementImage.getWidth() / 2, movementImage.getHeight() / 2);
+            userMovementImage.setRotatesWithMap(true);
+            userMovementImage.setPosition(position);
+            if (location.hasBearing()) userLocationImage.setAngle(-location.getBearing());
+            renderer.add(userMovementImage);
+            movementImage.recycle();
         }
 
         // Select what image to display
@@ -195,7 +191,10 @@ class CurLocationHelper implements LocationListener {
             accuracyCircle.setScale(r / 2048.0f);
             accuracyCircle.setVectorObject(
                     circle,
-                    Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")),
+                    Objects.requireNonNull(
+                            GLMapVectorCascadeStyle.createStyle(
+                                    "area{layer:100; width:1pt; fill-color:#3D99FA26;"
+                                            + " color:#3D99FA26;}")),
                     null);
             renderer.add(accuracyCircle);
         }

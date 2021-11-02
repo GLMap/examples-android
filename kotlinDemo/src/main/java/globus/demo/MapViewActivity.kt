@@ -48,9 +48,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private class Pins(imageManager: ImageManager) : GLMapImageGroupCallback {
         private val lock = ReentrantLock()
         private val images = arrayOf(
-                imageManager.open("1.svg", 1f, -0x10000)!!,
-                imageManager.open("2.svg", 1f, -0xff0100)!!,
-                imageManager.open("3.svg", 1f, -0xffff01)!!
+            imageManager.open("1.svg", 1f, -0x10000)!!,
+            imageManager.open("2.svg", 1f, -0xff0100)!!,
+            imageManager.open("3.svg", 1f, -0xffff01)!!
         )
 
         private val pins = mutableListOf<Pin>()

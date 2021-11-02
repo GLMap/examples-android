@@ -79,7 +79,10 @@ public class RoutingActivity extends MapViewActivity {
                     bbox.addPoint(new MapPoint(departure));
                     bbox.addPoint(new MapPoint(destination));
                     renderer.setMapCenter(bbox.center());
-                    renderer.setMapZoom(renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight) - 1);
+                    renderer.setMapZoom(
+                            renderer.mapZoomForBBox(
+                                            bbox, renderer.surfaceWidth, renderer.surfaceHeight)
+                                    - 1);
                 });
         updateRoute();
         setTabSwitches();
@@ -186,11 +189,14 @@ public class RoutingActivity extends MapViewActivity {
                     final MapPoint mapPoint = new MapPoint(x, y);
                     switch (actionId) {
                         case ID_DEPARTURE:
-                            departure = new MapGeoPoint(mapView.renderer.convertDisplayToInternal(mapPoint));
+                            departure =
+                                    new MapGeoPoint(
+                                            mapView.renderer.convertDisplayToInternal(mapPoint));
                             break;
                         case ID_DESTINATION:
                             destination =
-                                    new MapGeoPoint(mapView.renderer.convertDisplayToInternal(mapPoint));
+                                    new MapGeoPoint(
+                                            mapView.renderer.convertDisplayToInternal(mapPoint));
                             break;
                     }
                     if (departure != null && destination != null) updateRoute();

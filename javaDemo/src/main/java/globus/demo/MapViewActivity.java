@@ -21,7 +21,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -162,7 +161,8 @@ public class MapViewActivity extends Activity
             lock.lock();
             for (int i = 0; i < pins.size(); ++i) {
                 Pin pin = pins.get(i);
-                MapPoint screenPos = mapView.renderer.convertInternalToDisplay(new MapPoint(pin.pos));
+                MapPoint screenPos =
+                        mapView.renderer.convertInternalToDisplay(new MapPoint(pin.pos));
                 Rect rt = new Rect(-40, -40, 40, 40);
                 rt.offset((int) screenPos.x, (int) screenPos.y);
                 if (rt.contains((int) touchX, (int) touchY)) {
@@ -234,7 +234,8 @@ public class MapViewActivity extends Activity
         mapView.renderer.setStyle(Objects.requireNonNull(parser.parseFromResources()));
         checkAndRequestLocationPermission();
 
-        mapView.renderer.setScaleRulerStyle(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200);
+        mapView.renderer.setScaleRulerStyle(
+                GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200);
         mapView.renderer.setAttributionPosition(GLMapViewRenderer.GLMapPlacement.TopCenter);
 
         mapView.renderer.setCenterTileStateChangedCallback(this::updateMapDownloadButton);
@@ -269,7 +270,8 @@ public class MapViewActivity extends Activity
                 zoomToBBox();
                 break;
             case FLY_TO:
-                mapView.renderer.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353));
+                mapView.renderer.setMapCenter(
+                        MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353));
                 mapView.renderer.setMapZoom(14);
 
                 Button btn = this.findViewById(R.id.button_action);
@@ -407,7 +409,8 @@ public class MapViewActivity extends Activity
 
     public void checkAndRequestLocationPermission() {
         // Create helper if not exist
-        if (curLocationHelper == null) curLocationHelper = new CurLocationHelper(mapView.renderer, imageManager);
+        if (curLocationHelper == null)
+            curLocationHelper = new CurLocationHelper(mapView.renderer, imageManager);
 
         // Try to start location updates. If we need permissions - ask for them
         if (!curLocationHelper.initLocationManager(this))
@@ -464,7 +467,8 @@ public class MapViewActivity extends Activity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        mapView.renderer.animate(animation -> mapView.renderer.setMapZoom(mapView.renderer.getMapZoom() - 1));
+        mapView.renderer.animate(
+                animation -> mapView.renderer.setMapZoom(mapView.renderer.getMapZoom() - 1));
         return false;
     }
 
@@ -514,14 +518,16 @@ public class MapViewActivity extends Activity
                             String.format(
                                     Locale.getDefault(),
                                     "Downloading %s %d%%",
-                                    mapToDownload.getLocalizedName(mapView.renderer.getLocaleSettings()),
+                                    mapToDownload.getLocalizedName(
+                                            mapView.renderer.getLocaleSettings()),
                                     progress);
                 } else {
                     text =
                             String.format(
                                     Locale.getDefault(),
                                     "Download %s",
-                                    mapToDownload.getLocalizedName(mapView.renderer.getLocaleSettings()));
+                                    mapToDownload.getLocalizedName(
+                                            mapView.renderer.getLocaleSettings()));
                 }
                 btnDownloadMap.setText(text);
             } else {
@@ -569,7 +575,9 @@ public class MapViewActivity extends Activity
         searchOffline.setCenter(
                 MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)); // Set center of search
         searchOffline.setLimit(20); // Set maximum number of results. By default is is 100
-        searchOffline.setLocaleSettings(mapView.renderer.getLocaleSettings()); // Locale settings to give bonus for results that
+        searchOffline.setLocaleSettings(
+                mapView.renderer
+                        .getLocaleSettings()); // Locale settings to give bonus for results that
         // match to user language
         GLMapLocaleSettings localeSettingsEN =
                 new GLMapLocaleSettings(
@@ -606,8 +614,7 @@ public class MapViewActivity extends Activity
         filter.setMatchType(GLSearch.MatchType.EXACT);
         searchOffline.addFilter(filter);
 
-        searchOffline.searchAsync(
-                objects -> runOnUiThread(() -> displaySearchResults(objects)));
+        searchOffline.searchAsync(objects -> runOnUiThread(() -> displaySearchResults(objects)));
     }
 
     static class SearchStyle extends GLMapMarkerStyleCollectionDataCallback {
@@ -629,14 +636,16 @@ public class MapViewActivity extends Activity
     }
 
     void displaySearchResults(GLMapVectorObjectList objects) {
-        if(objects == null)
-            return;
+        if (objects == null) return;
         Object[] objectsArray = objects.toArray();
 
         final GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
         style.addStyle(
-                new GLMapMarkerImage("marker",
-                        Objects.requireNonNull(imageManager.open("cluster.svg", 0.2f, Color.argb(0xFF, 0, 0, 0xFF)))));
+                new GLMapMarkerImage(
+                        "marker",
+                        Objects.requireNonNull(
+                                imageManager.open(
+                                        "cluster.svg", 0.2f, Color.argb(0xFF, 0, 0, 0xFF)))));
         style.setDataCallback(new SearchStyle());
         markerLayer = new GLMapMarkerLayer(objectsArray, style, 0, 4);
         mapView.renderer.add(markerLayer);
@@ -652,7 +661,8 @@ public class MapViewActivity extends Activity
             }
             // Zoom to bbox
             mapView.renderer.setMapCenter(bbox.center());
-            mapView.renderer.setMapZoom(mapView.renderer.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+            mapView.renderer.setMapZoom(
+                    mapView.renderer.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
         }
     }
 
@@ -667,7 +677,9 @@ public class MapViewActivity extends Activity
 
                     GLMapViewRenderer renderer = mapView.renderer;
                     renderer.setMapCenter(bbox.center());
-                    renderer.setMapZoom(renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight));
+                    renderer.setMapZoom(
+                            renderer.mapZoomForBBox(
+                                    bbox, renderer.surfaceWidth, renderer.surfaceHeight));
                 });
     }
 
@@ -711,7 +723,9 @@ public class MapViewActivity extends Activity
     void deleteMarker(float x, float y) {
         if (markerLayer != null) {
             GLMapViewRenderer renderer = mapView.renderer;
-            Object[] markersToRemove = markerLayer.objectsNearPoint(renderer, renderer.convertDisplayToInternal(new MapPoint(x, y)), 30);
+            Object[] markersToRemove =
+                    markerLayer.objectsNearPoint(
+                            renderer, renderer.convertDisplayToInternal(new MapPoint(x, y)), 30);
             if (markersToRemove != null && markersToRemove.length == 1) {
                 markerLayer.modify(
                         null,
@@ -736,8 +750,11 @@ public class MapViewActivity extends Activity
     void addMarkerAsVectorObject(float x, float y) {
         if (markerLayer != null) {
             GLMapVectorObject[] newMarkers = new GLMapVectorObject[1];
-            newMarkers[0] = GLMapVectorObject.createPoint(mapView.renderer.convertDisplayToInternal(new MapPoint(x, y)));
-            markerLayer.modify(newMarkers, null, null, true, () -> Log.d("MarkerLayer", "Marker added"));
+            newMarkers[0] =
+                    GLMapVectorObject.createPoint(
+                            mapView.renderer.convertDisplayToInternal(new MapPoint(x, y)));
+            markerLayer.modify(
+                    newMarkers, null, null, true, () -> Log.d("MarkerLayer", "Marker added"));
         }
     }
 
@@ -760,21 +777,24 @@ public class MapViewActivity extends Activity
                     styleCollection.addStyle(
                             new GLMapMarkerImage(
                                     "marker" + scale,
-                                    Objects.requireNonNull(imageManager.open("cluster.svg", scale, unionColours[i]))));
+                                    Objects.requireNonNull(
+                                            imageManager.open(
+                                                    "cluster.svg", scale, unionColours[i]))));
             styleCollection.setStyleName(i, "uni" + index);
         }
 
         final GLMapVectorCascadeStyle style =
-                Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle(
-                        "node{icon-image:\"uni0\"; text:eval(tag(\"name\")); text-color:#2E2D2B;"
-                            + " font-size:12; font-stroke-width:1pt;"
-                            + " font-stroke-color:#FFFFFFEE;}node[count>=2]{icon-image:\"uni1\";"
-                            + " text:eval(tag(\"count\"));}node[count>=4]{icon-image:\"uni2\";}"
-                            + "node[count>=8]{icon-image:\"uni3\";}"
-                            + "node[count>=16]{icon-image:\"uni4\";}"
-                            + "node[count>=32]{icon-image:\"uni5\";}"
-                            + "node[count>=64]{icon-image:\"uni6\";}"
-                            + "node[count>=128]{icon-image:\"uni7\";}"));
+                Objects.requireNonNull(
+                        GLMapVectorCascadeStyle.createStyle(
+                                "node{icon-image:\"uni0\"; text:eval(tag(\"name\"));"
+                                    + " text-color:#2E2D2B; font-size:12; font-stroke-width:1pt;"
+                                    + " font-stroke-color:#FFFFFFEE;}node[count>=2]{icon-image:\"uni1\";"
+                                    + " text:eval(tag(\"count\"));}node[count>=4]{icon-image:\"uni2\";}"
+                                    + "node[count>=8]{icon-image:\"uni3\";}"
+                                    + "node[count>=16]{icon-image:\"uni4\";}"
+                                    + "node[count>=32]{icon-image:\"uni5\";}"
+                                    + "node[count>=64]{icon-image:\"uni6\";}"
+                                    + "node[count>=128]{icon-image:\"uni7\";}"));
 
         new AsyncTask<Void, Void, GLMapMarkerLayer>() {
             private GLMapBBox bbox;
@@ -808,7 +828,8 @@ public class MapViewActivity extends Activity
                     mapView.renderer.add(layer);
                     mapView.renderer.setMapCenter(bbox.center());
                     mapView.renderer.setMapZoom(
-                            mapView.renderer.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+                            mapView.renderer.mapZoomForBBox(
+                                    bbox, mapView.getWidth(), mapView.getHeight()));
                 }
             }
         }.execute();
@@ -875,7 +896,9 @@ public class MapViewActivity extends Activity
                         style.addStyle(
                                 new GLMapMarkerImage(
                                         "marker" + scale,
-                                        Objects.requireNonNull(imageManager.open("cluster.svg", scale, unionColours[i]))));
+                                        Objects.requireNonNull(
+                                                imageManager.open(
+                                                        "cluster.svg", scale, unionColours[i]))));
                     }
                     style.setDataCallback(new MarkersStyle());
 
@@ -904,7 +927,9 @@ public class MapViewActivity extends Activity
                     GLMapViewRenderer renderer = mapView.renderer;
                     renderer.add(layer);
                     renderer.setMapCenter(bbox.center());
-                    renderer.setMapZoom(renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight));
+                    renderer.setMapZoom(
+                            renderer.mapZoomForBBox(
+                                    bbox, renderer.surfaceWidth, renderer.surfaceHeight));
                 }
             }
         }.execute();
@@ -959,7 +984,9 @@ public class MapViewActivity extends Activity
         GLMapDrawable drawable = new GLMapDrawable();
         drawable.setVectorObject(
                 obj,
-                Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}")),
+                Objects.requireNonNull(
+                        GLMapVectorCascadeStyle.createStyle(
+                                "line{width: 2pt;color:green;layer:100;}")),
                 null);
         mapView.renderer.add(drawable);
     }
@@ -990,7 +1017,10 @@ public class MapViewActivity extends Activity
         // #RRGGBBAA format
         drawable.setVectorObject(
                 obj,
-                Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle( "area{fill-color:#10106050; fill-color:#10106050; width:4pt;color:green;}")),
+                Objects.requireNonNull(
+                        GLMapVectorCascadeStyle.createStyle(
+                                "area{fill-color:#10106050; fill-color:#10106050;"
+                                        + " width:4pt;color:green;}")),
                 null);
         mapView.renderer.add(drawable);
 
@@ -1098,7 +1128,8 @@ public class MapViewActivity extends Activity
                                                     }
                                                     return rv;
                                                 });
-                                mapView.renderer.setStyle(Objects.requireNonNull(parser.parseFromResources()));
+                                mapView.renderer.setStyle(
+                                        Objects.requireNonNull(parser.parseFromResources()));
                             }
                         }.execute(editText.getText().toString()));
     }
@@ -1174,7 +1205,8 @@ public class MapViewActivity extends Activity
                 () -> {
                     mapView.renderer.setMapCenter(bbox.center());
                     mapView.renderer.setMapZoom(
-                            mapView.renderer.mapZoomForBBox(bbox, mapView.getWidth(), mapView.getHeight()));
+                            mapView.renderer.mapZoomForBBox(
+                                    bbox, mapView.getWidth(), mapView.getHeight()));
                 });
     }
 
@@ -1189,8 +1221,9 @@ public class MapViewActivity extends Activity
         }
         if (objects != null) {
             GLMapVectorCascadeStyle style =
-                    Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle(
-                            "area{fill-color:green; width:1pt; color:red;}"));
+                    Objects.requireNonNull(
+                            GLMapVectorCascadeStyle.createStyle(
+                                    "area{fill-color:green; width:1pt; color:red;}"));
             GLMapDrawable drawable = new GLMapDrawable();
             drawable.setVectorObjects(objects, style, null);
             mapView.renderer.add(drawable);
@@ -1220,11 +1253,12 @@ public class MapViewActivity extends Activity
         }
 
         GLMapVectorCascadeStyle style =
-                Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle(
-                        "node[id=1]{icon-image:\"bus.svgpb\";icon-scale:0.5;icon-tint:green;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
-                            + "node|z-9[id=2]{icon-image:\"bus.svgpb\";icon-scale:0.7;icon-tint:blue;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}line{linecap:"
-                            + " round; width: 5pt; color:blue;}area{fill-color:green; width:1pt;"
-                            + " color:red;}"));
+                Objects.requireNonNull(
+                        GLMapVectorCascadeStyle.createStyle(
+                                "node[id=1]{icon-image:\"bus.svgpb\";icon-scale:0.5;icon-tint:green;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
+                                    + "node|z-9[id=2]{icon-image:\"bus.svgpb\";icon-scale:0.7;icon-tint:blue;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}line{linecap:"
+                                    + " round; width: 5pt; color:blue;}area{fill-color:green;"
+                                    + " width:1pt; color:red;}"));
 
         if (objects != null) {
             GLMapDrawable drawable = new GLMapDrawable();
