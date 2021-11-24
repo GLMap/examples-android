@@ -5,21 +5,17 @@ import android.os.Bundle
 import android.view.TextureView
 import globus.glmap.GLMapStyleParser
 import globus.glmap.GLMapView
+import globus.glmap.GLMapTextureView
+import globus.glmap.GLMapViewRenderer
 import globus.glmap.MapPoint
 
 class MapTextureViewActivity : Activity() {
-    private var mapView: GLMapView? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.texture_view_map)
-        val textureView = findViewById<TextureView>(R.id.texture_view)
-        val mapView = GLMapView(this, textureView)
-        mapView.setStyle(GLMapStyleParser(assets, "DefaultStyle.bundle").parseFromResources()!!)
-        mapView.setScaleRulerStyle(
-                GLMapView.GLUnitSystem.International,
-                GLMapView.GLMapPlacement.BottomCenter,
-                MapPoint(10.0, 10.0), 200.0)
-        mapView.setAttributionPosition(GLMapView.GLMapPlacement.TopCenter)
-        this.mapView = mapView //Save mapView to keep map rendering after gc
+        val textureView = findViewById<GLMapTextureView>(R.id.texture_view)
+        textureView.renderer.setStyle(GLMapStyleParser(assets, "DefaultStyle.bundle").parseFromResources()!!)
+        textureView.renderer.setScaleRulerStyle(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200.0)
+        textureView.renderer.setAttributionPosition(GLMapViewRenderer.GLMapPlacement.TopCenter)
     }
 }

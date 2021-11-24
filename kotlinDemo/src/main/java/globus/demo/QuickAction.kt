@@ -30,7 +30,8 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
         arrowDown = rootView.findViewById(R.id.arrow_down)
         arrowUp = rootView.findViewById(R.id.arrow_up)
         rootView.layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        )
         popupWindow = PopupWindow(context)
         popupWindow.contentView = rootView
     }
@@ -53,7 +54,8 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
             track.addView(separator)
         }
         val params = RelativeLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT
+        )
         container.layoutParams = params
         track.addView(container)
     }
@@ -75,8 +77,9 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
             rootWidth = screenWidth - arrowWidth
             popupWindow.width = rootWidth
             rootView.measure(
-                    View.MeasureSpec.makeMeasureSpec(rootWidth, View.MeasureSpec.EXACTLY),
-                    ViewGroup.LayoutParams.WRAP_CONTENT)
+                View.MeasureSpec.makeMeasureSpec(rootWidth, View.MeasureSpec.EXACTLY),
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         }
         val rootHeight = rootView.measuredHeight
         val arrow: View
@@ -96,7 +99,7 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
         finalScreenX -= arrowPos
         val param = arrow.getLayoutParams() as MarginLayoutParams
         param.leftMargin = when {
-            arrowPos < halfArrowWidth ->  0
+            arrowPos < halfArrowWidth -> 0
             arrowPos > rootWidth - halfArrowWidth -> rootWidth - halfArrowWidth
             else -> arrowPos.toInt()
         }

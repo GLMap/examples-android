@@ -1,6 +1,5 @@
 {
   "additional_data": {
-    "elevation": "/data/valhalla/elevation/"
   },
   "httpd": {
     "service": {
@@ -22,7 +21,7 @@
       "transit_available"
     ],
     "logging": {
-      "color": true,
+      "color": false,
       "file_name": "path_to_some_file.log",
       "long_request": 100.0,
       "type": "std_out"
@@ -73,7 +72,7 @@
       "size": 500
     },
     "logging": {
-      "color": true,
+      "color": false,
       "file_name": "path_to_some_file.log",
       "type": "std_out"
     },
@@ -91,22 +90,22 @@
     "verbose": false
   },
   "mjolnir": {
-    "admin": "/Users/destman/git/molind/valhalla/valhalla_tiles/admins.sqlite",
+    "admin": "/data/valhalla/admins.sqlite",
     "hierarchy": true,
     "logging": {
-      "color": true,
+      "color": false,
       "file_name": "path_to_some_file.log",
       "type": "std_out"
     },
     "max_cache_size": 1000000000,
     "shortcuts": true,
-    "tile_dir": "/Users/destman/git/molind/valhalla/valhalla_tiles",
-    "timezone": "/Users/destman/git/molind/valhalla/valhalla_tiles/timezones.sqlite",
+    "tile_dir": "/data/valhalla/valhalla_tiles",
+    "timezone": "/data/valhalla/timezones.sqlite",
     "transit_dir": "/data/valhalla/transit"
   },
   "odin": {
     "logging": {
-      "color": true,
+      "color": false,
       "file_name": "path_to_some_file.log",
       "type": "std_out"
     },
@@ -201,7 +200,7 @@
   },
   "thor": {
     "logging": {
-      "color": true,
+      "color": false,
       "file_name": "path_to_some_file.log",
       "long_request": 110.0,
       "type": "std_out"

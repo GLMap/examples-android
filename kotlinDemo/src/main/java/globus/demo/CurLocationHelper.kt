@@ -16,7 +16,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** Created by destman on 6/1/17.  */
-internal class CurLocationHelper(private val mapView: GLMapView) : LocationListener {
+internal class CurLocationHelper(private val renderer: GLMapViewRenderer, private val imageManager: ImageManager) : LocationListener {
     private var userMovementImage: GLMapDrawable? = null
     private var userLocationImage: GLMapDrawable? = null
     private var accuracyCircle: GLMapDrawable? = null
@@ -42,9 +42,10 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
 
     fun initLocationManager(activity: Activity): Boolean {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) return false
+            != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) return false
         var locationManager = locationManager
         if (locationManager == null) {
             try {
@@ -87,15 +88,16 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
                 }
                 // Update location to current best
                 val lastLocation = lastLocation
-                if(lastLocation != null)
+                if (lastLocation != null)
                     onLocationChanged(lastLocation)
                 // Request location updates
                 locationManager.requestLocationUpdates(
-                        MIN_TIME_BW_UPDATES,
-                        MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(),
-                        criteria,
-                        this,
-                        activity.mainLooper)
+                    MIN_TIME_BW_UPDATES,
+                    MIN_DISTANCE_CHANGE_FOR_UPDATES.toFloat(),
+                    criteria,
+                    this,
+                    activity.mainLooper
+                )
             } catch (e: Exception) {
                 locationManager = null
             } finally {
@@ -109,24 +111,24 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
         lastLocation = location
         val position = MapPoint.CreateFromGeoCoordinates(location.latitude, location.longitude)
         if (isFollowLocationEnabled)
-            mapView.animate { it.flyToPoint(position) }
+            renderer.animate { it.flyToPoint(position) }
 
         // Create drawables if not exist and set initial positions.
         var userLocationImage = userLocationImage
         if (userLocationImage == null) {
-            val locationImage = mapView.imageManager.open("DefaultStyle.bundle/circle-new.svgpb", 1f, 0)!!
+            val locationImage = imageManager.open("circle_new.svg", 1f, 0)!!
             userLocationImage = GLMapDrawable(locationImage, 100)
             this.userLocationImage = userLocationImage
             userLocationImage.isHidden = true
             userLocationImage.setOffset(locationImage.width / 2, locationImage.height / 2)
             userLocationImage.position = position
-            mapView.add(userLocationImage)
+            renderer.add(userLocationImage)
             locationImage.recycle()
         }
 
         var userMovementImage = userMovementImage
         if (userMovementImage == null) {
-            val movementImage = mapView.imageManager.open("DefaultStyle.bundle/arrow-new.svgpb", 1f, 0)!!
+            val movementImage = imageManager.open("arrow_new.svg", 1f, 0)!!
             userMovementImage = GLMapDrawable(movementImage, 100)
             this.userMovementImage = userMovementImage
             userMovementImage.isHidden = true
@@ -134,7 +136,7 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
             userMovementImage.isRotatesWithMap = true
             userMovementImage.position = position
             if (location.hasBearing()) userLocationImage.angle = -location.bearing
-            mapView.add(userMovementImage)
+            renderer.add(userMovementImage)
             movementImage.recycle()
         }
 
@@ -148,7 +150,7 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
         }
 
         // Calculate radius of accuracy circle
-        val r = mapView.convertMetersToInternal(location.accuracy.toDouble()).toFloat()
+        val r = renderer.convertMetersToInternal(location.accuracy.toDouble()).toFloat()
         // If accuracy circle drawable not exits - create it and set initial position
         var accuracyCircle = accuracyCircle
         if (accuracyCircle == null) {
@@ -167,12 +169,14 @@ internal class CurLocationHelper(private val mapView: GLMapView) : LocationListe
             accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom)
             accuracyCircle.position = position
             accuracyCircle.scale = r / 2048.0f.toDouble()
-            accuracyCircle.setVectorObject(circle,
-                    GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")!!,
-                    null)
-            mapView.add(accuracyCircle)
+            accuracyCircle.setVectorObject(
+                circle,
+                GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")!!,
+                null
+            )
+            renderer.add(accuracyCircle)
         }
-        mapView.animate {
+        renderer.animate {
             it.setTransition(GLMapAnimation.Linear)
             it.setDuration(1.0)
             userMovementImage.position = position

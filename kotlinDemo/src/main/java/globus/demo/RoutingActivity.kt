@@ -6,12 +6,12 @@ import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.widget.Toast
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import globus.glmap.*
 import globus.glroute.GLRoute
 import globus.glroute.GLRoutePoint
 import globus.glroute.GLRouteRequest
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import java.io.IOException
 import java.nio.charset.Charset
 
@@ -23,7 +23,7 @@ class RoutingActivity : MapViewActivity() {
     private var quickAction: QuickAction? = null
     private var routingMode = GLRoute.Mode.DRIVE
     private var networkMode = NetworkMode.Online
-    private var departure =  MapGeoPoint(53.844720, 27.482352)
+    private var departure = MapGeoPoint(53.844720, 27.482352)
     private var destination = MapGeoPoint(53.931935, 27.583995)
     private var track: GLMapTrack? = null
 
@@ -41,7 +41,7 @@ class RoutingActivity : MapViewActivity() {
                 var raw: ByteArray? = null
                 try {
                     // Read prepared categories
-                    val stream = resources.openRawResource(R.raw.valhalla)
+                    val stream = resources.openRawResource(R.raw.valhalla3)
                     raw = ByteArray(stream.available())
                     stream.read(raw)
                     stream.close()
@@ -57,52 +57,53 @@ class RoutingActivity : MapViewActivity() {
     @SuppressLint("ClickableViewAccessibility")
     override fun run(test: Samples) {
         val gestureDetector = GestureDetector(
-                this,
-                object : SimpleOnGestureListener() {
-                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                        showDefaultPopupMenu(e.x, e.y)
-                        return true
-                    }
-                    override fun onLongPress(e: MotionEvent) {}
-                })
+            this,
+            object : SimpleOnGestureListener() {
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    showDefaultPopupMenu(e.x, e.y)
+                    return true
+                }
+                override fun onLongPress(e: MotionEvent) {}
+            }
+        )
         mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
-        mapView.doWhenSurfaceCreated {
+        renderer.doWhenSurfaceCreated {
             val bbox = GLMapBBox()
             bbox.addPoint(MapPoint(departure))
             bbox.addPoint(MapPoint(destination))
-            mapView.mapCenter = bbox.center()
-            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.width, mapView.height) - 1
+            renderer.mapCenter = bbox.center()
+            renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight) - 1
         }
         updateRoute()
 
         onlineOfflineSwitch.addOnTabSelectedListener(
-                object : OnTabSelectedListener {
-                    override fun onTabSelected(tab: TabLayout.Tab) {
-                        when (tab.position) {
-                            0 -> networkMode = NetworkMode.Online
-                            1 -> networkMode = NetworkMode.Offline
-                        }
-                        updateRoute()
+            object : OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab) {
+                    when (tab.position) {
+                        0 -> networkMode = NetworkMode.Online
+                        1 -> networkMode = NetworkMode.Offline
                     }
+                    updateRoute()
+                }
 
-                    override fun onTabUnselected(tab: TabLayout.Tab) {}
-                    override fun onTabReselected(tab: TabLayout.Tab) {}
-                })
+                override fun onTabUnselected(tab: TabLayout.Tab) {}
+                override fun onTabReselected(tab: TabLayout.Tab) {}
+            })
 
         routeTypeSwitch.addOnTabSelectedListener(
-                object : OnTabSelectedListener {
-                    override fun onTabSelected(tab: TabLayout.Tab) {
-                        when (tab.position) {
-                            0 -> routingMode = GLRoute.Mode.DRIVE
-                            1 -> routingMode = GLRoute.Mode.CYCLE
-                            2 -> routingMode = GLRoute.Mode.WALK
-                        }
-                        updateRoute()
+            object : OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab) {
+                    when (tab.position) {
+                        0 -> routingMode = GLRoute.Mode.DRIVE
+                        1 -> routingMode = GLRoute.Mode.CYCLE
+                        2 -> routingMode = GLRoute.Mode.WALK
                     }
+                    updateRoute()
+                }
 
-                    override fun onTabUnselected(tab: TabLayout.Tab) {}
-                    override fun onTabReselected(tab: TabLayout.Tab) {}
-                })
+                override fun onTabUnselected(tab: TabLayout.Tab) {}
+                override fun onTabReselected(tab: TabLayout.Tab) {}
+            })
     }
 
     override fun onResume() {
@@ -117,7 +118,7 @@ class RoutingActivity : MapViewActivity() {
         request.addPoint(GLRoutePoint(departure, Double.NaN, true, true))
         request.addPoint(GLRoutePoint(destination, Double.NaN, true, true))
         request.locale = "en"
-        request.unitSystem = GLMapView.GLUnitSystem.International
+        request.unitSystem = GLMapLocaleSettings.UnitSystem.International
         request.mode = routingMode
         if (networkMode == NetworkMode.Offline)
             request.setOfflineWithConfig(valhallaConfig)
@@ -130,7 +131,7 @@ class RoutingActivity : MapViewActivity() {
                 } else {
                     track = GLMapTrack(trackData, 5)
                     this@RoutingActivity.track = track
-                    mapView.add(track)
+                    renderer.add(track)
                 }
             }
 
@@ -150,8 +151,8 @@ class RoutingActivity : MapViewActivity() {
         val quickAction = QuickAction(this) { actionId ->
             val mapPoint = MapPoint(x.toDouble(), y.toDouble())
             when (actionId) {
-                ID_DEPARTURE -> departure = MapGeoPoint(mapView.convertDisplayToInternal(mapPoint))
-                ID_DESTINATION -> destination = MapGeoPoint(mapView.convertDisplayToInternal(mapPoint))
+                ID_DEPARTURE -> departure = MapGeoPoint(renderer.convertDisplayToInternal(mapPoint))
+                ID_DESTINATION -> destination = MapGeoPoint(renderer.convertDisplayToInternal(mapPoint))
             }
             updateRoute()
         }

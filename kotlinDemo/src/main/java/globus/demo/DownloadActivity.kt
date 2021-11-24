@@ -45,7 +45,10 @@ class DownloadActivity : ListActivity(), StateListener {
         super.onDestroy()
     }
 
-    private inner class MapsAdapter internal constructor(val maps: Array<GLMapInfo>, private val context: Context) : BaseAdapter(), ListAdapter {
+    private inner class MapsAdapter internal constructor(
+        val maps: Array<GLMapInfo>,
+        private val context: Context
+    ) : BaseAdapter(), ListAdapter {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val map = maps[position]
             val convertViewFinal = convertView ?: LayoutInflater.from(context).inflate(R.layout.map_name, parent, false)
@@ -154,11 +157,13 @@ class DownloadActivity : ListActivity(), StateListener {
             return false
         }
         fun isOnDevice(info: GLMapInfo): Boolean {
-            return (anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS)
-                    || anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED)
-                    || anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME)
-                    || anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE)
-                    || anyDataSetHaveState(info, GLMapInfo.State.REMOVED))
+            return (
+                anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS) ||
+                    anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED) ||
+                    anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME) ||
+                    anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE) ||
+                    anyDataSetHaveState(info, GLMapInfo.State.REMOVED)
+                )
         }
     }
 }
