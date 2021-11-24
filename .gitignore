@@ -6,5 +6,4 @@ build
 .idea
 local.properties
 crashlytics-build.properties
-*.iml
 .externalNativeBuild
