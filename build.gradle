@@ -4,7 +4,7 @@ buildscript {
     ext.glmap_version = '1.5.0'
     ext.kotlin_version = '1.5.31'
     ext.ndk_version = '22.0.7026061'
-    ext.build_tools_version = '30.0.3'
+    ext.build_tools_version = '31.0.0'
     repositories {
         mavenCentral()
         google()

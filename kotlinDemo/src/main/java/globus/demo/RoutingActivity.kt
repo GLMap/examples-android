@@ -41,7 +41,7 @@ class RoutingActivity : MapViewActivity() {
                 var raw: ByteArray? = null
                 try {
                     // Read prepared categories
-                    val stream = resources.openRawResource(R.raw.valhalla)
+                    val stream = resources.openRawResource(R.raw.valhalla3)
                     raw = ByteArray(stream.available())
                     stream.read(raw)
                     stream.close()
@@ -67,12 +67,12 @@ class RoutingActivity : MapViewActivity() {
             }
         )
         mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
-        mapView.doWhenSurfaceCreated {
+        renderer.doWhenSurfaceCreated {
             val bbox = GLMapBBox()
             bbox.addPoint(MapPoint(departure))
             bbox.addPoint(MapPoint(destination))
-            mapView.mapCenter = bbox.center()
-            mapView.mapZoom = mapView.mapZoomForBBox(bbox, mapView.surfaceWidth, mapView.surfaceHeight) - 1
+            renderer.mapCenter = bbox.center()
+            renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight) - 1
         }
         updateRoute()
 
@@ -118,7 +118,7 @@ class RoutingActivity : MapViewActivity() {
         request.addPoint(GLRoutePoint(departure, Double.NaN, true, true))
         request.addPoint(GLRoutePoint(destination, Double.NaN, true, true))
         request.locale = "en"
-        request.unitSystem = GLMapView.GLUnitSystem.International
+        request.unitSystem = GLMapLocaleSettings.UnitSystem.International
         request.mode = routingMode
         if (networkMode == NetworkMode.Offline)
             request.setOfflineWithConfig(valhallaConfig)
@@ -131,7 +131,7 @@ class RoutingActivity : MapViewActivity() {
                 } else {
                     track = GLMapTrack(trackData, 5)
                     this@RoutingActivity.track = track
-                    mapView.add(track)
+                    renderer.add(track)
                 }
             }
 
@@ -151,8 +151,8 @@ class RoutingActivity : MapViewActivity() {
         val quickAction = QuickAction(this) { actionId ->
             val mapPoint = MapPoint(x.toDouble(), y.toDouble())
             when (actionId) {
-                ID_DEPARTURE -> departure = MapGeoPoint(mapView.convertDisplayToInternal(mapPoint))
-                ID_DESTINATION -> destination = MapGeoPoint(mapView.convertDisplayToInternal(mapPoint))
+                ID_DEPARTURE -> departure = MapGeoPoint(renderer.convertDisplayToInternal(mapPoint))
+                ID_DESTINATION -> destination = MapGeoPoint(renderer.convertDisplayToInternal(mapPoint))
             }
             updateRoute()
         }

@@ -27,6 +27,10 @@ android {
         }
     }
 
+    packagingOptions {
+        pickFirst 'lib/*/*.so'
+    }
+
     sourceSets {
         main {
             manifest.srcFile '../../Examples/javaDemo/src/main/AndroidManifest.xml'
