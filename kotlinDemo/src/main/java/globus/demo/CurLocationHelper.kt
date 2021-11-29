@@ -16,7 +16,10 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** Created by destman on 6/1/17.  */
-internal class CurLocationHelper(private val renderer: GLMapViewRenderer, private val imageManager: ImageManager) : LocationListener {
+internal class CurLocationHelper(
+    private val renderer: GLMapViewRenderer,
+    private val imageManager: ImageManager
+) : LocationListener {
     private var userMovementImage: GLMapDrawable? = null
     private var userLocationImage: GLMapDrawable? = null
     private var accuracyCircle: GLMapDrawable? = null

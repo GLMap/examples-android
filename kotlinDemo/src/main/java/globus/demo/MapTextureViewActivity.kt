@@ -2,12 +2,9 @@ package globus.demo
 
 import android.app.Activity
 import android.os.Bundle
-import android.view.TextureView
 import globus.glmap.GLMapStyleParser
-import globus.glmap.GLMapView
 import globus.glmap.GLMapTextureView
 import globus.glmap.GLMapViewRenderer
-import globus.glmap.MapPoint
 
 class MapTextureViewActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

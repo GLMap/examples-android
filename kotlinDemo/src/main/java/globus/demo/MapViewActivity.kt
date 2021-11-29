@@ -1017,7 +1017,7 @@ area {
     }
 
     override fun screenCaptured(bmp: Bitmap?) {
-        if(bmp == null)
+        if (bmp == null)
             return
         runOnUiThread {
             val bytes = ByteArrayOutputStream()
