@@ -11,11 +11,11 @@ import android.widget.*
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.AdapterView.OnItemLongClickListener
 import globus.glmap.*
-import globus.glmap.GLMapManager.StateListener
+import globus.glmap.GLMapManager
 import java.util.*
 
 @SuppressLint("SetTextI18n")
-class DownloadActivity : ListActivity(), StateListener {
+class DownloadActivity : ListActivity(), GLMapManager.StateListener {
     private enum class ContextItems {
         DELETE
     }
@@ -91,7 +91,7 @@ class DownloadActivity : ListActivity(), StateListener {
     }
 
     override fun onFinishDownloading(task: GLMapDownloadTask) {}
-    override fun onStateChanged(map: GLMapInfo) {
+    override fun onStateChanged(map: GLMapInfo, @GLMapInfo.DataSet dataSet: Int) {
         (listView.adapter as MapsAdapter).notifyDataSetChanged()
     }
 

@@ -10,9 +10,9 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Point
 import android.graphics.Rect
-import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -23,9 +23,7 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.core.app.ActivityCompat
 import globus.glmap.*
-import globus.glmap.GLMapManager.StateListener
-import globus.glmap.GLMapManager.TileDownloadProgress
-import globus.glmap.GLMapTrackData.PointsCallback
+import globus.glmap.GLMapManager
 import globus.glmap.GLMapViewRenderer.*
 import globus.glsearch.GLSearch
 import globus.glsearch.GLSearchCategories
@@ -36,12 +34,13 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.URL
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.cos
 import kotlin.math.sin
 
 @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
-open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
+open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.StateListener {
 
     private data class Pin(val pos: MapPoint, val imageVariant: Int)
 
@@ -137,9 +136,11 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     private var track: GLMapTrack? = null
     private var trackData: GLMapTrackData? = null
     private var trackRecordRunnable: Runnable? = null
-    private lateinit var handler: Handler
     private lateinit var imageManager: ImageManager
     lateinit var mapView: GLMapView
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val executor = Executors.newSingleThreadExecutor()
 
     inline val renderer: GLMapViewRenderer
         get() = mapView.renderer
@@ -155,7 +156,6 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(getLayoutID())
-        handler = Handler(applicationContext.mainLooper)
         mapView = findViewById(R.id.map_view)
         imageManager = ImageManager(assets, renderer.screenScale)
 
@@ -223,7 +223,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                 GLMapManager.SetTileDownloadingAllowed(true)
             }
             Samples.OFFLINE_SEARCH -> {
-                GLMapManager.AddMap(assets, "Montenegro.vm", null)
+                GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)
                 zoomToPoint()
                 offlineSearch()
             }
@@ -362,7 +362,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
         renderer.reloadTiles()
     }
 
-    override fun onStateChanged(map: GLMapInfo) {
+    override fun onStateChanged(map: GLMapInfo, @GLMapInfo.DataSet dataSet: Int) {
         updateMapDownloadButtonText()
     }
 
@@ -375,7 +375,6 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
             if (mapToDownload != null) {
                 var total: Long = 0
                 var downloaded: Long = 0
-                val text: String
                 val tasks = GLMapManager.getDownloadTasks(mapToDownload.mapID, GLMapInfo.DataSetMask.ALL)
                 if (!tasks.isNullOrEmpty()) {
                     for (task in tasks) {
@@ -383,7 +382,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
                         downloaded += task.downloaded.toLong()
                     }
                 }
-                text = if (total != 0L) {
+                val text = if (total != 0L) {
                     val progress = downloaded * 100 / total
                     String.format(
                         Locale.getDefault(), "Downloading %s %d%%",
@@ -403,9 +402,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     }
 
     private fun showEmbedded() {
-        if (!GLMapManager.AddMap(assets, "Montenegro.vm", null)) {
-            // Failed to unpack to caches. Check free space.
-        }
+        GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)
         zoomToPoint()
     }
 
@@ -476,15 +473,19 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, StateListener {
     }
 
     // Example how to calculate zoom level for some bbox
-    private fun zoomToBBox() {
-        // When surface will be created - getWidth and getHeight will have valid values
+    private fun zoomToBBox(bbox: GLMapBBox) {
         renderer.doWhenSurfaceCreated {
-            val bbox = GLMapBBox()
-            bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)) // Berlin
-            bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)) // Minsk
             renderer.mapCenter = bbox.center()
             renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight)
         }
+    }
+
+    private fun zoomToBBox() {
+        // When surface will be created - getWidth and getHeight will have valid values
+        val bbox = GLMapBBox()
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)) // Berlin
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)) // Minsk
+        zoomToBBox(bbox = bbox)
     }
 
     private fun zoomToPoint() {
@@ -596,36 +597,25 @@ node[count>=128]{
 }                  
                 """
         )!!
-
-        object : AsyncTask<Void, Void, GLMapMarkerLayer?>() {
-            private var bbox: GLMapBBox? = null
-            override fun doInBackground(vararg voids: Void): GLMapMarkerLayer? {
-                var rv: GLMapMarkerLayer?
-                try {
-                    Log.w("GLMapView", "Start parsing")
-                    val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("cluster_data.json"))
-                    Log.w("GLMapView", "Finish parsing")
-                    bbox = objects.bBox
-                    Log.w("GLMapView", "Start creating layer")
-                    rv = GLMapMarkerLayer(objects, style, styleCollection, 35.0, 3)
-                    Log.w("GLMapView", "Finish creating layer")
-                    objects.dispose()
-                } catch (e: Exception) {
-                    rv = null
-                }
-                return rv
-            }
-
-            override fun onPostExecute(layer: GLMapMarkerLayer?) {
-                val bbox = bbox
-                if (layer != null && bbox != null) {
+        executor.execute {
+            try {
+                Log.w("GLMapView", "Start parsing")
+                val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("cluster_data.json"))
+                Log.w("GLMapView", "Finish parsing")
+                Log.w("GLMapView", "Start creating layer")
+                val layer = GLMapMarkerLayer(objects, style, styleCollection, 35.0, 3)
+                val bbox = objects.bBox
+                Log.w("GLMapView", "Finish creating layer")
+                objects.dispose()
+                handler.post {
                     markerLayer = layer
                     renderer.add(layer)
                     renderer.mapCenter = bbox.center()
                     renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight)
                 }
+            } catch (e: Exception) {
             }
-        }.execute()
+        }
     }
 
     internal class MarkersStyle : GLMapMarkerStyleCollectionDataCallback() {
@@ -668,41 +658,31 @@ node[count>=128]{
 
     @SuppressLint("StaticFieldLeak")
     private fun addMarkers() {
-        object : AsyncTask<Void, Void, GLMapMarkerLayer?>() {
-            private var bbox: GLMapBBox? = null
-            override fun doInBackground(vararg voids: Void): GLMapMarkerLayer? {
-                var rv: GLMapMarkerLayer?
-                try {
-                    val style = GLMapMarkerStyleCollection()
-                    for (i in MarkersStyle.unionCounts.indices) {
-                        val scale = (0.2 + 0.1 * i).toFloat()
-                        style.addStyle(GLMapMarkerImage("marker$scale", imageManager.open("cluster.svg", scale, unionColours[i])!!))
-                    }
-                    style.setDataCallback(MarkersStyle())
-                    Log.w("GLMapView", "Start parsing")
-                    val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("cluster_data.json"))
-                    Log.w("GLMapView", "Finish parsing")
-                    bbox = objects.bBox
-                    Log.w("GLMapView", "Start creating layer")
-                    rv = GLMapMarkerLayer(objects.toArray(), style, 35.0, 3)
-                    Log.w("GLMapView", "Finish creating layer")
-                    objects.dispose()
-                } catch (e: Exception) {
-                    rv = null
+        executor.execute {
+            try {
+                val style = GLMapMarkerStyleCollection()
+                for (i in MarkersStyle.unionCounts.indices) {
+                    val scale = (0.2 + 0.1 * i).toFloat()
+                    style.addStyle(GLMapMarkerImage("marker$scale", imageManager.open("cluster.svg", scale, unionColours[i])!!))
                 }
-                return rv
-            }
-
-            override fun onPostExecute(layer: GLMapMarkerLayer?) {
-                val bbox = bbox
-                if (layer != null && bbox != null) {
+                style.setDataCallback(MarkersStyle())
+                Log.w("GLMapView", "Start parsing")
+                val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("cluster_data.json"))
+                Log.w("GLMapView", "Finish parsing")
+                Log.w("GLMapView", "Start creating layer")
+                val layer = GLMapMarkerLayer(objects.toArray(), style, 35.0, 3)
+                val bbox = objects.bBox
+                Log.w("GLMapView", "Finish creating layer")
+                objects.dispose()
+                handler.post {
                     markerLayer = layer
                     renderer.add(layer)
                     renderer.mapCenter = bbox.center()
                     renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight)
                 }
+            } catch (e: Exception) {
             }
-        }.execute()
+        }
     }
 
     private fun addImage() {
@@ -789,27 +769,79 @@ node[count>=128]{
     }
 
     private fun bulkDownload() {
-        renderer.mapCenter = MapPoint.CreateFromGeoCoordinates(53.0, 27.0)
-        renderer.mapZoom = 12.5
-        actionButton.visibility = View.VISIBLE
-        actionButton.text = "Download"
-        actionButton.setOnClickListener {
-            val allTiles = GLMapManager.VectorTilesAtBBox(renderer.bBox)
-            Log.i("BulkDownload", "tilesCount = ${allTiles.size}")
-            GLMapManager.CacheTiles(
-                allTiles,
-                object : TileDownloadProgress {
-                    override fun onSuccess(tile: Long): Boolean {
-                        Log.i("BulkDownloadSuccess", String.format("tile = %d", tile))
-                        return true
-                    }
+        val bbox = GLMapBBox()
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.0, 27.0))
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(54.0, 28.0))
+        zoomToBBox(bbox = bbox)
 
-                    override fun onError(tile: Long, errorCode: GLMapError): Boolean {
-                        Log.i("BulkDownloadError", "tile = $tile, domain = ${errorCode.errorDomain}, errorCode = ${errorCode.errorCode}")
-                        return true
+        val cacheDir = cacheDir
+        val mapFile = File(cacheDir, "test.vmtar")
+        val navFile = File(cacheDir, "test.navtar")
+        val eleFile = File(cacheDir, "test.eletar")
+
+        if (mapFile.exists())
+            GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, bbox, mapFile.absolutePath, null, null)
+        if (navFile.exists())
+            GLMapManager.AddDataSet(GLMapInfo.DataSet.NAVIGATION, bbox, navFile.absolutePath, null, null)
+        if (eleFile.exists())
+            GLMapManager.AddDataSet(GLMapInfo.DataSet.ELEVATION, bbox, eleFile.absolutePath, null, null)
+
+        mapView.renderer.drawElevationLines = true
+        mapView.renderer.drawHillshades = true
+        mapView.renderer.reloadTiles()
+
+        class ActionInfo(
+            val text: String,
+            @GLMapInfo.DataSet val dataSet: Int,
+            val file: File
+        )
+
+        val action = when {
+            !mapFile.exists() ->
+                ActionInfo("Download map data", GLMapInfo.DataSet.MAP, mapFile)
+            !navFile.exists() ->
+                ActionInfo("Download nav data", GLMapInfo.DataSet.NAVIGATION, navFile)
+            !eleFile.exists() ->
+                ActionInfo("Download ele data", GLMapInfo.DataSet.ELEVATION, eleFile)
+            else ->
+                null
+        }
+
+        val btn = findViewById<Button>(R.id.button_action)
+        if (action != null) {
+            btn.visibility = View.VISIBLE
+            btn.text = action.text
+            btn.setOnClickListener {
+                GLMapManager.DownloadDataSet(
+                    action.dataSet,
+                    action.file.absolutePath,
+                    bbox,
+                    object : GLMapManager.DownloadCallback {
+                        override fun onProgress(
+                            totalSize: Long,
+                            downloadedSize: Long,
+                            downloadSpeed: Double
+                        ) {
+                            Log.i(
+                                "BulkDownload",
+                                String.format(
+                                    "dl = %d speed = %f",
+                                    downloadedSize, downloadSpeed
+                                )
+                            )
+                        }
+
+                        override fun onFinished(error: GLMapError?) {
+                            if (error == null)
+                                bulkDownload()
+                            else
+                                Log.e("BulkDownload", error.message)
+                        }
                     }
-                }
-            )
+                )
+            }
+        } else {
+            btn.visibility = View.GONE
         }
     }
 
@@ -819,47 +851,38 @@ node[count>=128]{
         renderer.setStyle(parser.parseFromResources()!!)
     }
 
-    @SuppressLint("StaticFieldLeak")
     private fun styleLiveReload() {
         val editText = findViewById<EditText>(R.id.edit_text)
         editText.visibility = View.VISIBLE
         actionButton.visibility = View.VISIBLE
         actionButton.text = "Reload"
         actionButton.setOnClickListener {
-            object : AsyncTask<String, String?, ByteArray?>() {
-                override fun doInBackground(vararg strings: String): ByteArray? {
-                    var rv: ByteArray?
-                    try {
-                        val connection = URL(strings[0]).openConnection()
-                        connection.connect()
-                        val inputStream = connection.getInputStream()
-                        val buffer = ByteArrayOutputStream()
-                        var nRead: Int
-                        val data = ByteArray(16384)
-                        while (inputStream.read(data, 0, data.size).also { nRead = it } != -1) {
-                            buffer.write(data, 0, nRead)
-                        }
-                        buffer.flush()
-                        rv = buffer.toByteArray()
-                        buffer.close()
-                        inputStream.close()
-                    } catch (ignore: Exception) {
-                        rv = null
+            val url = editText.text.toString()
+            executor.execute {
+                try {
+                    val connection = URL(url).openConnection()
+                    connection.connect()
+                    val inputStream = connection.getInputStream()
+                    val buffer = ByteArrayOutputStream()
+                    var nRead: Int
+                    val data = ByteArray(16384)
+                    while (inputStream.read(data, 0, data.size).also { nRead = it } != -1) {
+                        buffer.write(data, 0, nRead)
                     }
-                    return rv
-                }
-
-                override fun onPostExecute(newStyleData: ByteArray?) {
+                    buffer.flush()
+                    val newStyleData = buffer.toByteArray()
+                    buffer.close()
+                    inputStream.close()
                     val parser = GLMapStyleParser { name: String ->
                         if (name == "Style.mapcss") {
                             newStyleData
                         } else {
-                            var result: ByteArray? = null
+                            var result: ByteArray?
                             try {
                                 val stream = assets.open("DefaultStyle.bundle/$name")
-                                val buffer = ByteArray(stream.available())
-                                if (stream.read(buffer) == buffer.size) {
-                                    result = buffer
+                                result = ByteArray(stream.available())
+                                if (stream.read(result) == result.size) {
+                                    result = null
                                 }
                                 stream.close()
                             } catch (ignore: IOException) {
@@ -870,9 +893,10 @@ node[count>=128]{
                     }
                     val style = parser.parseFromResources()
                     if (style != null)
-                        renderer.setStyle(style)
+                        handler.post { renderer.setStyle(style) }
+                } catch (ignore: Exception) {
                 }
-            }.execute(editText.text.toString())
+            }
         }
     }
 
@@ -891,7 +915,7 @@ node[count>=128]{
         // Create trackData with initial data
         trackPointIndex = 100
         val trackData = GLMapTrackData(
-            PointsCallback { index, nativePoint ->
+            { index, nativePoint ->
                 GLMapTrackData.setPointDataGeo(
                     nativePoint,
                     clat + sin(rDelta * index.toDouble()) * (rStart - rDiff * index),
