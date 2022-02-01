@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import static android.content.Context.LOCATION_SERVICE;
 

@@ -4,7 +4,6 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 31
     buildToolsVersion build_tools_version
-    ndkVersion ndk_version
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -12,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.getyourmap.kotlindemo"
+        applicationId "globus.kotlinDemo"
         minSdkVersion 16
         targetSdkVersion 31
         versionCode 1500
@@ -26,32 +25,34 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
     packagingOptions {
-        pickFirst 'lib/*/*.so'
+        jniLibs {
+            pickFirsts += ['lib/*/*.so']
+        }
     }
+
 
     sourceSets {
         main {
-            manifest.srcFile '../../Examples/javaDemo/src/main/AndroidManifest.xml'
             assets.srcDirs = ["../../Examples/javaDemo/src/main/assets", "../../../Resources/framework"]
             res.srcDirs = ["../../Examples/javaDemo/src/main/res"]
         }
+    }
+    androidResources {
+        noCompress 'vm', 'ttf', 'otf'
     }
 
     //If world and font files are compressed - GLMap will decompress and cache them while initialization.
     //This will take some time and space on device.
     //You can disable compression for them in resulting apk file to speedup loading time.
-    aaptOptions {
-        noCompress 'vm', 'ttf', 'otf'
-    }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    implementation 'androidx.appcompat:appcompat:1.4.0'
-    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.google.android.material:material:1.5.0'
 
     implementation "globus:glmap:$glmap_version"
     implementation "globus:glroute:$glmap_version"

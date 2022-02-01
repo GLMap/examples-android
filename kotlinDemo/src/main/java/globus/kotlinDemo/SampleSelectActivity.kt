@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import android.app.ListActivity
 import android.content.Intent
@@ -27,8 +27,8 @@ enum class Samples(val tableName: String) {
     CALLBACK_TEST("Callback test"),
     CAPTURE_SCREEN("Capture screen"),
     FLY_TO("Fly to"),
+    DOWNLOAD_IN_BBOX("Download data in bounding box"),
     STYLE_LIVE_RELOAD("Style live reload"),
-    TILES_BULK_DOWNLOAD("Bulk tiles download"),
     RECORD_TRACK("Recording track"),
     DOWNLOAD_MAP("Download Map"),
     SVG_TEST("SVG Test")

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="globus.javaDemo">
+    package="globus.kotlinDemo">
 
     <uses-feature
         android:glEsVersion="0x00020000"
@@ -24,16 +24,16 @@
         android:required="false" />
 
     <application
-        android:name="globus.javaDemo.DemoApp"
+        android:name="globus.kotlinDemo.DemoApp"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
-        android:label="@string/java_app_name"
+        android:label="@string/kotlin_app_name"
         android:theme="@android:style/Theme.Black" >
         <activity
-            android:name="globus.javaDemo.SampleSelectActivity"
+            android:name="globus.kotlinDemo.SampleSelectActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true"
-            android:label="@string/java_app_name"
+            android:label="@string/kotlin_app_name"
             android:theme="@android:style/Theme.Black">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -43,41 +43,41 @@
         </activity>
 
         <activity
-            android:name="globus.javaDemo.MapViewActivity"
+            android:name="globus.kotlinDemo.MapViewActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
-            android:label="@string/java_app_name"
+            android:label="@string/kotlin_app_name"
             android:theme="@android:style/Theme.Black" >
         </activity>
 
         <activity
-            android:name="globus.javaDemo.MapTextureViewActivity"
+            android:name="globus.kotlinDemo.MapTextureViewActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
-            android:label="@string/java_app_name"
+            android:label="@string/kotlin_app_name"
             android:theme="@android:style/Theme.Black" >
         </activity>
 
         <activity
-            android:name="globus.javaDemo.DownloadActivity"
+            android:name="globus.kotlinDemo.DownloadActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
-            android:label="@string/java_app_name"
+            android:label="@string/kotlin_app_name"
             android:theme="@android:style/Theme.Black" >
         </activity>
 
         <activity
-            android:name="globus.javaDemo.DisplayImageActivity"
+            android:name="globus.kotlinDemo.DisplayImageActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
-            android:label="@string/java_app_name"
+            android:label="@string/kotlin_app_name"
             android:theme="@android:style/Theme.Black" >
         </activity>
         <activity
-            android:name="globus.javaDemo.RoutingActivity"
+            android:name="globus.kotlinDemo.RoutingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="false"
-            android:label="@string/java_app_name"
+            android:label="@string/kotlin_app_name"
             android:theme="@style/TabAppTheme" />
     </application>
 </manifest>

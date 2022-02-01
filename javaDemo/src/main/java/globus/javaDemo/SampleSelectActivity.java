@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -28,8 +28,8 @@ public class SampleSelectActivity extends ListActivity {
         CALLBACK_TEST,
         CAPTURE_SCREEN,
         FLY_TO,
+        DOWNLOAD_IN_BBOX,
         STYLE_LIVE_RELOAD,
-        TILES_BULK_DOWNLOAD,
         RECORD_TRACK,
         DOWNLOAD_MAP,
         SVG_TEST,
@@ -42,30 +42,30 @@ public class SampleSelectActivity extends ListActivity {
 
         String[] values =
                 new String[] {
-                    "Open offline map",
-                    "Dark Theme",
-                    "Open embedded map",
-                    "Open online map",
-                    "Open online raster map",
-                    "Routing",
-                    "GLMapView in TextureView",
-                    "Zoom to bbox",
-                    "Offline Search",
-                    "Markers",
-                    "Markers using mapcss",
-                    "Display single image",
-                    "Display image group",
-                    "Add multiline",
-                    "Add polygon",
-                    "Load GeoJSON",
-                    "Callback test",
-                    "Capture screen",
-                    "Fly to",
-                    "Style live reload",
-                    "Bulk tiles download",
-                    "Recording track",
-                    "Download Map",
-                    "SVG Test",
+                        "Open offline map",
+                        "Dark Theme",
+                        "Open embedded map",
+                        "Open online map",
+                        "Open online raster map",
+                        "Routing",
+                        "GLMapView in TextureView",
+                        "Zoom to bbox",
+                        "Offline Search",
+                        "Markers",
+                        "Markers using mapcss",
+                        "Display single image",
+                        "Display image group",
+                        "Add multiline",
+                        "Add polygon",
+                        "Load GeoJSON",
+                        "Callback test",
+                        "Capture screen",
+                        "Fly to",
+                        "Download data in bounding box",
+                        "Style live reload",
+                        "Recording track",
+                        "Download Map",
+                        "SVG Test",
                 };
         ArrayAdapter<String> adapter =
                 new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, values);

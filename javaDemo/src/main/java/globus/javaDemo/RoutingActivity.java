@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import android.annotation.SuppressLint;
 import android.content.res.Resources;
@@ -11,8 +11,8 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.tabs.TabLayout;
 
-import globus.demo.utils.ActionItem;
-import globus.demo.utils.QuickAction;
+import globus.javaDemo.utils.ActionItem;
+import globus.javaDemo.utils.QuickAction;
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapError;
 import globus.glmap.GLMapLocaleSettings;

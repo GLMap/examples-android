@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import android.app.Activity;
 import android.util.DisplayMetrics;

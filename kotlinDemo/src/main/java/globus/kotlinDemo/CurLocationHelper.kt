@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import android.Manifest
 import android.app.Activity

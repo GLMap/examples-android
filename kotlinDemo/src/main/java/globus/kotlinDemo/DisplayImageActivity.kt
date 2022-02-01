@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import android.app.Activity
 import android.graphics.BitmapFactory

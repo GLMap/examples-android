@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -10,9 +10,9 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -69,6 +69,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressLint({"ClickableViewAccessibility", "StaticFieldLeak", "SetTextI18n"})
@@ -189,9 +191,11 @@ public class MapViewActivity extends Activity
     private int trackPointIndex;
     private GLMapTrack track;
     private GLMapTrackData trackData;
-    private Handler handler;
     private Runnable trackRecordRunnable;
     private ImageManager imageManager;
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -297,7 +301,8 @@ public class MapViewActivity extends Activity
                 GLMapManager.SetTileDownloadingAllowed(true);
                 break;
             case OFFLINE_SEARCH:
-                GLMapManager.AddMap(getAssets(), "Montenegro.vm", null);
+                GLMapManager.AddDataSet(
+                        GLMapInfo.DataSet.MAP, null, "Montenegro.vm", getAssets(), null);
                 zoomToPoint();
                 offlineSearch();
                 break;
@@ -387,8 +392,8 @@ public class MapViewActivity extends Activity
             case GEO_JSON:
                 loadGeoJSON();
                 break;
-            case TILES_BULK_DOWNLOAD:
-                bulkDownload();
+            case DOWNLOAD_IN_BBOX:
+                downloadInBBox();
                 break;
             case STYLE_LIVE_RELOAD:
                 styleLiveReload();
@@ -458,10 +463,7 @@ public class MapViewActivity extends Activity
             curLocationHelper = null;
         }
 
-        if (handler != null) {
-            handler.removeCallbacks(trackRecordRunnable);
-            handler = null;
-        }
+        handler.removeCallbacks(trackRecordRunnable);
         super.onDestroy();
     }
 
@@ -486,7 +488,7 @@ public class MapViewActivity extends Activity
     }
 
     @Override
-    public void onStateChanged(GLMapInfo map) {
+    public void onStateChanged(GLMapInfo map, int dataSet) {
         updateMapDownloadButtonText();
     }
 
@@ -537,9 +539,7 @@ public class MapViewActivity extends Activity
     }
 
     void showEmbedded() {
-        if (!GLMapManager.AddMap(getAssets(), "Montenegro.vm", null)) {
-            // Failed to unpack to caches. Check free space.
-        }
+        GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", getAssets(), null);
         zoomToPoint();
     }
 
@@ -667,20 +667,23 @@ public class MapViewActivity extends Activity
     }
 
     // Example how to calculate zoom level for some bbox
-    void zoomToBBox() {
+    void zoomToBBox(GLMapBBox bbox) {
         // When surface will be created - surfaceWidth and surfaceHeight will have valid values
         mapView.renderer.doWhenSurfaceCreated(
                 () -> {
-                    GLMapBBox bbox = new GLMapBBox();
-                    bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
-                    bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
-
                     GLMapViewRenderer renderer = mapView.renderer;
                     renderer.setMapCenter(bbox.center());
                     renderer.setMapZoom(
                             renderer.mapZoomForBBox(
                                     bbox, renderer.surfaceWidth, renderer.surfaceHeight));
                 });
+    }
+
+    void zoomToBBox() {
+        GLMapBBox bbox = new GLMapBBox();
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(52.5037, 13.4102)); // Berlin
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.9024, 27.5618)); // Minsk
+        zoomToBBox(bbox);
     }
 
     void zoomToPoint() {
@@ -796,43 +799,33 @@ public class MapViewActivity extends Activity
                                     + "node[count>=64]{icon-image:\"uni6\";}"
                                     + "node[count>=128]{icon-image:\"uni7\";}"));
 
-        new AsyncTask<Void, Void, GLMapMarkerLayer>() {
-            private GLMapBBox bbox;
+        executor.execute(
+                () -> {
+                    try {
+                        Log.w("GLMapView", "Start parsing");
+                        GLMapVectorObjectList objects =
+                                GLMapVectorObject.createFromGeoJSONStreamOrThrow(
+                                        getAssets().open("cluster_data.json"));
+                        Log.w("GLMapView", "Finish parsing");
 
-            @Override
-            protected GLMapMarkerLayer doInBackground(Void... voids) {
-                GLMapMarkerLayer rv;
-                try {
-                    Log.w("GLMapView", "Start parsing");
-                    GLMapVectorObjectList objects =
-                            GLMapVectorObject.createFromGeoJSONStreamOrThrow(
-                                    getAssets().open("cluster_data.json"));
-                    Log.w("GLMapView", "Finish parsing");
-
-                    bbox = objects.getBBox();
-
-                    Log.w("GLMapView", "Start creating layer");
-                    rv = new GLMapMarkerLayer(objects, style, styleCollection, 35, 3);
-                    Log.w("GLMapView", "Finish creating layer");
-                    objects.dispose();
-                } catch (Exception e) {
-                    rv = null;
-                }
-                return rv;
-            }
-
-            @Override
-            protected void onPostExecute(GLMapMarkerLayer layer) {
-                if (layer != null) {
-                    markerLayer = layer;
-                    mapView.renderer.add(layer);
-                    mapView.renderer.setMapCenter(bbox.center());
-                    mapView.renderer.setMapZoom(
-                            mapView.renderer.mapZoomForBBox(
-                                    bbox, mapView.getWidth(), mapView.getHeight()));
-                }
-            }
-        }.execute();
+                        Log.w("GLMapView", "Start creating layer");
+                        GLMapMarkerLayer layer =
+                                new GLMapMarkerLayer(objects, style, styleCollection, 35, 3);
+                        GLMapBBox bbox = objects.getBBox();
+                        Log.w("GLMapView", "Finish creating layer");
+                        objects.dispose();
+                        handler.post(
+                                () -> {
+                                    markerLayer = layer;
+                                    mapView.renderer.add(layer);
+                                    mapView.renderer.setMapCenter(bbox.center());
+                                    mapView.renderer.setMapZoom(
+                                            mapView.renderer.mapZoomForBBox(
+                                                    bbox, mapView.getWidth(), mapView.getHeight()));
+                                });
+                    } catch (Exception ignore) {
+                    }
+                });
     }
 
     static class MarkersStyle extends GLMapMarkerStyleCollectionDataCallback {
@@ -883,56 +876,49 @@ public class MapViewActivity extends Activity
     }
 
     void addMarkers() {
-        new AsyncTask<Void, Void, GLMapMarkerLayer>() {
-            private GLMapBBox bbox;
+        executor.execute(
+                () -> {
+                    try {
+                        GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
+                        for (int i = 0; i < MarkersStyle.unionCounts.length; i++) {
+                            float scale = (float) (0.2 + 0.1 * i);
+                            style.addStyle(
+                                    new GLMapMarkerImage(
+                                            "marker" + scale,
+                                            Objects.requireNonNull(
+                                                    imageManager.open(
+                                                            "cluster.svg",
+                                                            scale,
+                                                            unionColours[i]))));
+                        }
+                        style.setDataCallback(new MarkersStyle());
 
-            @Override
-            protected GLMapMarkerLayer doInBackground(Void... voids) {
-                GLMapMarkerLayer rv;
-                try {
-                    GLMapMarkerStyleCollection style = new GLMapMarkerStyleCollection();
-                    for (int i = 0; i < MarkersStyle.unionCounts.length; i++) {
-                        float scale = (float) (0.2 + 0.1 * i);
-                        style.addStyle(
-                                new GLMapMarkerImage(
-                                        "marker" + scale,
-                                        Objects.requireNonNull(
-                                                imageManager.open(
-                                                        "cluster.svg", scale, unionColours[i]))));
+                        Log.w("GLMapView", "Start parsing");
+                        GLMapVectorObjectList objects =
+                                GLMapVectorObject.createFromGeoJSONStreamOrThrow(
+                                        getAssets().open("cluster_data.json"));
+                        Log.w("GLMapView", "Finish parsing");
+                        Log.w("GLMapView", "Start creating layer");
+                        GLMapMarkerLayer layer =
+                                new GLMapMarkerLayer(objects.toArray(), style, 35, 3);
+                        Log.w("GLMapView", "Finish creating layer");
+                        GLMapBBox bbox = objects.getBBox();
+                        objects.dispose();
+                        handler.post(
+                                () -> {
+                                    markerLayer = layer;
+                                    GLMapViewRenderer renderer = mapView.renderer;
+                                    renderer.add(layer);
+                                    renderer.setMapCenter(bbox.center());
+                                    renderer.setMapZoom(
+                                            renderer.mapZoomForBBox(
+                                                    bbox,
+                                                    renderer.surfaceWidth,
+                                                    renderer.surfaceHeight));
+                                });
+                    } catch (Exception ignore) {
                     }
-                    style.setDataCallback(new MarkersStyle());
-
-                    Log.w("GLMapView", "Start parsing");
-                    GLMapVectorObjectList objects =
-                            GLMapVectorObject.createFromGeoJSONStreamOrThrow(
-                                    getAssets().open("cluster_data.json"));
-                    Log.w("GLMapView", "Finish parsing");
-
-                    bbox = objects.getBBox();
-
-                    Log.w("GLMapView", "Start creating layer");
-                    rv = new GLMapMarkerLayer(objects.toArray(), style, 35, 3);
-                    Log.w("GLMapView", "Finish creating layer");
-                    objects.dispose();
-                } catch (Exception e) {
-                    rv = null;
-                }
-                return rv;
-            }
-
-            @Override
-            protected void onPostExecute(GLMapMarkerLayer layer) {
-                if (layer != null) {
-                    markerLayer = layer;
-                    GLMapViewRenderer renderer = mapView.renderer;
-                    renderer.add(layer);
-                    renderer.setMapCenter(bbox.center());
-                    renderer.setMapZoom(
-                            renderer.mapZoomForBBox(
-                                    bbox, renderer.surfaceWidth, renderer.surfaceHeight));
-                }
-            }
-        }.execute();
+                });
     }
 
     void addImage(final Button btn) {
@@ -1027,44 +1013,121 @@ public class MapViewActivity extends Activity
         mapView.renderer.setMapGeoCenter(centerPoint);
     }
 
-    private void bulkDownload() {
-        mapView.renderer.setMapCenter(MapPoint.CreateFromGeoCoordinates(53, 27));
-        mapView.renderer.setMapZoom(12.5);
+    private void downloadInBBox() {
+        GLMapBBox bbox = new GLMapBBox();
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53, 27));
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.5, 27.5));
+        zoomToBBox(bbox);
+
+        File cacheDir = getCacheDir();
+        File mapPath = new File(cacheDir, "test.vmtar");
+        File navigationPath = new File(cacheDir, "test.navtar");
+        File elevationPath = new File(cacheDir, "test.eletar");
+
+        if (mapPath.exists())
+            GLMapManager.AddDataSet(
+                    GLMapInfo.DataSet.MAP, bbox, mapPath.getAbsolutePath(), null, null);
+        if (navigationPath.exists())
+            GLMapManager.AddDataSet(
+                    GLMapInfo.DataSet.NAVIGATION, bbox, navigationPath.getAbsolutePath(), null, null);
+        if (elevationPath.exists())
+            GLMapManager.AddDataSet(
+                    GLMapInfo.DataSet.ELEVATION, bbox, elevationPath.getAbsolutePath(), null, null);
+
+        mapView.renderer.setDrawElevationLines(true);
+        mapView.renderer.setDrawHillshades(true);
+        mapView.renderer.reloadTiles();
+
+        class Action {
+            String title;
+            int dataSet;
+            File path;
+        };
 
         final Button btn = this.findViewById(R.id.button_action);
-        btn.setVisibility(View.VISIBLE);
-        btn.setText("Download");
-        btn.setOnClickListener(
-                view -> {
-                    long[] allTiles = GLMapManager.VectorTilesAtBBox(mapView.renderer.getBBox());
-                    Log.i("BulkDownload", String.format("tilesCount = %d", allTiles.length));
-                    GLMapManager.CacheTiles(
-                            allTiles,
-                            new GLMapManager.TileDownloadProgress() {
-                                @Override
-                                public boolean onSuccess(long tile) {
-                                    Log.i("BulkDownloadSuccess", String.format("tile = %d", tile));
-                                    return true;
-                                }
+        final Action action;
 
-                                @Override
-                                public boolean onError(long tile, @NonNull GLMapError errorCode) {
-                                    Log.i(
-                                            "BulkDownloadError",
-                                            String.format(
-                                                    "tile = %d, domain = %s, errorCode = %d",
-                                                    tile,
-                                                    errorCode.getErrorDomain(),
-                                                    errorCode.getErrorCode()));
-                                    return true;
-                                }
-                            });
-                });
+        if (!mapPath.exists()) {
+            action = new Action();
+            action.title = "Download map";
+            action.dataSet = GLMapInfo.DataSet.MAP;
+            action.path = mapPath;
+        } else if (!navigationPath.exists()) {
+            action = new Action();
+            action.title = "Download navigation";
+            action.dataSet = GLMapInfo.DataSet.NAVIGATION;
+            action.path = navigationPath;
+        } else if (!elevationPath.exists()) {
+            action = new Action();
+            action.title = "Download elevation";
+            action.dataSet = GLMapInfo.DataSet.ELEVATION;
+            action.path = elevationPath;
+        } else {
+            action = null;
+        }
+
+        if (action != null) {
+            btn.setVisibility(View.VISIBLE);
+            btn.setText(action.title);
+            btn.setOnClickListener(
+                    view ->
+                            GLMapManager.DownloadDataSet(
+                                    action.dataSet,
+                                    action.path.getAbsolutePath(),
+                                    bbox,
+                                    new GLMapManager.DownloadCallback() {
+                                        @Override
+                                        public void onProgress(
+                                                long totalSize,
+                                                long downloadedSize,
+                                                double downloadSpeed) {
+                                            Log.i(
+                                                    "BulkDownload",
+                                                    String.format(
+                                                            "Download %d stats: %d, %f",
+                                                            action.dataSet, downloadedSize, downloadSpeed));
+                                        }
+
+                                        @Override
+                                        public void onFinished(@Nullable GLMapError error) {
+                                            if (error == null) {
+                                                downloadInBBox();
+                                            }
+                                        }
+                                    }));
+        } else {
+            btn.setVisibility(View.GONE);
+        }
     }
 
     private void loadDarkTheme() {
         GLMapStyleParser parser = new GLMapStyleParser(getAssets(), "DefaultStyle.bundle");
         parser.setOptions(Collections.singletonMap("Theme", "Dark"), true);
+        mapView.renderer.setStyle(Objects.requireNonNull(parser.parseFromResources()));
+    }
+
+    private void loadCustomStyle(byte[] newStyleData) {
+        GLMapStyleParser parser =
+                new GLMapStyleParser(
+                        name -> {
+                            byte[] rv;
+                            if (name.equals("Style.mapcss")) {
+                                rv = newStyleData;
+                            } else {
+                                try {
+                                    InputStream stream =
+                                            getAssets().open("DefaultStyle.bundle/" + name);
+                                    rv = new byte[stream.available()];
+                                    if (stream.read(rv) < rv.length) {
+                                        rv = null;
+                                    }
+                                    stream.close();
+                                } catch (IOException ignore) {
+                                    rv = null;
+                                }
+                            }
+                            return rv;
+                        });
         mapView.renderer.setStyle(Objects.requireNonNull(parser.parseFromResources()));
     }
 
@@ -1076,13 +1139,12 @@ public class MapViewActivity extends Activity
         btn.setVisibility(View.VISIBLE);
         btn.setText("Reload");
         btn.setOnClickListener(
-                view ->
-                        new AsyncTask<String, String, byte[]>() {
-                            @Override
-                            protected byte[] doInBackground(String... strings) {
-                                byte[] rv;
+                view -> {
+                    String url = editText.getText().toString();
+                    executor.execute(
+                            () -> {
                                 try {
-                                    URLConnection connection = new URL(strings[0]).openConnection();
+                                    URLConnection connection = new URL(url).openConnection();
                                     connection.connect();
                                     InputStream inputStream = connection.getInputStream();
 
@@ -1093,45 +1155,15 @@ public class MapViewActivity extends Activity
                                         buffer.write(data, 0, nRead);
                                     }
                                     buffer.flush();
-                                    rv = buffer.toByteArray();
+                                    byte[] newStyleData = buffer.toByteArray();
                                     buffer.close();
                                     inputStream.close();
-                                } catch (Exception ignore) {
-                                    rv = null;
-                                }
-                                return rv;
-                            }
 
-                            @Override
-                            protected void onPostExecute(final byte[] newStyleData) {
-                                GLMapStyleParser parser =
-                                        new GLMapStyleParser(
-                                                name -> {
-                                                    byte[] rv;
-                                                    if (name.equals("Style.mapcss")) {
-                                                        rv = newStyleData;
-                                                    } else {
-                                                        try {
-                                                            InputStream stream =
-                                                                    getAssets()
-                                                                            .open(
-                                                                                    "DefaultStyle.bundle/"
-                                                                                            + name);
-                                                            rv = new byte[stream.available()];
-                                                            if (stream.read(rv) < rv.length) {
-                                                                rv = null;
-                                                            }
-                                                            stream.close();
-                                                        } catch (IOException ignore) {
-                                                            rv = null;
-                                                        }
-                                                    }
-                                                    return rv;
-                                                });
-                                mapView.renderer.setStyle(
-                                        Objects.requireNonNull(parser.parseFromResources()));
-                            }
-                        }.execute(editText.getText().toString()));
+                                    handler.post(() -> loadCustomStyle(newStyleData));
+                                } catch (Exception ignore) {
+                                }
+                            });
+                });
     }
 
     int colorForTrack(float angle) {
@@ -1167,10 +1199,6 @@ public class MapViewActivity extends Activity
         mapView.renderer.add(track);
         mapView.renderer.setMapCenter(MapPoint.CreateFromGeoCoordinates(clat, clon));
         mapView.renderer.setMapZoom(4);
-
-        if (handler == null) {
-            handler = new Handler();
-        }
 
         trackRecordRunnable =
                 () -> {
