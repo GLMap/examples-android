@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import android.annotation.SuppressLint
 import android.app.ListActivity

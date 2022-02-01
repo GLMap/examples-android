@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GLMap Demo</string>
 <!-- <string name="api_key" translatable="false">Uncomment and enter your API key here</string> -->
+    <string name="java_app_name">GLMap Java Demo</string>
+    <string name="kotlin_app_name">GLMap Kotlin Demo</string>
 </resources>

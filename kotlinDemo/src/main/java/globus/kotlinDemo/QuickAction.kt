@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import android.content.Context
 import android.graphics.Color

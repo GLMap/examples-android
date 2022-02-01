@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import android.annotation.SuppressLint;
 import android.app.ListActivity;

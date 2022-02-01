@@ -1,7 +1,6 @@
-package globus.demo;
+package globus.javaDemo;
 
 import androidx.multidex.MultiDexApplication;
-
 import globus.glmap.GLMapManager;
 
 /** Created by destman on 10/18/17. */

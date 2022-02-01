@@ -1,4 +1,4 @@
-package globus.demo;
+package globus.javaDemo;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -392,8 +392,8 @@ public class MapViewActivity extends Activity
             case GEO_JSON:
                 loadGeoJSON();
                 break;
-            case TILES_BULK_DOWNLOAD:
-                bulkDownload();
+            case DOWNLOAD_IN_BBOX:
+                downloadInBBox();
                 break;
             case STYLE_LIVE_RELOAD:
                 styleLiveReload();
@@ -1013,40 +1013,67 @@ public class MapViewActivity extends Activity
         mapView.renderer.setMapGeoCenter(centerPoint);
     }
 
-    private void bulkDownload() {
+    private void downloadInBBox() {
         GLMapBBox bbox = new GLMapBBox();
         bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53, 27));
-        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(54, 28));
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.5, 27.5));
         zoomToBBox(bbox);
 
         File cacheDir = getCacheDir();
-        File mapFile = new File(cacheDir, "test.vmtar");
-        File navFile = new File(cacheDir, "test.navtar");
-        File eleFile = new File(cacheDir, "test.eletar");
+        File mapPath = new File(cacheDir, "test.vmtar");
+        File navigationPath = new File(cacheDir, "test.navtar");
+        File elevationPath = new File(cacheDir, "test.eletar");
 
-        if (mapFile.exists())
+        if (mapPath.exists())
             GLMapManager.AddDataSet(
-                    GLMapInfo.DataSet.MAP, bbox, mapFile.getAbsolutePath(), null, null);
-        if (navFile.exists())
+                    GLMapInfo.DataSet.MAP, bbox, mapPath.getAbsolutePath(), null, null);
+        if (navigationPath.exists())
             GLMapManager.AddDataSet(
-                    GLMapInfo.DataSet.NAVIGATION, bbox, navFile.getAbsolutePath(), null, null);
-        if (eleFile.exists())
+                    GLMapInfo.DataSet.NAVIGATION, bbox, navigationPath.getAbsolutePath(), null, null);
+        if (elevationPath.exists())
             GLMapManager.AddDataSet(
-                    GLMapInfo.DataSet.ELEVATION, bbox, eleFile.getAbsolutePath(), null, null);
+                    GLMapInfo.DataSet.ELEVATION, bbox, elevationPath.getAbsolutePath(), null, null);
 
         mapView.renderer.setDrawElevationLines(true);
         mapView.renderer.setDrawHillshades(true);
         mapView.renderer.reloadTiles();
 
+        class Action {
+            String title;
+            int dataSet;
+            File path;
+        };
+
         final Button btn = this.findViewById(R.id.button_action);
-        if (!mapFile.exists()) {
+        final Action action;
+
+        if (!mapPath.exists()) {
+            action = new Action();
+            action.title = "Download map";
+            action.dataSet = GLMapInfo.DataSet.MAP;
+            action.path = mapPath;
+        } else if (!navigationPath.exists()) {
+            action = new Action();
+            action.title = "Download navigation";
+            action.dataSet = GLMapInfo.DataSet.NAVIGATION;
+            action.path = navigationPath;
+        } else if (!elevationPath.exists()) {
+            action = new Action();
+            action.title = "Download elevation";
+            action.dataSet = GLMapInfo.DataSet.ELEVATION;
+            action.path = elevationPath;
+        } else {
+            action = null;
+        }
+
+        if (action != null) {
             btn.setVisibility(View.VISIBLE);
-            btn.setText("Download Map");
+            btn.setText(action.title);
             btn.setOnClickListener(
                     view ->
                             GLMapManager.DownloadDataSet(
-                                    GLMapInfo.DataSet.MAP,
-                                    mapFile.getAbsolutePath(),
+                                    action.dataSet,
+                                    action.path.getAbsolutePath(),
                                     bbox,
                                     new GLMapManager.DownloadCallback() {
                                         @Override
@@ -1057,72 +1084,14 @@ public class MapViewActivity extends Activity
                                             Log.i(
                                                     "BulkDownload",
                                                     String.format(
-                                                            "dl = %d speed = %f",
-                                                            downloadedSize, downloadSpeed));
+                                                            "Download %d stats: %d, %f",
+                                                            action.dataSet, downloadedSize, downloadSpeed));
                                         }
 
                                         @Override
                                         public void onFinished(@Nullable GLMapError error) {
                                             if (error == null) {
-                                                bulkDownload();
-                                            }
-                                        }
-                                    }));
-        } else if (!navFile.exists()) {
-            btn.setVisibility(View.VISIBLE);
-            btn.setText("Download navigation data");
-            btn.setOnClickListener(
-                    view ->
-                            GLMapManager.DownloadDataSet(
-                                    GLMapInfo.DataSet.NAVIGATION,
-                                    navFile.getAbsolutePath(),
-                                    bbox,
-                                    new GLMapManager.DownloadCallback() {
-                                        @Override
-                                        public void onProgress(
-                                                long totalSize,
-                                                long downloadedSize,
-                                                double downloadSpeed) {
-                                            Log.i(
-                                                    "BulkDownload",
-                                                    String.format(
-                                                            "dl = %d speed = %f",
-                                                            downloadedSize, downloadSpeed));
-                                        }
-
-                                        @Override
-                                        public void onFinished(@Nullable GLMapError error) {
-                                            if (error == null) {
-                                                bulkDownload();
-                                            }
-                                        }
-                                    }));
-        } else if (!eleFile.exists()) {
-            btn.setVisibility(View.VISIBLE);
-            btn.setText("Download elevation data");
-            btn.setOnClickListener(
-                    view ->
-                            GLMapManager.DownloadDataSet(
-                                    GLMapInfo.DataSet.ELEVATION,
-                                    eleFile.getAbsolutePath(),
-                                    bbox,
-                                    new GLMapManager.DownloadCallback() {
-                                        @Override
-                                        public void onProgress(
-                                                long totalSize,
-                                                long downloadedSize,
-                                                double downloadSpeed) {
-                                            Log.i(
-                                                    "BulkDownload",
-                                                    String.format(
-                                                            "dl = %d speed = %f",
-                                                            downloadedSize, downloadSpeed));
-                                        }
-
-                                        @Override
-                                        public void onFinished(@Nullable GLMapError error) {
-                                            if (error == null) {
-                                                bulkDownload();
+                                                downloadInBBox();
                                             }
                                         }
                                     }));

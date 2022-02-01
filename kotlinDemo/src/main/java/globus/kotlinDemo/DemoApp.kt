@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import androidx.multidex.MultiDexApplication
 import globus.glmap.GLMapManager

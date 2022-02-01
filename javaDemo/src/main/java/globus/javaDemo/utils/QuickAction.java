@@ -1,4 +1,4 @@
-package globus.demo.utils;
+package globus.javaDemo.utils;
 
 import android.content.Context;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,7 +11,7 @@ import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import globus.demo.R;
+import globus.javaDemo.R;
 
 // Custom popup menu with pin arrow
 public class QuickAction {

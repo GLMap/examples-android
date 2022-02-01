@@ -1,4 +1,4 @@
-package globus.demo
+package globus.kotlinDemo
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -292,7 +292,7 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
                 mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
             }
             Samples.GEO_JSON -> loadGeoJSON()
-            Samples.TILES_BULK_DOWNLOAD -> bulkDownload()
+            Samples.DOWNLOAD_IN_BBOX -> downloadInBBox()
             Samples.STYLE_LIVE_RELOAD -> styleLiveReload()
             Samples.RECORD_TRACK -> recordTrack()
         }
@@ -768,41 +768,42 @@ node[count>=128]{
         renderer.mapGeoCenter = centerPoint
     }
 
-    private fun bulkDownload() {
+    private fun downloadInBBox() {
         val bbox = GLMapBBox()
         bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.0, 27.0))
-        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(54.0, 28.0))
+        bbox.addPoint(MapPoint.CreateFromGeoCoordinates(53.5, 27.5))
         zoomToBBox(bbox = bbox)
 
         val cacheDir = cacheDir
-        val mapFile = File(cacheDir, "test.vmtar")
-        val navFile = File(cacheDir, "test.navtar")
-        val eleFile = File(cacheDir, "test.eletar")
+        val mapPath = File(cacheDir, "test.vmtar")
+        val navigationPath = File(cacheDir, "test.navtar")
+        val elevationPath = File(cacheDir, "test.eletar")
 
-        if (mapFile.exists())
-            GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, bbox, mapFile.absolutePath, null, null)
-        if (navFile.exists())
-            GLMapManager.AddDataSet(GLMapInfo.DataSet.NAVIGATION, bbox, navFile.absolutePath, null, null)
-        if (eleFile.exists())
-            GLMapManager.AddDataSet(GLMapInfo.DataSet.ELEVATION, bbox, eleFile.absolutePath, null, null)
+        if (mapPath.exists())
+            GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, bbox, mapPath.absolutePath, null, null)
+        if (navigationPath.exists())
+            GLMapManager.AddDataSet(GLMapInfo.DataSet.NAVIGATION, bbox, navigationPath.absolutePath, null, null)
+        if (elevationPath.exists())
+            GLMapManager.AddDataSet(GLMapInfo.DataSet.ELEVATION, bbox, elevationPath.absolutePath, null, null)
 
+        mapView.renderer.enableClipping(bbox, 9.0F, 16.0F)
         mapView.renderer.drawElevationLines = true
         mapView.renderer.drawHillshades = true
         mapView.renderer.reloadTiles()
 
         class ActionInfo(
-            val text: String,
+            val title: String,
             @GLMapInfo.DataSet val dataSet: Int,
             val file: File
         )
 
         val action = when {
-            !mapFile.exists() ->
-                ActionInfo("Download map data", GLMapInfo.DataSet.MAP, mapFile)
-            !navFile.exists() ->
-                ActionInfo("Download nav data", GLMapInfo.DataSet.NAVIGATION, navFile)
-            !eleFile.exists() ->
-                ActionInfo("Download ele data", GLMapInfo.DataSet.ELEVATION, eleFile)
+            !mapPath.exists() ->
+                ActionInfo("Download map", GLMapInfo.DataSet.MAP, mapPath)
+            !navigationPath.exists() ->
+                ActionInfo("Download navigation", GLMapInfo.DataSet.NAVIGATION, navigationPath)
+            !elevationPath.exists() ->
+                ActionInfo("Download elevation", GLMapInfo.DataSet.ELEVATION, elevationPath)
             else ->
                 null
         }
@@ -810,7 +811,7 @@ node[count>=128]{
         val btn = findViewById<Button>(R.id.button_action)
         if (action != null) {
             btn.visibility = View.VISIBLE
-            btn.text = action.text
+            btn.text = action.title
             btn.setOnClickListener {
                 GLMapManager.DownloadDataSet(
                     action.dataSet,
@@ -825,15 +826,15 @@ node[count>=128]{
                             Log.i(
                                 "BulkDownload",
                                 String.format(
-                                    "dl = %d speed = %f",
-                                    downloadedSize, downloadSpeed
+                                    "Download %d stats: %d, %f",
+                                    action.dataSet, downloadedSize, downloadSpeed
                                 )
                             )
                         }
 
                         override fun onFinished(error: GLMapError?) {
                             if (error == null)
-                                bulkDownload()
+                                downloadInBBox()
                             else
                                 Log.e("BulkDownload", error.message)
                         }

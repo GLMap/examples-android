@@ -1,4 +1,4 @@
-package globus.demo.utils;
+package globus.javaDemo.utils;
 
 // Item in QuickAction
 public class ActionItem {
