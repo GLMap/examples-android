@@ -11,8 +11,6 @@ import androidx.annotation.NonNull;
 
 import com.google.android.material.tabs.TabLayout;
 
-import globus.javaDemo.utils.ActionItem;
-import globus.javaDemo.utils.QuickAction;
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapError;
 import globus.glmap.GLMapLocaleSettings;
@@ -24,6 +22,8 @@ import globus.glmap.MapPoint;
 import globus.glroute.GLRoute;
 import globus.glroute.GLRoutePoint;
 import globus.glroute.GLRouteRequest;
+import globus.javaDemo.utils.ActionItem;
+import globus.javaDemo.utils.QuickAction;
 
 import java.io.IOException;
 import java.io.InputStream;

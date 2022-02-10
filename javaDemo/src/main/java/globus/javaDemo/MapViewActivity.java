@@ -1029,7 +1029,11 @@ public class MapViewActivity extends Activity
                     GLMapInfo.DataSet.MAP, bbox, mapPath.getAbsolutePath(), null, null);
         if (navigationPath.exists())
             GLMapManager.AddDataSet(
-                    GLMapInfo.DataSet.NAVIGATION, bbox, navigationPath.getAbsolutePath(), null, null);
+                    GLMapInfo.DataSet.NAVIGATION,
+                    bbox,
+                    navigationPath.getAbsolutePath(),
+                    null,
+                    null);
         if (elevationPath.exists())
             GLMapManager.AddDataSet(
                     GLMapInfo.DataSet.ELEVATION, bbox, elevationPath.getAbsolutePath(), null, null);
@@ -1042,7 +1046,7 @@ public class MapViewActivity extends Activity
             String title;
             int dataSet;
             File path;
-        };
+        }
 
         final Button btn = this.findViewById(R.id.button_action);
         final Action action;
@@ -1085,7 +1089,9 @@ public class MapViewActivity extends Activity
                                                     "BulkDownload",
                                                     String.format(
                                                             "Download %d stats: %d, %f",
-                                                            action.dataSet, downloadedSize, downloadSpeed));
+                                                            action.dataSet,
+                                                            downloadedSize,
+                                                            downloadSpeed));
                                         }
 
                                         @Override
