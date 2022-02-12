@@ -23,8 +23,10 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.core.app.ActivityCompat
 import globus.glmap.*
-import globus.glmap.GLMapManager
 import globus.glmap.GLMapViewRenderer.*
+import globus.glroute.GLRoute
+import globus.glroute.GLRoutePoint
+import globus.glroute.GLRouteRequest
 import globus.glsearch.GLSearch
 import globus.glsearch.GLSearchCategories
 import globus.glsearch.GLSearchFilter
@@ -793,8 +795,8 @@ node[count>=128]{
 
         class ActionInfo(
             val title: String,
-            @GLMapInfo.DataSet val dataSet: Int,
-            val file: File
+            @GLMapInfo.DataSet val dataSet: Int?,
+            val file: File?
         )
 
         val action = when {
@@ -805,7 +807,7 @@ node[count>=128]{
             !elevationPath.exists() ->
                 ActionInfo("Download elevation", GLMapInfo.DataSet.ELEVATION, elevationPath)
             else ->
-                null
+                ActionInfo("Calc route", null, null)
         }
 
         val btn = findViewById<Button>(R.id.button_action)
@@ -813,33 +815,60 @@ node[count>=128]{
             btn.visibility = View.VISIBLE
             btn.text = action.title
             btn.setOnClickListener {
-                GLMapManager.DownloadDataSet(
-                    action.dataSet,
-                    action.file.absolutePath,
-                    bbox,
-                    object : GLMapManager.DownloadCallback {
-                        override fun onProgress(
-                            totalSize: Long,
-                            downloadedSize: Long,
-                            downloadSpeed: Double
-                        ) {
-                            Log.i(
-                                "BulkDownload",
-                                String.format(
-                                    "Download %d stats: %d, %f",
-                                    action.dataSet, downloadedSize, downloadSpeed
+                if (action.file != null && action.dataSet != null) {
+                    GLMapManager.DownloadDataSet(
+                        action.dataSet,
+                        action.file.absolutePath,
+                        bbox,
+                        object : GLMapManager.DownloadCallback {
+                            override fun onProgress(
+                                totalSize: Long,
+                                downloadedSize: Long,
+                                downloadSpeed: Double
+                            ) {
+                                Log.i(
+                                    "BulkDownload",
+                                    String.format(
+                                        "Download %d stats: %d, %f",
+                                        action.dataSet, downloadedSize, downloadSpeed
+                                    )
                                 )
-                            )
+                            }
+
+                            override fun onFinished(error: GLMapError?) {
+                                if (error == null)
+                                    downloadInBBox()
+                                else
+                                    Log.e("BulkDownload", error.message)
+                            }
+                        }
+                    )
+                } else {
+                    val request = GLRouteRequest()
+                    request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, true,true))
+                    request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, true,true))
+                    request.mode = GLRoute.Mode.DRIVE
+                    request.locale = "en"
+                    request.setOfflineWithConfig(RoutingActivity.GetValhallaConfig(resources))
+
+                    request.start(object : GLRouteRequest.ResultsCallback {
+                        override fun onResult(route: GLRoute) {
+                            Log.i("Route", "Success")
+                            val trackData = route.getTrackData(Color.argb(255, 255, 0, 0))
+
+                            if (track != null) {
+                                track!!.setData(trackData)
+                            } else {
+                                track = GLMapTrack(trackData, 5)
+                                mapView.renderer.add(track!!)
+                            }
                         }
 
-                        override fun onFinished(error: GLMapError?) {
-                            if (error == null)
-                                downloadInBBox()
-                            else
-                                Log.e("BulkDownload", error.message)
+                        override fun onError(error: GLMapError) {
+                            Log.i("Route", "Error: $error")
                         }
-                    }
-                )
+                    })
+                }
             }
         } else {
             btn.visibility = View.GONE

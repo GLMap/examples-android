@@ -1,6 +1,7 @@
 package globus.kotlinDemo
 
 import android.annotation.SuppressLint
+import android.content.res.Resources
 import android.graphics.Color
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -34,25 +35,6 @@ class RoutingActivity : MapViewActivity() {
         get() = findViewById(R.id.tab_layout_right)
 
     override fun getLayoutID() = R.layout.routing
-
-    private var valhallaConfig: String = ""
-        get() {
-            if (field.isEmpty()) {
-                var raw: ByteArray? = null
-                try {
-                    // Read prepared categories
-                    val stream = resources.openRawResource(R.raw.valhalla3)
-                    raw = ByteArray(stream.available())
-                    stream.read(raw)
-                    stream.close()
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-                // Construct categories
-                field = String(raw!!, Charset.defaultCharset())
-            }
-            return field
-        }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun run(test: Samples) {
@@ -121,7 +103,7 @@ class RoutingActivity : MapViewActivity() {
         request.unitSystem = GLMapLocaleSettings.UnitSystem.International
         request.mode = routingMode
         if (networkMode == NetworkMode.Offline)
-            request.setOfflineWithConfig(valhallaConfig)
+            request.setOfflineWithConfig(GetValhallaConfig(resources))
         request.start(object : GLRouteRequest.ResultsCallback {
             override fun onResult(route: GLRoute) {
                 val trackData = route.getTrackData(Color.RED)
@@ -165,5 +147,20 @@ class RoutingActivity : MapViewActivity() {
     companion object {
         private const val ID_DEPARTURE = 0
         private const val ID_DESTINATION = 1
+
+        fun GetValhallaConfig(resources: Resources) : String {
+            var raw: ByteArray? = null
+            try {
+                // Read prepared categories
+                val stream = resources.openRawResource(R.raw.valhalla3)
+                raw = ByteArray(stream.available())
+                stream.read(raw)
+                stream.close()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+            // Construct categories
+            return String(raw!!, Charset.defaultCharset())
+        }
     }
 }

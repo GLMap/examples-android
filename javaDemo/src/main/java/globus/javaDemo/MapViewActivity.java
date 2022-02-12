@@ -1,5 +1,7 @@
 package globus.javaDemo;
 
+import static globus.javaDemo.RoutingActivity.getValhallaConfig;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -52,6 +54,9 @@ import globus.glmap.GLMapViewRenderer;
 import globus.glmap.ImageManager;
 import globus.glmap.MapGeoPoint;
 import globus.glmap.MapPoint;
+import globus.glroute.GLRoute;
+import globus.glroute.GLRoutePoint;
+import globus.glroute.GLRouteRequest;
 import globus.glsearch.GLSearch;
 import globus.glsearch.GLSearchCategories;
 import globus.glsearch.GLSearchCategory;
@@ -1067,14 +1072,16 @@ public class MapViewActivity extends Activity
             action.dataSet = GLMapInfo.DataSet.ELEVATION;
             action.path = elevationPath;
         } else {
-            action = null;
+            action = new Action();
+            action.title = "Calc route";
         }
 
         if (action != null) {
             btn.setVisibility(View.VISIBLE);
             btn.setText(action.title);
             btn.setOnClickListener(
-                    view ->
+                    view -> {
+                        if (action.path != null) {
                             GLMapManager.DownloadDataSet(
                                     action.dataSet,
                                     action.path.getAbsolutePath(),
@@ -1100,7 +1107,35 @@ public class MapViewActivity extends Activity
                                                 downloadInBBox();
                                             }
                                         }
-                                    }));
+                                    });
+                        } else {
+                            GLRouteRequest request = new GLRouteRequest();
+                            request.addPoint(new GLRoutePoint(new MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true));
+                            request.addPoint(new GLRoutePoint(new MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true));
+                            request.mode = GLRoute.Mode.DRIVE;
+                            request.locale = "en";
+                            request.setOfflineWithConfig(getValhallaConfig(getResources()));
+
+                            request.start(new GLRouteRequest.ResultsCallback() {
+                                @Override
+                                public void onResult(@NonNull GLRoute route) {
+                                    Log.i("Route", "Success");
+                                    GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
+                                    if (track != null) {
+                                        track.setData(trackData);
+                                    } else {
+                                        track = new GLMapTrack(trackData, 5);
+                                        mapView.renderer.add(track);
+                                    }
+                                }
+
+                                @Override
+                                public void onError(@NonNull GLMapError error) {
+                                    Log.i("Route", "Error: " + error);
+                                }
+                            });
+                        }
+                    });
         } else {
             btn.setVisibility(View.GONE);
         }
