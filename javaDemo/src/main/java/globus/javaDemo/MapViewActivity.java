@@ -1110,30 +1110,42 @@ public class MapViewActivity extends Activity
                                     });
                         } else {
                             GLRouteRequest request = new GLRouteRequest();
-                            request.addPoint(new GLRoutePoint(new MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true));
-                            request.addPoint(new GLRoutePoint(new MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true));
+                            request.addPoint(
+                                    new GLRoutePoint(
+                                            new MapGeoPoint(53.2328, 27.2699),
+                                            Double.NaN,
+                                            true,
+                                            true));
+                            request.addPoint(
+                                    new GLRoutePoint(
+                                            new MapGeoPoint(53.1533, 27.0909),
+                                            Double.NaN,
+                                            true,
+                                            true));
                             request.mode = GLRoute.Mode.DRIVE;
                             request.locale = "en";
                             request.setOfflineWithConfig(getValhallaConfig(getResources()));
 
-                            request.start(new GLRouteRequest.ResultsCallback() {
-                                @Override
-                                public void onResult(@NonNull GLRoute route) {
-                                    Log.i("Route", "Success");
-                                    GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
-                                    if (track != null) {
-                                        track.setData(trackData);
-                                    } else {
-                                        track = new GLMapTrack(trackData, 5);
-                                        mapView.renderer.add(track);
-                                    }
-                                }
+                            request.start(
+                                    new GLRouteRequest.ResultsCallback() {
+                                        @Override
+                                        public void onResult(@NonNull GLRoute route) {
+                                            Log.i("Route", "Success");
+                                            GLMapTrackData trackData =
+                                                    route.getTrackData(Color.argb(255, 255, 0, 0));
+                                            if (track != null) {
+                                                track.setData(trackData);
+                                            } else {
+                                                track = new GLMapTrack(trackData, 5);
+                                                mapView.renderer.add(track);
+                                            }
+                                        }
 
-                                @Override
-                                public void onError(@NonNull GLMapError error) {
-                                    Log.i("Route", "Error: " + error);
-                                }
-                            });
+                                        @Override
+                                        public void onError(@NonNull GLMapError error) {
+                                            Log.i("Route", "Error: " + error);
+                                        }
+                                    });
                         }
                     });
         } else {

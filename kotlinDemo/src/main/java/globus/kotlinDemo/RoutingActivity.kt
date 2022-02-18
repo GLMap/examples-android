@@ -148,7 +148,7 @@ class RoutingActivity : MapViewActivity() {
         private const val ID_DEPARTURE = 0
         private const val ID_DESTINATION = 1
 
-        fun GetValhallaConfig(resources: Resources) : String {
+        fun GetValhallaConfig(resources: Resources): String {
             var raw: ByteArray? = null
             try {
                 // Read prepared categories

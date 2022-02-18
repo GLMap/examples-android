@@ -845,8 +845,8 @@ node[count>=128]{
                     )
                 } else {
                     val request = GLRouteRequest()
-                    request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, true,true))
-                    request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, true,true))
+                    request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true))
+                    request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true))
                     request.mode = GLRoute.Mode.DRIVE
                     request.locale = "en"
                     request.setOfflineWithConfig(RoutingActivity.GetValhallaConfig(resources))
