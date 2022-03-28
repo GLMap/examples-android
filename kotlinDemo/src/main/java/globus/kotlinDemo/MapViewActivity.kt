@@ -597,7 +597,7 @@ node[count>=128]{
     icon-image:"uni7";
     text-priority: 107;
 }                  
-                """
+            """
         )!!
         executor.execute {
             try {
@@ -1017,7 +1017,7 @@ node[count>=128]{
 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [27.7151, 53.8869]}, "properties": {"id": "2", "text": "test2"}},
 {"type":"LineString", "coordinates": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},
 {"type":"Polygon", "coordinates":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]            
-        """
+            """
         )
         val style = GLMapVectorCascadeStyle.createStyle(
             """
@@ -1051,7 +1051,7 @@ area {
     width:1pt;
     color:red;
 }            
-        """
+            """
         )!!
         if (objects != null) {
             val drawable = GLMapDrawable()

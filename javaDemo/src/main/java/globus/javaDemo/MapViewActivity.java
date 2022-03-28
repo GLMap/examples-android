@@ -206,6 +206,7 @@ public class MapViewActivity extends Activity
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getLayoutID());
+
         mapView = this.findViewById(R.id.map_view);
         imageManager = new ImageManager(getAssets(), mapView.renderer.screenScale);
 
@@ -418,12 +419,16 @@ public class MapViewActivity extends Activity
     }
 
     public void checkAndRequestLocationPermission() {
+        DemoApp app = (DemoApp) getApplication();
         // Create helper if not exist
-        if (curLocationHelper == null)
+        if (curLocationHelper == null) {
             curLocationHelper = new CurLocationHelper(mapView.renderer, imageManager);
+            app.locationListeners.add(curLocationHelper);
+        }
 
         // Try to start location updates. If we need permissions - ask for them
-        if (!curLocationHelper.initLocationManager(this))
+        // Setup get location service
+        if (!app.initLocationManager())
             ActivityCompat.requestPermissions(
                     this,
                     new String[] {
@@ -437,8 +442,9 @@ public class MapViewActivity extends Activity
     public void onRequestPermissionsResult(
             int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == 0) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                curLocationHelper.initLocationManager(this);
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                ((DemoApp) getApplication()).initLocationManager();
+            }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
@@ -447,11 +453,6 @@ public class MapViewActivity extends Activity
     @Override
     protected void onDestroy() {
         GLMapManager.removeStateListener(this);
-        if (mapView != null) {
-            mapView.renderer.removeAllObjects();
-            mapView.renderer.setCenterTileStateChangedCallback(null);
-            mapView.renderer.setMapDidMoveCallback(null);
-        }
 
         if (markerLayer != null) {
             markerLayer.dispose();
@@ -464,8 +465,12 @@ public class MapViewActivity extends Activity
         }
 
         if (curLocationHelper != null) {
-            curLocationHelper.onDestroy();
+            ((DemoApp) getApplication()).locationListeners.remove(curLocationHelper);
             curLocationHelper = null;
+        }
+
+        if (mapView != null) {
+            mapView.dispose();
         }
 
         handler.removeCallbacks(trackRecordRunnable);

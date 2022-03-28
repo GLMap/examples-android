@@ -1,19 +1,10 @@
 package globus.javaDemo;
 
-import static android.content.Context.LOCATION_SERVICE;
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
-import android.util.Log;
 
-import androidx.core.app.ActivityCompat;
+import androidx.annotation.NonNull;
 
 import globus.glmap.GLMapAnimation;
 import globus.glmap.GLMapDrawable;
@@ -23,18 +14,12 @@ import globus.glmap.GLMapViewRenderer;
 import globus.glmap.ImageManager;
 import globus.glmap.MapPoint;
 
-import java.util.List;
 import java.util.Objects;
 
 /** Created by destman on 6/1/17. */
-class CurLocationHelper implements LocationListener {
-    private static final long MIN_TIME_BW_UPDATES = 1000; // 1 second
-    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 1 meter
-
+class CurLocationHelper implements DemoApp.LocationCallback {
     private GLMapDrawable userMovementImage, userLocationImage, accuracyCircle;
     private boolean isFollowLocationEnabled = false;
-    private LocationManager locationManager;
-    private Location lastLocation;
     private final GLMapViewRenderer renderer;
     private final ImageManager imageManager;
 
@@ -43,91 +28,8 @@ class CurLocationHelper implements LocationListener {
         this.imageManager = imageManager;
     }
 
-    void onDestroy() {
-        if (locationManager != null) {
-            locationManager.removeUpdates(this);
-            locationManager = null;
-        }
-    }
-
-    boolean initLocationManager(Activity activity) {
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-                                activity, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) return false;
-
-        if (locationManager == null) {
-            try {
-                // Setup get location service
-                locationManager = (LocationManager) activity.getSystemService(LOCATION_SERVICE);
-
-                // Configure criteria
-                Criteria criteria = new Criteria();
-                criteria.setAccuracy(Criteria.ACCURACY_FINE);
-                criteria.setSpeedRequired(true);
-                criteria.setAltitudeRequired(true);
-                criteria.setBearingRequired(true);
-                criteria.setBearingAccuracy(Criteria.ACCURACY_HIGH);
-
-                // Find the best location that currently have all location providers
-                float bestAccuracy = Float.MAX_VALUE;
-                long bestTime = Long.MAX_VALUE;
-                lastLocation = null;
-                List<String> matchingProviders = locationManager.getAllProviders();
-                for (String provider : matchingProviders) {
-                    Location location = null;
-                    try {
-                        location = locationManager.getLastKnownLocation(provider);
-                    } catch (Exception e) {
-                        Log.e("CurLocationHelper", e.getLocalizedMessage());
-                    }
-                    if (location != null) {
-                        float accuracy = location.getAccuracy();
-                        long time = location.getTime();
-                        if ((time >= bestTime && accuracy < bestAccuracy)) {
-                            lastLocation = location;
-                            bestAccuracy = accuracy;
-                            bestTime = time;
-                        } else if (time < bestTime && bestAccuracy == Float.MAX_VALUE) {
-                            lastLocation = location;
-                            bestTime = time;
-                            bestAccuracy = accuracy;
-                        }
-                    }
-                }
-                // Update location to current best
-                onLocationChanged(lastLocation);
-                // Request location updates
-                locationManager.requestLocationUpdates(
-                        MIN_TIME_BW_UPDATES,
-                        MIN_DISTANCE_CHANGE_FOR_UPDATES,
-                        criteria,
-                        this,
-                        activity.getMainLooper());
-            } catch (Exception e) {
-                locationManager = null;
-            }
-        }
-        return true;
-    }
-
-    public Location getLastLocation() {
-        return lastLocation;
-    }
-
-    public void setEnableFollowLocation(boolean enable) {
-        this.isFollowLocationEnabled = enable;
-        if (isFollowLocationEnabled) {
-            onLocationChanged(lastLocation);
-        }
-    }
-
     @Override
-    public void onLocationChanged(final Location location) {
-        if (location == null) return;
-
-        lastLocation = location;
+    public void onLocationChanged(@NonNull Location location) {
         final MapPoint position =
                 MapPoint.CreateFromGeoCoordinates(location.getLatitude(), location.getLongitude());
         if (isFollowLocationEnabled) {
@@ -210,13 +112,4 @@ class CurLocationHelper implements LocationListener {
                     if (location.hasBearing()) userLocationImage.setAngle(-location.getBearing());
                 });
     }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-    @Override
-    public void onProviderEnabled(String provider) {}
-
-    @Override
-    public void onProviderDisabled(String provider) {}
 }
