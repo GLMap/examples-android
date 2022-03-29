@@ -1,6 +1,5 @@
 package globus.javaDemo;
 
-
 import android.graphics.Bitmap;
 import android.location.Location;
 
