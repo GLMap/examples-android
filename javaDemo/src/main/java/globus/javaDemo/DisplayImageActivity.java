@@ -11,11 +11,9 @@ import globus.glmap.ImageManager;
 import java.io.FileNotFoundException;
 
 public class DisplayImageActivity extends Activity {
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.display_image);
-
         Bundle b = getIntent().getExtras();
         String imgPath = b != null ? b.getString("imageName") : null;
         if (imgPath != null) {

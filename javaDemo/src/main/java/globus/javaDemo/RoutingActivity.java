@@ -44,7 +44,7 @@ public class RoutingActivity extends MapViewActivity {
     private NetworkMode networkMode = NetworkMode.Online;
     private TabLayout onlineOfflineSwitch, routeTypeSwitch;
     private MapGeoPoint departure, destination;
-    private static String valhallaConfig, valhallaLegacyConfig;
+    private static String valhallaConfig;
     private GLMapTrack track;
 
     @Override
@@ -107,7 +107,6 @@ public class RoutingActivity extends MapViewActivity {
 
         if (networkMode == NetworkMode.Offline) {
             request.setOfflineWithConfig(getValhallaConfig(getResources()));
-            request.setOfflineWithLegacyConfig(getValhallaLegacyConfig(getResources()));
         }
 
         request.start(
@@ -149,24 +148,6 @@ public class RoutingActivity extends MapViewActivity {
             valhallaConfig = new String(raw, Charset.defaultCharset());
         }
         return valhallaConfig;
-    }
-
-    public static String getValhallaLegacyConfig(Resources resources) {
-        if (valhallaLegacyConfig == null) {
-            byte[] raw = null;
-            try {
-                // Read prepared categories
-                InputStream stream = resources.openRawResource(R.raw.valhalla2);
-                raw = new byte[stream.available()];
-                stream.read(raw);
-                stream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            // Construct categories
-            valhallaLegacyConfig = new String(raw, Charset.defaultCharset());
-        }
-        return valhallaLegacyConfig;
     }
 
     private void setSwitchesValues() {

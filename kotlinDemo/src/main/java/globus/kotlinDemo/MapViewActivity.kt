@@ -23,7 +23,6 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.core.app.ActivityCompat
 import globus.glmap.*
-import globus.glmap.GLMapViewRenderer.*
 import globus.glroute.GLRoute
 import globus.glroute.GLRoutePoint
 import globus.glroute.GLRouteRequest
@@ -42,7 +41,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
-open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.StateListener {
+open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback, GLMapManager.StateListener {
 
     private data class Pin(val pos: MapPoint, val imageVariant: Int)
 
@@ -186,8 +185,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
         renderer.localeSettings = localeSettings
         renderer.setStyle(GLMapStyleParser(assets, "DefaultStyle.bundle").parseFromResources()!!)
         checkAndRequestLocationPermission()
-        renderer.setScaleRulerStyle(GLMapPlacement.BottomCenter, 10, 10, 200.0)
-        renderer.setAttributionPosition(GLMapPlacement.TopCenter)
+        renderer.setScaleRulerStyle(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200.0)
+        renderer.setAttributionPosition(GLMapViewRenderer.GLMapPlacement.TopCenter)
         renderer.setCenterTileStateChangedCallback { updateMapDownloadButton() }
         renderer.setMapDidMoveCallback { updateMapDownloadButtonText() }
         run(Samples.values()[intent.extras?.getInt("example") ?: 0])
@@ -307,46 +306,56 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
     }
 
     private fun checkAndRequestLocationPermission() {
+        val app = application as DemoApp
         // Create helper if not exist
-        if (curLocationHelper == null) curLocationHelper = CurLocationHelper(renderer, imageManager)
+        var curLocationHelper = curLocationHelper
+        if (curLocationHelper == null) {
+            curLocationHelper = CurLocationHelper(renderer, imageManager)
+            this.curLocationHelper = curLocationHelper
+            app.locationListeners.add(curLocationHelper)
+        }
 
         // Try to start location updates. If we need permissions - ask for them
-        if (curLocationHelper?.initLocationManager(this) == false)
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 0)
+        if (!app.initLocationManager())
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                0
+            )
     }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
-        permissions: Array<String>,
+        permissions: Array<out String>,
         grantResults: IntArray
     ) {
         when (requestCode) {
             0 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                curLocationHelper?.initLocationManager(this)
+                (application as DemoApp).initLocationManager()
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
 
     override fun onDestroy() {
         GLMapManager.removeStateListener(this)
-        renderer.removeAllObjects()
-        renderer.setCenterTileStateChangedCallback(null)
-        renderer.setMapDidMoveCallback(null)
-
         markerLayer?.dispose()
         markerLayer = null
 
         imageGroup?.dispose()
         imageGroup = null
 
-        curLocationHelper?.onDestroy()
-        curLocationHelper = null
+        val curLocationHelper = curLocationHelper
+        if (curLocationHelper != null) {
+            (application as DemoApp).locationListeners.remove(curLocationHelper)
+            this.curLocationHelper = null
+        }
 
         val trackRecordRunnable = trackRecordRunnable
         if (trackRecordRunnable != null) {
             this.trackRecordRunnable = null
             handler.removeCallbacks(trackRecordRunnable)
         }
+        mapView.dispose()
         super.onDestroy()
     }
 
@@ -414,9 +423,9 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
         val searchOffline = GLSearch()
         searchOffline.setCenter(MapPoint.CreateFromGeoCoordinates(42.4341, 19.26)) // Set center of search
         searchOffline.setLimit(20) // Set maximum number of results. By default is is 100
-        searchOffline.setLocaleSettings(renderer.localeSettings) // Locale settings to give bonus for results that match to user language
+        searchOffline.setLocaleSettings(renderer.localeSettings) // If locale matches result will have bonus score
         val localeEn = GLMapLocaleSettings(arrayOf("en", "native"), GLMapLocaleSettings.UnitSystem.International)
-        val category = GLSearchCategories.getShared().getStartedWith(arrayOf("restaurant"), localeEn) // find categories by name
+        val category = GLSearchCategories.getShared().getStartedWith(arrayOf("restaurant"), localeEn) // find category
         if (category.isNullOrEmpty()) return
 
         // Logical operations between filters is AND
@@ -429,7 +438,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
         // "Crno" as word beginning in addr:* tags,
         // and exact "60/1" in addr:* tags.
         //
-        // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1 ( https://www.openstreetmap.org/node/4397752292 )
+        // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1
+        // (https://www.openstreetmap.org/node/4397752292 )
         searchOffline.addFilter(GLSearchFilter.createWithQuery("Baj", GLSearch.TagSetMask.NAME or GLSearch.TagSetMask.ALT_NAME))
         searchOffline.addFilter(GLSearchFilter.createWithQuery("Crno", GLSearch.TagSetMask.ADDRESS))
         val filter = GLSearchFilter.createWithQuery("60/1", GLSearch.TagSetMask.ADDRESS)
@@ -455,7 +465,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
 
     private fun displaySearchResults(objects: Array<GLMapVectorObject>?) {
         val style = GLMapMarkerStyleCollection()
-        style.addStyle(GLMapMarkerImage("marker", imageManager.open("cluster.svg", 0.2f, Color.BLUE)!!))
+        val markerImage = imageManager.open("cluster.svg", 0.2f, Color.BLUE)!!
+        style.addStyle(GLMapMarkerImage("marker", markerImage))
         style.setDataCallback(SearchStyle())
         val markerLayer = GLMapMarkerLayer(objects, style, 0.0, 4)
         this.markerLayer = markerLayer
@@ -526,7 +537,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
     }
 
     private fun deleteMarker(x: Double, y: Double) {
-        val markersToRemove = markerLayer?.objectsNearPoint(renderer, renderer.convertDisplayToInternal(MapPoint(x, y)), 30.0)
+        val pt = renderer.convertDisplayToInternal(MapPoint(x, y))
+        val markersToRemove = markerLayer?.objectsNearPoint(renderer, pt, 30.0)
         if (!markersToRemove.isNullOrEmpty()) {
             markerLayer?.modify(null, setOf(markersToRemove[0]), null, true) {
                 Log.d("MarkerLayer", "Marker deleted")
@@ -554,7 +566,8 @@ open class MapViewActivity : Activity(), ScreenCaptureCallback, GLMapManager.Sta
         val styleCollection = GLMapMarkerStyleCollection()
         for (i in unionColours.indices) {
             val scale = (0.2 + 0.1 * i).toFloat()
-            val index = styleCollection.addStyle(GLMapMarkerImage("marker$scale", imageManager.open("cluster.svg", scale, unionColours[i])!!))
+            val img = imageManager.open("cluster.svg", scale, unionColours[i])!!
+            val index = styleCollection.addStyle(GLMapMarkerImage("marker$scale", img))
             styleCollection.setStyleName(i, "uni$index")
         }
         val style = GLMapVectorCascadeStyle.createStyle(
@@ -597,7 +610,7 @@ node[count>=128]{
     icon-image:"uni7";
     text-priority: 107;
 }                  
-                """
+            """
         )!!
         executor.execute {
             try {
@@ -665,7 +678,8 @@ node[count>=128]{
                 val style = GLMapMarkerStyleCollection()
                 for (i in MarkersStyle.unionCounts.indices) {
                     val scale = (0.2 + 0.1 * i).toFloat()
-                    style.addStyle(GLMapMarkerImage("marker$scale", imageManager.open("cluster.svg", scale, unionColours[i])!!))
+                    val img = imageManager.open("cluster.svg", scale, unionColours[i])!!
+                    style.addStyle(GLMapMarkerImage("marker$scale", img))
                 }
                 style.setDataCallback(MarkersStyle())
                 Log.w("GLMapView", "Start parsing")
@@ -734,7 +748,8 @@ node[count>=128]{
         val obj = GLMapVectorObject.createMultiline(arrayOf(line1, line2))
         // style applied to all lines added. Style is string with mapcss rules. Read more in manual.
         val drawable = GLMapDrawable()
-        drawable.setVectorObject(obj, GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}")!!, null)
+        val style = GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}")!!
+        drawable.setVectorObject(obj, style, null)
         renderer.add(drawable)
     }
 
@@ -761,11 +776,9 @@ node[count>=128]{
         val innerRings = arrayOf(innerRing)
         val obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings)
         val drawable = GLMapDrawable()
-        drawable.setVectorObject(
-            obj,
-            GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}")!!,
-            null
-        ) // #RRGGBBAA format
+        // #RRGGBBAA format
+        val style = GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}")!!
+        drawable.setVectorObject(obj, style, null)
         renderer.add(drawable)
         renderer.mapGeoCenter = centerPoint
     }
@@ -811,67 +824,63 @@ node[count>=128]{
         }
 
         val btn = findViewById<Button>(R.id.button_action)
-        if (action != null) {
-            btn.visibility = View.VISIBLE
-            btn.text = action.title
-            btn.setOnClickListener {
-                if (action.file != null && action.dataSet != null) {
-                    GLMapManager.DownloadDataSet(
-                        action.dataSet,
-                        action.file.absolutePath,
-                        bbox,
-                        object : GLMapManager.DownloadCallback {
-                            override fun onProgress(
-                                totalSize: Long,
-                                downloadedSize: Long,
-                                downloadSpeed: Double
-                            ) {
-                                Log.i(
-                                    "BulkDownload",
-                                    String.format(
-                                        "Download %d stats: %d, %f",
-                                        action.dataSet, downloadedSize, downloadSpeed
-                                    )
+        btn.visibility = View.VISIBLE
+        btn.text = action.title
+        btn.setOnClickListener {
+            if (action.file != null && action.dataSet != null) {
+                GLMapManager.DownloadDataSet(
+                    action.dataSet,
+                    action.file.absolutePath,
+                    bbox,
+                    object : GLMapManager.DownloadCallback {
+                        override fun onProgress(
+                            totalSize: Long,
+                            downloadedSize: Long,
+                            downloadSpeed: Double
+                        ) {
+                            Log.i(
+                                "BulkDownload",
+                                String.format(
+                                    "Download %d stats: %d, %f",
+                                    action.dataSet, downloadedSize, downloadSpeed
                                 )
-                            }
-
-                            override fun onFinished(error: GLMapError?) {
-                                if (error == null)
-                                    downloadInBBox()
-                                else
-                                    Log.e("BulkDownload", error.message)
-                            }
-                        }
-                    )
-                } else {
-                    val request = GLRouteRequest()
-                    request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true))
-                    request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true))
-                    request.mode = GLRoute.Mode.DRIVE
-                    request.locale = "en"
-                    request.setOfflineWithConfig(RoutingActivity.GetValhallaConfig(resources))
-
-                    request.start(object : GLRouteRequest.ResultsCallback {
-                        override fun onResult(route: GLRoute) {
-                            Log.i("Route", "Success")
-                            val trackData = route.getTrackData(Color.argb(255, 255, 0, 0))
-
-                            if (track != null) {
-                                track!!.setData(trackData)
-                            } else {
-                                track = GLMapTrack(trackData, 5)
-                                mapView.renderer.add(track!!)
-                            }
+                            )
                         }
 
-                        override fun onError(error: GLMapError) {
-                            Log.i("Route", "Error: $error")
+                        override fun onFinished(error: GLMapError?) {
+                            if (error == null)
+                                downloadInBBox()
+                            else
+                                Log.e("BulkDownload", error.message)
                         }
-                    })
-                }
+                    }
+                )
+            } else {
+                val request = GLRouteRequest()
+                request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true))
+                request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true))
+                request.mode = GLRoute.Mode.DRIVE
+                request.locale = "en"
+                request.setOfflineWithConfig(RoutingActivity.GetValhallaConfig(resources))
+
+                request.start(object : GLRouteRequest.ResultsCallback {
+                    override fun onResult(route: GLRoute) {
+                        Log.i("Route", "Success")
+                        val trackData = route.getTrackData(Color.argb(255, 255, 0, 0))
+
+                        if (track != null) {
+                            track!!.setData(trackData)
+                        } else {
+                            track = GLMapTrack(trackData, 5)
+                            mapView.renderer.add(track!!)
+                        }
+                    }
+
+                    override fun onError(error: GLMapError) {
+                        Log.i("Route", "Error: $error")
+                    }
+                })
             }
-        } else {
-            btn.visibility = View.GONE
         }
     }
 
@@ -1017,7 +1026,7 @@ node[count>=128]{
 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [27.7151, 53.8869]}, "properties": {"id": "2", "text": "test2"}},
 {"type":"LineString", "coordinates": [ [27.7151, 53.8869], [30.5186, 50.4339], [21.0103, 52.2251], [13.4102, 52.5037], [2.3343, 48.8505]]},
 {"type":"Polygon", "coordinates":[[ [0.0, 10.0], [10.0, 10.0], [10.0, 20.0], [0.0, 20.0] ],[ [2.0, 12.0], [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]            
-        """
+            """
         )
         val style = GLMapVectorCascadeStyle.createStyle(
             """
@@ -1051,7 +1060,7 @@ area {
     width:1pt;
     color:red;
 }            
-        """
+            """
         )!!
         if (objects != null) {
             val drawable = GLMapDrawable()
@@ -1097,19 +1106,19 @@ area {
 
     private fun updateMapDownloadButton() {
         when (renderer.centerTileState) {
-            GLMapTileState.NoData -> {
+            GLMapViewRenderer.GLMapTileState.NoData -> {
                 if (btnDownloadMap.visibility == View.INVISIBLE) {
                     btnDownloadMap.visibility = View.VISIBLE
                     btnDownloadMap.parent.requestLayout()
                     updateMapDownloadButtonText()
                 }
             }
-            GLMapTileState.Loaded -> {
+            GLMapViewRenderer.GLMapTileState.Loaded -> {
                 if (btnDownloadMap.visibility == View.VISIBLE) {
                     btnDownloadMap.visibility = View.INVISIBLE
                 }
             }
-            GLMapTileState.Unknown -> {
+            GLMapViewRenderer.GLMapTileState.Unknown -> {
             }
         }
     }
