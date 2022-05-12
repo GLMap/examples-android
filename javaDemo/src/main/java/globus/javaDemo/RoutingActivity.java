@@ -137,7 +137,7 @@ public class RoutingActivity extends MapViewActivity {
             byte[] raw = null;
             try {
                 // Read prepared categories
-                InputStream stream = resources.openRawResource(R.raw.valhalla3);
+                InputStream stream = resources.openRawResource(R.raw.valhalla);
                 raw = new byte[stream.available()];
                 stream.read(raw);
                 stream.close();

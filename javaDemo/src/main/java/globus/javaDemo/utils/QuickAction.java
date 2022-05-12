@@ -18,7 +18,7 @@ public class QuickAction {
 
     private View rootView;
     private ImageView arrowUp, arrowDown;
-    private LayoutInflater inflater;
+    private final LayoutInflater inflater;
     private ViewGroup track;
     private OnActionItemClickListener onActionItemClickListener;
 
@@ -57,14 +57,11 @@ public class QuickAction {
 
         final int actionId = action.getActionId();
         container.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if (onActionItemClickListener != null) {
-                            onActionItemClickListener.onItemClick(QuickAction.this, actionId);
-                        }
-                        popupWindow.dismiss();
+                view -> {
+                    if (onActionItemClickListener != null) {
+                        onActionItemClickListener.onItemClick(QuickAction.this, actionId);
                     }
+                    popupWindow.dismiss();
                 });
 
         if (track.getChildCount() != 0) {
