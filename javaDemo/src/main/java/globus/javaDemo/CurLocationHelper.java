@@ -7,7 +7,9 @@ import androidx.annotation.NonNull;
 
 import globus.glmap.GLMapAnimation;
 import globus.glmap.GLMapDrawable;
+import globus.glmap.GLMapImage;
 import globus.glmap.GLMapVectorCascadeStyle;
+import globus.glmap.GLMapVectorLayer;
 import globus.glmap.GLMapVectorObject;
 import globus.glmap.GLMapViewRenderer;
 import globus.glmap.ImageManager;
@@ -17,7 +19,8 @@ import java.util.Objects;
 
 /** Created by destman on 6/1/17. */
 class CurLocationHelper implements DemoApp.LocationCallback {
-    private GLMapDrawable userMovementImage, userLocationImage, accuracyCircle;
+    private GLMapImage userMovementImage, userLocationImage;
+    private GLMapVectorLayer accuracyCircle;
     private boolean isFollowLocationEnabled = false;
     private final GLMapViewRenderer renderer;
     private final ImageManager imageManager;
@@ -39,7 +42,8 @@ class CurLocationHelper implements DemoApp.LocationCallback {
         if (userLocationImage == null) {
             Bitmap locationImage =
                     Objects.requireNonNull(imageManager.open("circle_new.svg", 1, 0));
-            userLocationImage = new GLMapDrawable(locationImage, 100);
+            userLocationImage = new GLMapImage(100);
+            userLocationImage.setBitmap(locationImage);
             userLocationImage.setHidden(true);
             userLocationImage.setOffset(
                     locationImage.getWidth() / 2, locationImage.getHeight() / 2);
@@ -50,7 +54,8 @@ class CurLocationHelper implements DemoApp.LocationCallback {
 
         if (userMovementImage == null) {
             Bitmap movementImage = Objects.requireNonNull(imageManager.open("arrow_new.svg", 1, 0));
-            userMovementImage = new GLMapDrawable(movementImage, 100);
+            userMovementImage = new GLMapImage(100);
+            userLocationImage.setBitmap(movementImage);
             userMovementImage.setHidden(true);
             userMovementImage.setOffset(
                     movementImage.getWidth() / 2, movementImage.getHeight() / 2);
@@ -86,7 +91,7 @@ class CurLocationHelper implements DemoApp.LocationCallback {
             GLMapVectorObject circle =
                     GLMapVectorObject.createPolygon(new MapPoint[][] {points}, null);
 
-            accuracyCircle = new GLMapDrawable(99);
+            accuracyCircle = new GLMapVectorLayer(99);
             accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom);
             accuracyCircle.setPosition(position);
             accuracyCircle.setScale(r / 2048.0f);

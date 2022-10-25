@@ -70,7 +70,8 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            })
+            }
+        )
 
         routeTypeSwitch.addOnTabSelectedListener(
             object : OnTabSelectedListener {
@@ -85,7 +86,8 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            })
+            }
+        )
     }
 
     override fun onResume() {
@@ -102,8 +104,9 @@ class RoutingActivity : MapViewActivity() {
         request.locale = "en"
         request.unitSystem = GLMapLocaleSettings.UnitSystem.International
         request.mode = routingMode
-        if (networkMode == NetworkMode.Offline)
+        if (networkMode == NetworkMode.Offline) {
             request.setOfflineWithConfig(GetValhallaConfig(resources))
+        }
         request.start(object : GLRouteRequest.ResultsCallback {
             override fun onResult(route: GLRoute) {
                 val trackData = route.getTrackData(Color.RED)
@@ -152,7 +155,7 @@ class RoutingActivity : MapViewActivity() {
             var raw: ByteArray? = null
             try {
                 // Read prepared categories
-                val stream = resources.openRawResource(R.raw.valhalla3)
+                val stream = resources.openRawResource(R.raw.valhalla)
                 raw = ByteArray(stream.available())
                 stream.read(raw)
                 stream.close()

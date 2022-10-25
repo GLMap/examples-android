@@ -31,15 +31,17 @@ class DemoApp : MultiDexApplication(), LocationListener {
     }
 
     fun initLocationManager(): Boolean {
-        if (::locationManager.isInitialized)
+        if (::locationManager.isInitialized) {
             return true
+        }
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
-        )
+        ) {
             return false
+        }
         val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         try {
             // Setup get location service
@@ -79,8 +81,9 @@ class DemoApp : MultiDexApplication(), LocationListener {
             }
             // Update location to current best
             val lastLocation = lastLocation
-            if (lastLocation != null)
+            if (lastLocation != null) {
                 onLocationChanged(lastLocation)
+            }
             // Request location updates
             lm.requestLocationUpdates(1000, 1.0f, criteria, this, mainLooper)
         } catch (e: Exception) {

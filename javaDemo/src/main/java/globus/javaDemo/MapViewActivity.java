@@ -32,6 +32,7 @@ import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapDownloadTask;
 import globus.glmap.GLMapDrawable;
 import globus.glmap.GLMapError;
+import globus.glmap.GLMapImage;
 import globus.glmap.GLMapImageGroup;
 import globus.glmap.GLMapImageGroupCallback;
 import globus.glmap.GLMapInfo;
@@ -46,6 +47,7 @@ import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
 import globus.glmap.GLMapValue;
 import globus.glmap.GLMapVectorCascadeStyle;
+import globus.glmap.GLMapVectorLayer;
 import globus.glmap.GLMapVectorObject;
 import globus.glmap.GLMapVectorObjectList;
 import globus.glmap.GLMapVectorStyle;
@@ -182,7 +184,7 @@ public class MapViewActivity extends Activity
         }
     }
 
-    private GLMapDrawable image;
+    private GLMapImage image;
     private GLMapImageGroup imageGroup;
     private Pins pins;
     private GestureDetector gestureDetector;
@@ -933,7 +935,8 @@ public class MapViewActivity extends Activity
 
     void addImage(final Button btn) {
         Bitmap bmp = Objects.requireNonNull(imageManager.open("arrow-maphint.svg", 1, 0));
-        image = new GLMapDrawable(bmp, 2);
+        image = new GLMapImage(2);
+        image.setBitmap(bmp);
         image.setOffset(bmp.getWidth(), bmp.getHeight() / 2);
         image.setRotatesWithMap(true);
         image.setAngle((float) Math.random() * 360);
@@ -977,7 +980,7 @@ public class MapViewActivity extends Activity
         final GLMapVectorObject obj = GLMapVectorObject.createMultiline(multiline);
         // style applied to all lines added. Style is string with mapcss rules. Read more in manual.
 
-        GLMapDrawable drawable = new GLMapDrawable();
+        GLMapVectorLayer drawable = new GLMapVectorLayer();
         drawable.setVectorObject(
                 obj,
                 Objects.requireNonNull(
@@ -1009,7 +1012,7 @@ public class MapViewActivity extends Activity
         MapGeoPoint[][] innerRings = {innerRing};
 
         GLMapVectorObject obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings);
-        GLMapDrawable drawable = new GLMapDrawable();
+        GLMapVectorLayer drawable = new GLMapVectorLayer();
         // #RRGGBBAA format
         drawable.setVectorObject(
                 obj,
@@ -1310,7 +1313,7 @@ public class MapViewActivity extends Activity
                     Objects.requireNonNull(
                             GLMapVectorCascadeStyle.createStyle(
                                     "area{fill-color:green; width:1pt; color:red;}"));
-            GLMapDrawable drawable = new GLMapDrawable();
+            GLMapVectorLayer drawable = new GLMapVectorLayer();
             drawable.setVectorObjects(objects, style, null);
             mapView.renderer.add(drawable);
             zoomToObjects(objects);
@@ -1347,7 +1350,7 @@ public class MapViewActivity extends Activity
                                     + " width:1pt; color:red;}"));
 
         if (objects != null) {
-            GLMapDrawable drawable = new GLMapDrawable();
+            GLMapVectorLayer drawable = new GLMapVectorLayer();
             drawable.setVectorObjects(objects, style, null);
             mapView.renderer.add(drawable);
             zoomToObjects(objects);

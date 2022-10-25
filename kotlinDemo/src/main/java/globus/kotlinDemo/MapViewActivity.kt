@@ -127,7 +127,7 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
     }
 
     private val localeSettings = GLMapLocaleSettings()
-    private var image: GLMapDrawable? = null
+    private var image: GLMapImage? = null
     private var imageGroup: GLMapImageGroup? = null
     private val pins: Pins by lazy { Pins(imageManager) }
     private var mapToDownload: GLMapInfo? = null
@@ -316,12 +316,13 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
         }
 
         // Try to start location updates. If we need permissions - ask for them
-        if (!app.initLocationManager())
+        if (!app.initLocationManager()) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
                 0
             )
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -330,8 +331,9 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
         grantResults: IntArray
     ) {
         when (requestCode) {
-            0 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            0 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 (application as DemoApp).initLocationManager()
+            }
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
@@ -396,12 +398,15 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
                 val text = if (total != 0L) {
                     val progress = downloaded * 100 / total
                     String.format(
-                        Locale.getDefault(), "Downloading %s %d%%",
-                        mapToDownload.getLocalizedName(localeSettings), progress
+                        Locale.getDefault(),
+                        "Downloading %s %d%%",
+                        mapToDownload.getLocalizedName(localeSettings),
+                        progress
                     )
                 } else {
                     String.format(
-                        Locale.getDefault(), "Download %s",
+                        Locale.getDefault(),
+                        "Download %s",
                         mapToDownload.getLocalizedName(localeSettings)
                     )
                 }
@@ -440,7 +445,9 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
         //
         // Expected result is restaurant Bajka at Bulevar Ivana Crnojevića 60/1
         // (https://www.openstreetmap.org/node/4397752292 )
-        searchOffline.addFilter(GLSearchFilter.createWithQuery("Baj", GLSearch.TagSetMask.NAME or GLSearch.TagSetMask.ALT_NAME))
+        searchOffline.addFilter(
+            GLSearchFilter.createWithQuery("Baj", GLSearch.TagSetMask.NAME or GLSearch.TagSetMask.ALT_NAME)
+        )
         searchOffline.addFilter(GLSearchFilter.createWithQuery("Crno", GLSearch.TagSetMask.ADDRESS))
         val filter = GLSearchFilter.createWithQuery("60/1", GLSearch.TagSetMask.ADDRESS)
         // Default match type is WordStart. But we could change it to Exact or Word.
@@ -703,7 +710,8 @@ node[count>=128]{
 
     private fun addImage() {
         val bmp = imageManager.open("arrow-maphint.svg", 1f, 0)!!
-        val image = GLMapDrawable(bmp, 2)
+        val image = GLMapImage(2)
+        image.setBitmap(bmp)
         this.image = image
         image.setOffset(bmp.width, bmp.height / 2)
         image.isRotatesWithMap = true
@@ -747,7 +755,7 @@ node[count>=128]{
         )
         val obj = GLMapVectorObject.createMultiline(arrayOf(line1, line2))
         // style applied to all lines added. Style is string with mapcss rules. Read more in manual.
-        val drawable = GLMapDrawable()
+        val drawable = GLMapVectorLayer()
         val style = GLMapVectorCascadeStyle.createStyle("line{width: 2pt;color:green;layer:100;}")!!
         drawable.setVectorObject(obj, style, null)
         renderer.add(drawable)
@@ -775,9 +783,11 @@ node[count>=128]{
         val outerRings = arrayOf(outerRing)
         val innerRings = arrayOf(innerRing)
         val obj = GLMapVectorObject.createPolygonGeo(outerRings, innerRings)
-        val drawable = GLMapDrawable()
+        val drawable = GLMapVectorLayer()
         // #RRGGBBAA format
-        val style = GLMapVectorCascadeStyle.createStyle("area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}")!!
+        val style = GLMapVectorCascadeStyle.createStyle(
+            "area{fill-color:#10106050; fill-color:#10106050; width:4pt; color:green;}"
+        )!!
         drawable.setVectorObject(obj, style, null)
         renderer.add(drawable)
         renderer.mapGeoCenter = centerPoint
@@ -794,12 +804,15 @@ node[count>=128]{
         val navigationPath = File(cacheDir, "test.navtar")
         val elevationPath = File(cacheDir, "test.eletar")
 
-        if (mapPath.exists())
+        if (mapPath.exists()) {
             GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, bbox, mapPath.absolutePath, null, null)
-        if (navigationPath.exists())
+        }
+        if (navigationPath.exists()) {
             GLMapManager.AddDataSet(GLMapInfo.DataSet.NAVIGATION, bbox, navigationPath.absolutePath, null, null)
-        if (elevationPath.exists())
+        }
+        if (elevationPath.exists()) {
             GLMapManager.AddDataSet(GLMapInfo.DataSet.ELEVATION, bbox, elevationPath.absolutePath, null, null)
+        }
 
         mapView.renderer.enableClipping(bbox, 9.0F, 16.0F)
         mapView.renderer.drawElevationLines = true
@@ -842,16 +855,19 @@ node[count>=128]{
                                 "BulkDownload",
                                 String.format(
                                     "Download %d stats: %d, %f",
-                                    action.dataSet, downloadedSize, downloadSpeed
+                                    action.dataSet,
+                                    downloadedSize,
+                                    downloadSpeed
                                 )
                             )
                         }
 
                         override fun onFinished(error: GLMapError?) {
-                            if (error == null)
+                            if (error == null) {
                                 downloadInBBox()
-                            else
+                            } else {
                                 Log.e("BulkDownload", error.message)
+                            }
                         }
                     }
                 )
@@ -931,8 +947,9 @@ node[count>=128]{
                         }
                     }
                     val style = parser.parseFromResources()
-                    if (style != null)
+                    if (style != null) {
                         handler.post { renderer.setStyle(style) }
+                    }
                 } catch (ignore: Exception) {
                 }
             }
@@ -1012,7 +1029,7 @@ node[count>=128]{
         }
         if (objects != null) {
             val style = GLMapVectorCascadeStyle.createStyle("area{fill-color:green; width:1pt; color:red;}")!!
-            val drawable = GLMapDrawable()
+            val drawable = GLMapVectorLayer()
             drawable.setVectorObjects(objects, style, null)
             renderer.add(drawable)
             zoomToObjects(objects)
@@ -1063,7 +1080,7 @@ area {
             """
         )!!
         if (objects != null) {
-            val drawable = GLMapDrawable()
+            val drawable = GLMapVectorLayer()
             drawable.setVectorObjects(objects, style, null)
             renderer.add(drawable)
             zoomToObjects(objects)
@@ -1080,8 +1097,9 @@ area {
     }
 
     override fun screenCaptured(bmp: Bitmap?) {
-        if (bmp == null)
+        if (bmp == null) {
             return
+        }
         runOnUiThread {
             val bytes = ByteArrayOutputStream()
             bmp.compress(Bitmap.CompressFormat.PNG, 100, bytes)

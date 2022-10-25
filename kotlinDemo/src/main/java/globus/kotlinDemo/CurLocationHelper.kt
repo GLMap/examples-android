@@ -8,25 +8,27 @@ import kotlin.math.sin
 /** Created by destman on 6/1/17.  */
 internal class CurLocationHelper(
     private val renderer: GLMapViewRenderer,
-    private val imageManager: ImageManager
+    imageManager: ImageManager
 ) :
     DemoApp.LocationCallback {
-    private var userMovementImage: GLMapDrawable
-    private var userLocationImage: GLMapDrawable
-    private var accuracyCircle: GLMapDrawable
+    private var userMovementImage: GLMapImage
+    private var userLocationImage: GLMapImage
+    private var accuracyCircle: GLMapVectorLayer
     private var lastLocation: Location? = null
     var isFollowLocationEnabled = false
 
     init {
         val locationImage = imageManager.open("circle_new.svg", 1f, 0)!!
-        userLocationImage = GLMapDrawable(locationImage, 100)
+        userLocationImage = GLMapImage(100)
+        userLocationImage.setBitmap(locationImage)
         userLocationImage.isHidden = true
         userLocationImage.setOffset(locationImage.width / 2, locationImage.height / 2)
         renderer.add(userLocationImage)
         locationImage.recycle()
 
         val movementImage = imageManager.open("arrow_new.svg", 1f, 0)!!
-        userMovementImage = GLMapDrawable(movementImage, 100)
+        userMovementImage = GLMapImage(100)
+        userMovementImage.setBitmap(movementImage)
         userMovementImage.isHidden = true
         userMovementImage.setOffset(movementImage.width / 2, movementImage.height / 2)
         userMovementImage.isRotatesWithMap = true
@@ -42,9 +44,11 @@ internal class CurLocationHelper(
             // douglas-peucker)
             MapPoint(sin(f) * 2048, cos(f) * 2048)
         }
-        val circleStyle = GLMapVectorCascadeStyle.createStyle("area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}")!!
+        val circleStyle = GLMapVectorCascadeStyle.createStyle(
+            "area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"
+        )!!
         val circle = GLMapVectorObject.createPolygon(arrayOf(points), null)
-        accuracyCircle = GLMapDrawable(99)
+        accuracyCircle = GLMapVectorLayer(99)
         accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom)
         accuracyCircle.setVectorObject(circle, circleStyle, null)
         renderer.add(accuracyCircle)
@@ -52,8 +56,9 @@ internal class CurLocationHelper(
 
     override fun onLocationChanged(location: Location) {
         val position = MapPoint.CreateFromGeoCoordinates(location.latitude, location.longitude)
-        if (isFollowLocationEnabled)
+        if (isFollowLocationEnabled) {
             renderer.animate { it.flyToPoint(position) }
+        }
 
         // Accuracy radius
         val r = renderer.convertMetersToInternal(location.accuracy.toDouble()).toFloat()

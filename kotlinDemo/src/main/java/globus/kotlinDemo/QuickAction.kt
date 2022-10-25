@@ -30,7 +30,8 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
         arrowDown = rootView.findViewById(R.id.arrow_down)
         arrowUp = rootView.findViewById(R.id.arrow_up)
         rootView.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
         )
         popupWindow = PopupWindow(context)
         popupWindow.contentView = rootView
@@ -54,7 +55,8 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
             track.addView(separator)
         }
         val params = RelativeLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         )
         container.layoutParams = params
         track.addView(container)
@@ -93,7 +95,9 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
         }
         val halfArrowWidth = arrowWidth / 2
         var arrowPos = finalScreenX - (screenWidth - rootWidth) / 2
-        if (arrowPos < 0) arrowPos = 0f else if (arrowPos > rootWidth - halfArrowWidth * 2) {
+        if (arrowPos < 0) {
+            arrowPos = 0f
+        } else if (arrowPos > rootWidth - halfArrowWidth * 2) {
             arrowPos = rootWidth - halfArrowWidth * 2.toFloat()
         }
         finalScreenX -= arrowPos
