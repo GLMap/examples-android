@@ -23,6 +23,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -1300,15 +1301,11 @@ public class MapViewActivity extends Activity
     }
 
     private void loadGeoJSONPostcode() {
-        GLMapVectorObjectList objects = null;
         try {
-            objects =
+            GLMapVectorObjectList objects =
                     GLMapVectorObject.createFromGeoJSONStreamOrThrow(
                             getAssets().open("uk_postcodes.geojson"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (objects != null) {
+
             GLMapVectorCascadeStyle style =
                     Objects.requireNonNull(
                             GLMapVectorCascadeStyle.createStyle(
@@ -1317,7 +1314,35 @@ public class MapViewActivity extends Activity
             drawable.setVectorObjects(objects, style, null);
             mapView.renderer.add(drawable);
             zoomToObjects(objects);
+            gestureDetector =
+                    new GestureDetector(
+                            this,
+                            new SimpleOnGestureListener() {
+                                @Override
+                                public boolean onSingleTapConfirmed(MotionEvent e) {
+                                    for (int i = 0; i < objects.size(); i++) {
+                                        GLMapVectorObject obj = objects.get(i);
+                                        MapPoint mapPoint = new MapPoint(e.getX(), e.getY());
+                                        mapPoint = mapView.renderer.convertDisplayToInternal(mapPoint);
+                                        // When checking polygons it will check if point is inside polygon.
+                                        // For lines and points it will check if distance is less then maxDistance.
+                                        if(obj.findNearestPoint(mapView.renderer, mapPoint, 10.0) != null) {
+                                            String message = "Tapped object: " + obj.asGeoJSON();
+                                            Toast.makeText(MapViewActivity.this, message, Toast.LENGTH_LONG).show();
+                                        }
+                                    }
+                                    return true;
+                                }
+
+                                @Override
+                                public void onLongPress(MotionEvent e) { }
+                            });
+
+            mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
     }
 
     private void loadGeoJSONWithCSSStyle() {

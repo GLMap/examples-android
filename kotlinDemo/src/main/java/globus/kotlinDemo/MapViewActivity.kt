@@ -21,6 +21,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import globus.glmap.*
 import globus.glroute.GLRoute
@@ -1021,18 +1022,36 @@ node[count>=128]{
     }
 
     private fun loadGeoJSONPostcode() {
-        var objects: GLMapVectorObjectList? = null
         try {
-            objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("uk_postcodes.geojson"))
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        if (objects != null) {
+            val objects = GLMapVectorObject.createFromGeoJSONStreamOrThrow(assets.open("uk_postcodes.geojson"))
             val style = GLMapVectorCascadeStyle.createStyle("area{fill-color:green; width:1pt; color:red;}")!!
             val drawable = GLMapVectorLayer()
             drawable.setVectorObjects(objects, style, null)
             renderer.add(drawable)
             zoomToObjects(objects)
+
+            val gestureDetector = GestureDetector(
+                this,
+                object : SimpleOnGestureListener() {
+                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                        for (index in 0 until objects.size()) {
+                            val obj = objects[index]
+                            val mapPoint = renderer.convertDisplayToInternal(MapPoint(e.x.toDouble(), e.y.toDouble()))
+                            // When checking polygons it will check if point is inside polygon.
+                            // For lines and points it will check if distance is less then maxDistance.
+                            if (obj.findNearestPoint(renderer, mapPoint, 10.0) != null) {
+                                val message = "Tapped object: ${obj.asGeoJSON()}"
+                                Toast.makeText(this@MapViewActivity, message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        return true
+                    }
+                    override fun onLongPress(e: MotionEvent) { }
+                }
+            )
+            mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 
