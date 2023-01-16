@@ -3,16 +3,15 @@ package globus.javaDemo;
 import android.app.Activity;
 import android.util.DisplayMetrics;
 import android.util.Log;
-
 import globus.glmap.GLMapRasterTileSource;
-
 import java.io.File;
 
 /** Created by destman on 11/11/15. */
 class OSMTileSource extends GLMapRasterTileSource {
     private String[] mirrors;
 
-    OSMTileSource(Activity activity) throws OutOfMemoryError {
+    OSMTileSource(Activity activity) throws OutOfMemoryError
+    {
         super(CachePath(activity));
 
         mirrors = new String[3];
@@ -32,15 +31,17 @@ class OSMTileSource extends GLMapRasterTileSource {
         setAttributionText("© OpenStreetMap contributors");
     }
 
-    private static String CachePath(Activity activity) {
+    private static String CachePath(Activity activity)
+    {
         File filesDir = new File(activity.getFilesDir().getAbsolutePath(), "RasterCache");
         filesDir.mkdir();
         return new File(filesDir.getAbsolutePath(), "osm.db").getAbsolutePath();
     }
 
     @Override
-    public String urlForTilePos(int x, int y, int z) {
-        String mirror = mirrors[(int) (Math.random() * mirrors.length)];
+    public String urlForTilePos(int x, int y, int z)
+    {
+        String mirror = mirrors[(int)(Math.random() * mirrors.length)];
         String rv = String.format(mirror, z, x, y);
         Log.i("OSMTileSource", rv);
         return rv;
