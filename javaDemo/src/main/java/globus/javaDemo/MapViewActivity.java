@@ -1048,10 +1048,9 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                     GLRouteRequest request = new GLRouteRequest();
                     request.addPoint(new GLRoutePoint(new MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true));
                     request.addPoint(new GLRoutePoint(new MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true));
-                    request.mode = GLRoute.Mode.DRIVE;
-                    request.locale = "en";
+                    request.setLocale("en");
+                    request.setAutoWithOptions(new GLRouteRequest.CostingOptionsAuto());
                     request.setOfflineWithConfig(getValhallaConfig(getResources()));
-
                     request.start(new GLRouteRequest.ResultsCallback() {
                         @Override
                         public void onResult(@NonNull GLRoute route)

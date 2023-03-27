@@ -33,7 +33,7 @@ public class RoutingActivity extends MapViewActivity {
     private static final int ID_DESTINATION = 1;
 
     private QuickAction quickAction;
-    private int routingMode = GLRoute.Mode.DRIVE;
+    private int routingMode = GLRoute.Mode.AUTO;
     private NetworkMode networkMode = NetworkMode.Online;
     private TabLayout onlineOfflineSwitch, routeTypeSwitch;
     private MapGeoPoint departure, destination;
@@ -94,10 +94,19 @@ public class RoutingActivity extends MapViewActivity {
         GLRouteRequest request = new GLRouteRequest();
         request.addPoint(new GLRoutePoint(departure, Float.NaN, true, true));
         request.addPoint(new GLRoutePoint(destination, Float.NaN, true, true));
-        request.locale = "en";
-        request.unitSystem = GLMapLocaleSettings.UnitSystem.International;
-        request.mode = routingMode;
-
+        request.setLocale("en");
+        request.setUnitSystem(GLMapLocaleSettings.UnitSystem.International);
+        switch (routingMode) {
+        case GLRoute.Mode.AUTO:
+            request.setAutoWithOptions(new GLRouteRequest.CostingOptionsAuto());
+            break;
+        case GLRoute.Mode.BICYCLE:
+            request.setBicycleWithOptions(new GLRouteRequest.CostingOptionsBicycle());
+            break;
+        case GLRoute.Mode.PEDESTRIAN:
+            request.setPedestrianWithOptions(new GLRouteRequest.CostingOptionsPedestrian());
+            break;
+        }
         if (networkMode == NetworkMode.Offline) {
             request.setOfflineWithConfig(getValhallaConfig(getResources()));
         }
@@ -216,13 +225,13 @@ public class RoutingActivity extends MapViewActivity {
 
                 switch (tab.getPosition()) {
                 case 0:
-                    routingMode = GLRoute.Mode.DRIVE;
+                    routingMode = GLRoute.Mode.AUTO;
                     break;
                 case 1:
-                    routingMode = GLRoute.Mode.CYCLE;
+                    routingMode = GLRoute.Mode.BICYCLE;
                     break;
                 case 2:
-                    routingMode = GLRoute.Mode.WALK;
+                    routingMode = GLRoute.Mode.PEDESTRIAN;
                     break;
                 }
                 updateRoute();
