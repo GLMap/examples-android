@@ -13,9 +13,11 @@ import globus.glmap.GLMapError;
 import globus.glmap.GLMapLocaleSettings;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
+import globus.glmap.GLMapVectorStyle;
 import globus.glmap.GLMapViewRenderer;
 import globus.glmap.MapGeoPoint;
 import globus.glmap.MapPoint;
+import globus.glroute.CostingOptions;
 import globus.glroute.GLRoute;
 import globus.glroute.GLRoutePoint;
 import globus.glroute.GLRouteRequest;
@@ -39,6 +41,7 @@ public class RoutingActivity extends MapViewActivity {
     private MapGeoPoint departure, destination;
     private static String valhallaConfig;
     private GLMapTrack track;
+    private final GLMapVectorStyle trackStyle = GLMapVectorStyle.createStyle("{width: 7pt;}");
 
     @Override
     protected int getLayoutID()
@@ -98,13 +101,13 @@ public class RoutingActivity extends MapViewActivity {
         request.setUnitSystem(GLMapLocaleSettings.UnitSystem.International);
         switch (routingMode) {
         case GLRoute.Mode.AUTO:
-            request.setAutoWithOptions(new GLRouteRequest.CostingOptionsAuto());
+            request.setAutoWithOptions(new CostingOptions.Auto());
             break;
         case GLRoute.Mode.BICYCLE:
-            request.setBicycleWithOptions(new GLRouteRequest.CostingOptionsBicycle());
+            request.setBicycleWithOptions(new CostingOptions.Bicycle());
             break;
         case GLRoute.Mode.PEDESTRIAN:
-            request.setPedestrianWithOptions(new GLRouteRequest.CostingOptionsPedestrian());
+            request.setPedestrianWithOptions(new CostingOptions.Pedestrian());
             break;
         }
         if (networkMode == NetworkMode.Offline) {
@@ -117,9 +120,10 @@ public class RoutingActivity extends MapViewActivity {
             {
                 GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
                 if (track != null) {
-                    track.setData(trackData);
+                    track.setData(trackData, trackStyle, null);
                 } else {
-                    track = new GLMapTrack(trackData, 5);
+                    track = new GLMapTrack(5);
+                    track.setData(trackData, trackStyle, null);
                     mapView.renderer.add(track);
                 }
             }

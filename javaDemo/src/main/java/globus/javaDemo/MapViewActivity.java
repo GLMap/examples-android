@@ -54,6 +54,7 @@ import globus.glmap.GLMapViewRenderer;
 import globus.glmap.MapGeoPoint;
 import globus.glmap.MapPoint;
 import globus.glmap.SVGRender;
+import globus.glroute.CostingOptions;
 import globus.glroute.GLRoute;
 import globus.glroute.GLRoutePoint;
 import globus.glroute.GLRouteRequest;
@@ -203,6 +204,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
     private CurLocationHelper curLocationHelper;
     private int trackPointIndex;
     private GLMapTrack track;
+    private final GLMapVectorStyle trackStyle = GLMapVectorStyle.createStyle("{width: 7pt; fill-image:\"track-arrow.svgpb\";}");
     private GLMapTrackData trackData;
     private Runnable trackRecordRunnable;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -1049,7 +1051,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                     request.addPoint(new GLRoutePoint(new MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true));
                     request.addPoint(new GLRoutePoint(new MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true));
                     request.setLocale("en");
-                    request.setAutoWithOptions(new GLRouteRequest.CostingOptionsAuto());
+                    request.setAutoWithOptions(new CostingOptions.Auto());
                     request.setOfflineWithConfig(getValhallaConfig(getResources()));
                     request.start(new GLRouteRequest.ResultsCallback() {
                         @Override
@@ -1058,9 +1060,10 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                             Log.i("Route", "Success");
                             GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
                             if (track != null) {
-                                track.setData(trackData);
+                                track.setData(trackData, trackStyle, null);
                             } else {
-                                track = new GLMapTrack(trackData, 5);
+                                track = new GLMapTrack(5);
+                                track.setData(trackData, trackStyle, null);
                                 mapView.renderer.add(track);
                             }
                         }
@@ -1167,10 +1170,10 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                     colorForTrack(rDelta * index)),
             trackPointIndex);
 
-        track = new GLMapTrack(trackData, 2);
+        track = new GLMapTrack(2);
         // To use files from style, (e.g. track-arrow.svgpb) you should create DefaultStyle.bundle
         // inside assets and put all additional resources inside.
-        track.setStyle(GLMapVectorStyle.createStyle("{width: 7pt; fill-image:\"track-arrow.svgpb\";}"));
+        track.setData(trackData, trackStyle, null);
 
         mapView.renderer.add(track);
         mapView.renderer.setMapCenter(MapPoint.CreateFromGeoCoordinates(clat, clon));
@@ -1185,7 +1188,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                 colorForTrack(rDelta * trackPointIndex),
                 false);
             // Set data to track
-            track.setData(newData);
+            track.setData(newData, trackStyle, null);
 
             trackData.dispose(); // Release native data before GC will occur
             trackData = newData;
