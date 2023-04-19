@@ -40,6 +40,7 @@ import globus.glmap.GLMapMarkerImage;
 import globus.glmap.GLMapMarkerLayer;
 import globus.glmap.GLMapMarkerStyleCollection;
 import globus.glmap.GLMapMarkerStyleCollectionDataCallback;
+import globus.glmap.GLMapScaleRuler;
 import globus.glmap.GLMapStyleParser;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
@@ -252,7 +253,9 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
         mapView.renderer.setStyle(Objects.requireNonNull(parser.parseFromResources()));
         checkAndRequestLocationPermission();
 
-        mapView.renderer.setScaleRulerStyle(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200);
+        GLMapScaleRuler ruler = new GLMapScaleRuler(Integer.MAX_VALUE);
+        ruler.setPlacement(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200);
+        mapView.renderer.add(ruler);
         mapView.renderer.setAttributionPosition(GLMapViewRenderer.GLMapPlacement.TopCenter);
 
         mapView.renderer.setCenterTileStateChangedCallback(this::updateMapDownloadButton);
