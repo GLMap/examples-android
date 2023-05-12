@@ -51,8 +51,8 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
     }
 
     private class MapsAdapter extends BaseAdapter implements ListAdapter {
-        private GLMapInfo[] maps;
-        private Context context;
+        private final GLMapInfo[] maps;
+        private final Context context;
 
         MapsAdapter(GLMapInfo[] maps, Context context)
         {
@@ -202,7 +202,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
         return true;
     }
 
-    public void updateAllItems(@Nullable GLMapInfo maps[])
+    public void updateAllItems(@Nullable GLMapInfo[] maps)
     {
         if (maps == null)
             return;

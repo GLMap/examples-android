@@ -42,6 +42,7 @@ import globus.glmap.GLMapMarkerStyleCollection;
 import globus.glmap.GLMapMarkerStyleCollectionDataCallback;
 import globus.glmap.GLMapScaleRuler;
 import globus.glmap.GLMapStyleParser;
+import globus.glmap.GLMapTextAlignment;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
 import globus.glmap.GLMapValue;
@@ -832,20 +833,20 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                     break;
                 }
             }
-            GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount), new Point(0, 0), textStyle);
+            GLMapMarkerStyleCollection.setMarkerText(nativeMarker, Integer.toString(markersCount), GLMapTextAlignment.Undefined, new Point(0, 0), textStyle);
         }
 
         @Override
         public void fillData(@NonNull Object marker, long nativeMarker)
         {
             if (marker instanceof MapPoint) {
-                GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", new Point(0, 0), textStyle);
+                GLMapMarkerStyleCollection.setMarkerText(nativeMarker, "Test", GLMapTextAlignment.Undefined, new Point(0, 0), textStyle);
             } else if (marker instanceof GLMapVectorObject) {
                 GLMapValue nameValue = ((GLMapVectorObject)marker).valueForKey("name");
                 if (nameValue != null) {
                     String name = nameValue.getString();
                     if (name != null) {
-                        GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, new Point(0, 15 / 2), textStyle);
+                        GLMapMarkerStyleCollection.setMarkerText(nativeMarker, name, GLMapTextAlignment.Undefined, new Point(0, 15 / 2), textStyle);
                     }
                 }
             }

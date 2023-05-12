@@ -2,7 +2,6 @@ package globus.javaDemo;
 
 import android.app.Activity;
 import android.os.Bundle;
-
 import globus.glmap.GLMapScaleRuler;
 import globus.glmap.GLMapStyleParser;
 import globus.glmap.GLMapTextureView;
