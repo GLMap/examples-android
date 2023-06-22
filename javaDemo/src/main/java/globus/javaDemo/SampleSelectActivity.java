@@ -36,44 +36,44 @@ public class SampleSelectActivity extends ListActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.sample_select);
 
-        String[] values =
-                new String[] {
-                    "Open offline map",
-                    "Dark Theme",
-                    "Open embedded map",
-                    "Open online map",
-                    "Open online raster map",
-                    "Routing",
-                    "GLMapView in TextureView",
-                    "Zoom to bbox",
-                    "Offline Search",
-                    "Markers",
-                    "Markers using mapcss",
-                    "Display single image",
-                    "Display image group",
-                    "Add multiline",
-                    "Add polygon",
-                    "Load GeoJSON",
-                    "Callback test",
-                    "Capture screen",
-                    "Fly to",
-                    "Download data in bounding box",
-                    "Style live reload",
-                    "Recording track",
-                    "Download Map",
-                    "SVG Test",
-                };
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, values);
+        String[] values = new String[] {
+            "Open offline map",
+            "Dark Theme",
+            "Open embedded map",
+            "Open online map",
+            "Open online raster map",
+            "Routing",
+            "GLMapView in TextureView",
+            "Zoom to bbox",
+            "Offline Search",
+            "Markers",
+            "Markers using mapcss",
+            "Display single image",
+            "Display image group",
+            "Add multiline",
+            "Add polygon",
+            "Load GeoJSON",
+            "Callback test",
+            "Capture screen",
+            "Fly to",
+            "Download data in bounding box",
+            "Style live reload",
+            "Recording track",
+            "Download Map",
+            "SVG Test",
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, values);
         setListAdapter(adapter);
     }
 
     @Override
-    protected void onListItemClick(ListView l, View v, int position, long id) {
+    protected void onListItemClick(ListView l, View v, int position, long id)
+    {
         if (position == Samples.OPEN_ROUTING.ordinal()) {
             Intent intent = new Intent(this, RoutingActivity.class);
             this.startActivity(intent);

@@ -6,16 +6,13 @@ public class ActionItem {
     private String name;
     private int actionId;
 
-    public ActionItem(int actionId, String name) {
+    public ActionItem(int actionId, String name)
+    {
         this.actionId = actionId;
         this.name = name;
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    public int getActionId() {
-        return actionId;
-    }
+    public int getActionId() { return actionId; }
 }

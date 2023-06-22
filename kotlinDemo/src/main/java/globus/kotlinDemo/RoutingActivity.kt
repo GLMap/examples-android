@@ -10,6 +10,7 @@ import android.widget.Toast
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import globus.glmap.*
+import globus.glroute.CostingOptions
 import globus.glroute.GLRoute
 import globus.glroute.GLRoutePoint
 import globus.glroute.GLRouteRequest
@@ -22,11 +23,12 @@ class RoutingActivity : MapViewActivity() {
     }
 
     private var quickAction: QuickAction? = null
-    private var routingMode = GLRoute.Mode.DRIVE
+    private var routingMode = GLRoute.Mode.AUTO
     private var networkMode = NetworkMode.Online
     private var departure = MapGeoPoint(53.844720, 27.482352)
     private var destination = MapGeoPoint(53.931935, 27.583995)
     private var track: GLMapTrack? = null
+    private val trackStyle = GLMapVectorStyle.createStyle("{width: 7pt;}")
 
     private inline val onlineOfflineSwitch: TabLayout
         get() = findViewById(R.id.tab_layout_left)
@@ -46,7 +48,7 @@ class RoutingActivity : MapViewActivity() {
                     return true
                 }
                 override fun onLongPress(e: MotionEvent) {}
-            }
+            },
         )
         mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
         renderer.doWhenSurfaceCreated {
@@ -70,23 +72,23 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            }
+            },
         )
 
         routeTypeSwitch.addOnTabSelectedListener(
             object : OnTabSelectedListener {
                 override fun onTabSelected(tab: TabLayout.Tab) {
                     when (tab.position) {
-                        0 -> routingMode = GLRoute.Mode.DRIVE
-                        1 -> routingMode = GLRoute.Mode.CYCLE
-                        2 -> routingMode = GLRoute.Mode.WALK
+                        0 -> routingMode = GLRoute.Mode.AUTO
+                        1 -> routingMode = GLRoute.Mode.BICYCLE
+                        2 -> routingMode = GLRoute.Mode.PEDESTRIAN
                     }
                     updateRoute()
                 }
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            }
+            },
         )
     }
 
@@ -103,7 +105,11 @@ class RoutingActivity : MapViewActivity() {
         request.addPoint(GLRoutePoint(destination, Double.NaN, true, true))
         request.locale = "en"
         request.unitSystem = GLMapLocaleSettings.UnitSystem.International
-        request.mode = routingMode
+        when (routingMode) {
+            GLRoute.Mode.AUTO -> request.setAutoWithOptions(CostingOptions.Auto())
+            GLRoute.Mode.BICYCLE -> request.setBicycleWithOptions(CostingOptions.Bicycle())
+            GLRoute.Mode.PEDESTRIAN -> request.setPedestrianWithOptions(CostingOptions.Pedestrian())
+        }
         if (networkMode == NetworkMode.Offline) {
             request.setOfflineWithConfig(GetValhallaConfig(resources))
         }
@@ -112,9 +118,9 @@ class RoutingActivity : MapViewActivity() {
                 val trackData = route.getTrackData(Color.RED)
                 var track = track
                 if (track != null) {
-                    track.setData(trackData)
+                    track.setData(trackData, trackStyle, null)
                 } else {
-                    track = GLMapTrack(trackData, 5)
+                    track = GLMapTrack(5)
                     this@RoutingActivity.track = track
                     renderer.add(track)
                 }

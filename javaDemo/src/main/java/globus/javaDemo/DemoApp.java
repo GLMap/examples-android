@@ -7,19 +7,16 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.multidex.MultiDexApplication;
-
 import globus.glmap.GLMapManager;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /** Created by destman on 10/18/17. */
 public class DemoApp extends MultiDexApplication implements LocationListener {
-    private static final long MIN_TIME_BW_UPDATES = 1000; // 1 second
+    private static final long MIN_TIME_BW_UPDATES = 1000;          // 1 second
     private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1; // 1 meter
 
     public interface LocationCallback {
@@ -31,22 +28,22 @@ public class DemoApp extends MultiDexApplication implements LocationListener {
     List<LocationCallback> locationListeners = new ArrayList<>();
 
     @Override
-    public void onCreate() {
+    public void onCreate()
+    {
         super.onCreate();
         // Uncomment and insert your API key into api_key in res/values/strings.xml
         String apiKey = this.getString(R.string.api_key);
         if (!GLMapManager.Initialize(this, apiKey, null)) {
             // Error caching resources. Check free space for world database (~25MB)
         }
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
     }
 
-    boolean initLocationManager() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(
-                                this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) return false;
+    boolean initLocationManager()
+    {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return false;
 
         try {
             // Configure criteria
@@ -86,19 +83,15 @@ public class DemoApp extends MultiDexApplication implements LocationListener {
             // Update location to current best
             onLocationChanged(lastLocation);
             // Request location updates
-            locationManager.requestLocationUpdates(
-                    MIN_TIME_BW_UPDATES,
-                    MIN_DISTANCE_CHANGE_FOR_UPDATES,
-                    criteria,
-                    this,
-                    getMainLooper());
+            locationManager.requestLocationUpdates(MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES, criteria, this, getMainLooper());
         } catch (Exception ignore) {
         }
         return true;
     }
 
     @Override
-    public void onLocationChanged(@NonNull Location location) {
+    public void onLocationChanged(@NonNull Location location)
+    {
         for (LocationCallback listener : locationListeners) {
             listener.onLocationChanged(location);
         }

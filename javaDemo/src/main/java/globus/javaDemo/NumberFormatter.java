@@ -5,7 +5,8 @@ import java.util.Locale;
 class NumberFormatter {
     static Locale locale = Locale.getDefault();
 
-    private static String NiceDoubleToString(double val) {
+    private static String NiceDoubleToString(double val)
+    {
         if (Double.isNaN(val)) {
             return "---";
         }
@@ -18,8 +19,9 @@ class NumberFormatter {
         return String.format(locale, "%.0f", val);
     }
 
-    static String FormatSize(long val) {
-        double sizeInMB = (double) val / (1000 * 1000);
+    static String FormatSize(long val)
+    {
+        double sizeInMB = (double)val / (1000 * 1000);
         return String.format("%s %s", NiceDoubleToString(sizeInMB), "MB");
     }
 }
