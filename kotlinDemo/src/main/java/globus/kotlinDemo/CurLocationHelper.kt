@@ -1,15 +1,15 @@
 package globus.kotlinDemo
 
+import android.content.res.AssetManager
 import android.location.Location
 import globus.glmap.*
+import java.util.Objects
 import kotlin.math.cos
 import kotlin.math.sin
 
 /** Created by destman on 6/1/17.  */
 internal class CurLocationHelper(
-    private val renderer: GLMapViewRenderer,
-    imageManager: ImageManager
-) :
+    private val renderer: GLMapViewRenderer) :
     DemoApp.LocationCallback {
     private var userMovementImage: GLMapImage
     private var userLocationImage: GLMapImage
@@ -18,40 +18,45 @@ internal class CurLocationHelper(
     var isFollowLocationEnabled = false
 
     init {
-        val locationImage = imageManager.open("circle_new.svg", 1f, 0)!!
-        userLocationImage = GLMapImage(100)
-        userLocationImage.setBitmap(locationImage)
-        userLocationImage.isHidden = true
-        userLocationImage.setOffset(locationImage.width / 2, locationImage.height / 2)
-        renderer.add(userLocationImage)
-        locationImage.recycle()
+        val manager = renderer.attachedView.context.assets
+        userLocationImage = createImage(manager, "circle_new.svg")
+        userMovementImage = createImage(manager, "arrow_new.svg")
+        accuracyCircle = createAccuracyCircle()
+    }
 
-        val movementImage = imageManager.open("arrow_new.svg", 1f, 0)!!
-        userMovementImage = GLMapImage(100)
-        userMovementImage.setBitmap(movementImage)
-        userMovementImage.isHidden = true
-        userMovementImage.setOffset(movementImage.width / 2, movementImage.height / 2)
-        userMovementImage.isRotatesWithMap = true
-        renderer.add(userMovementImage)
-        movementImage.recycle()
+    private fun createImage(manager: AssetManager, filename: String): GLMapImage {
+        val image = SVGRender.render(
+            manager,
+            filename,
+            SVGRender.transform(renderer.screenScale.toDouble())
+        ) ?: throw IllegalArgumentException("SVGRender can't render image")
 
-        // Calculate radius of accuracy circle
-        val pointCount = 100
-        // Use MapPoint to avoid distortions of circle
-        val points = Array(pointCount) {
-            val f = 2 * Math.PI * it / pointCount
-            // If radius of circle will be 1 only 2 points will be in final geometry (after
-            // douglas-peucker)
+        return GLMapImage(100).apply {
+            setBitmap(image)
+            isHidden = true
+            setOffset(image.width / 2, image.height / 2)
+            renderer.add(this)
+            image.recycle()
+        }
+    }
+
+    private fun createAccuracyCircle(): GLMapVectorLayer {
+        val points = Array(100) {
+            val f = 2 * Math.PI * it / 100
             MapPoint(sin(f) * 2048, cos(f) * 2048)
         }
+
         val circleStyle = GLMapVectorCascadeStyle.createStyle(
             "area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"
         )!!
+
         val circle = GLMapVectorObject.createPolygon(arrayOf(points), null)
-        accuracyCircle = GLMapVectorLayer(99)
-        accuracyCircle.setTransformMode(GLMapDrawable.TransformMode.Custom)
-        accuracyCircle.setVectorObject(circle, circleStyle, null)
-        renderer.add(accuracyCircle)
+
+        return GLMapVectorLayer(99).apply {
+            setTransformMode(GLMapDrawable.TransformMode.Custom)
+            setVectorObject(circle, circleStyle, null)
+            renderer.add(this)
+        }
     }
 
     override fun onLocationChanged(location: Location) {

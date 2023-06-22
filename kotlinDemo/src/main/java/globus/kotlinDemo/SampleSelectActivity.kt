@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.ListView
+import globus.javaDemo.DisplayImageActivity
+import globus.javaDemo.MapTextureViewActivity
 
 enum class Samples(val tableName: String) {
     MAP("Open offline map"),

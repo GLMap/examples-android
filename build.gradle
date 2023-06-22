@@ -4,14 +4,14 @@ buildscript {
     project.ext {
         build_tools_version = '33.0.2'
         kotlin_version = '1.8.21'
-        glmap_version = '1.7.1'
+        glmap_version = '1.7.3'
     }
     repositories {
         mavenCentral()
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.1'
+        classpath 'com.android.tools.build:gradle:8.0.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
