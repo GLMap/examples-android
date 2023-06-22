@@ -1,4 +1,4 @@
-package globus.javaDemo
+package globus.kotlinDemo
 
 import android.app.Activity
 import android.os.Bundle
@@ -6,7 +6,6 @@ import globus.glmap.GLMapScaleRuler
 import globus.glmap.GLMapStyleParser
 import globus.glmap.GLMapTextureView
 import globus.glmap.GLMapViewRenderer
-import globus.kotlinDemo.R
 
 class MapTextureViewActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

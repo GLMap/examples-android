@@ -1,4 +1,4 @@
-package globus.javaDemo
+package globus.kotlinDemo
 
 import android.app.Activity
 import android.graphics.Bitmap
@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.ImageView
 import globus.glmap.SVGRender
-import globus.kotlinDemo.R
 import java.io.FileNotFoundException
 
 class DisplayImageActivity : Activity() {

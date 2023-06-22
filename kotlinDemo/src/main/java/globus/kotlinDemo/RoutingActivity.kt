@@ -48,7 +48,7 @@ class RoutingActivity : MapViewActivity() {
                     return true
                 }
                 override fun onLongPress(e: MotionEvent) {}
-            }
+            },
         )
         mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
         renderer.doWhenSurfaceCreated {
@@ -72,7 +72,7 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            }
+            },
         )
 
         routeTypeSwitch.addOnTabSelectedListener(
@@ -88,7 +88,7 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            }
+            },
         )
     }
 
