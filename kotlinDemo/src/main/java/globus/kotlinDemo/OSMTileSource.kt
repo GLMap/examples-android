@@ -11,7 +11,7 @@ internal class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cachePa
     private val mirrors: Array<String> = arrayOf(
         "https://a.tile.openstreetmap.org/%d/%d/%d.png",
         "https://b.tile.openstreetmap.org/%d/%d/%d.png",
-        "https://c.tile.openstreetmap.org/%d/%d/%d.png",
+        "https://c.tile.openstreetmap.org/%d/%d/%d.png"
     )
 
     init {

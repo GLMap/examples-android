@@ -8,7 +8,7 @@ import kotlin.math.sin
 
 /** Created by destman on 6/1/17.  */
 internal class CurLocationHelper(
-    private val renderer: GLMapViewRenderer,
+    private val renderer: GLMapViewRenderer
 ) :
     DemoApp.LocationCallback {
     private var userMovementImage: GLMapImage
@@ -28,7 +28,7 @@ internal class CurLocationHelper(
         val image = SVGRender.render(
             manager,
             filename,
-            SVGRender.transform(renderer.screenScale.toDouble()),
+            SVGRender.transform(renderer.screenScale.toDouble())
         ) ?: throw IllegalArgumentException("SVGRender can't render image")
 
         return GLMapImage(100).apply {
@@ -47,7 +47,7 @@ internal class CurLocationHelper(
         }
 
         val circleStyle = GLMapVectorCascadeStyle.createStyle(
-            "area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}",
+            "area{layer:100; width:1pt; fill-color:#3D99FA26; color:#3D99FA26;}"
         )!!
 
         val circle = GLMapVectorObject.createPolygon(arrayOf(points), null)

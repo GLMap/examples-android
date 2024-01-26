@@ -19,7 +19,8 @@ import java.nio.charset.Charset
 
 class RoutingActivity : MapViewActivity() {
     private enum class NetworkMode {
-        Online, Offline
+        Online,
+        Offline
     }
 
     private var quickAction: QuickAction? = null
@@ -48,7 +49,7 @@ class RoutingActivity : MapViewActivity() {
                     return true
                 }
                 override fun onLongPress(e: MotionEvent) {}
-            },
+            }
         )
         mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
         renderer.doWhenSurfaceCreated {
@@ -72,7 +73,7 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            },
+            }
         )
 
         routeTypeSwitch.addOnTabSelectedListener(
@@ -88,7 +89,7 @@ class RoutingActivity : MapViewActivity() {
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {}
                 override fun onTabReselected(tab: TabLayout.Tab) {}
-            },
+            }
         )
     }
 
@@ -111,7 +112,7 @@ class RoutingActivity : MapViewActivity() {
             GLRoute.Mode.PEDESTRIAN -> request.setPedestrianWithOptions(CostingOptions.Pedestrian())
         }
         if (networkMode == NetworkMode.Offline) {
-            request.setOfflineWithConfig(GetValhallaConfig(resources))
+            request.setOfflineWithConfig(getValhallaConfig(resources))
         }
         request.start(object : GLRouteRequest.ResultsCallback {
             override fun onResult(route: GLRoute) {
@@ -157,7 +158,7 @@ class RoutingActivity : MapViewActivity() {
         private const val ID_DEPARTURE = 0
         private const val ID_DESTINATION = 1
 
-        fun GetValhallaConfig(resources: Resources): String {
+        fun getValhallaConfig(resources: Resources): String {
             var raw: ByteArray? = null
             try {
                 // Read prepared categories
