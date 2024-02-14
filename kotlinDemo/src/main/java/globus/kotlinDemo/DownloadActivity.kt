@@ -40,6 +40,7 @@ class DownloadActivity : ListActivity(), GLMapManager.StateListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onDestroy() {
         GLMapManager.removeStateListener(this)
         super.onDestroy()

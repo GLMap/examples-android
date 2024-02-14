@@ -41,6 +41,7 @@ class SampleSelectActivity : ListActivity() {
         listAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, Samples.values().map { it.tableName })
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onListItemClick(l: ListView, v: View, position: Int, id: Long) {
         when (position) {
             Samples.OPEN_ROUTING.ordinal -> {
