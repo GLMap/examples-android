@@ -3,7 +3,15 @@ package globus.javaDemo;
 import android.app.Activity;
 import android.util.DisplayMetrics;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import globus.glmap.GLMapFileStorage;
 import globus.glmap.GLMapRasterTileSource;
+import globus.glmap.GLMapStorage;
+import globus.glmap.GLMapStorageFile;
+
 import java.io.File;
 
 /** Created by destman on 11/11/15. */
@@ -31,11 +39,12 @@ class OSMTileSource extends GLMapRasterTileSource {
         setAttributionText("© OpenStreetMap contributors");
     }
 
-    private static String CachePath(Activity activity)
+    @Nullable
+    private static GLMapStorageFile CachePath(Activity activity)
     {
-        File filesDir = new File(activity.getFilesDir().getAbsolutePath(), "RasterCache");
-        filesDir.mkdir();
-        return new File(filesDir.getAbsolutePath(), "osm.db").getAbsolutePath();
+        GLMapStorage storage = new GLMapFileStorage(activity.getFilesDir());
+        storage = storage.findStorage("RasterCache", true);
+        return storage != null ? storage.findFile("osm.db", true) : null;
     }
 
     @Override
