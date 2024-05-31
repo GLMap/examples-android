@@ -42,9 +42,8 @@ class OSMTileSource extends GLMapRasterTileSource {
     @Nullable
     private static GLMapStorageFile CachePath(Activity activity)
     {
-        GLMapStorage storage = new GLMapFileStorage(activity.getFilesDir());
-        storage = storage.findStorage("RasterCache", true);
-        return storage != null ? storage.findFile("osm.db", true) : null;
+        GLMapStorage storage = new GLMapFileStorage(activity.getFilesDir()).findStorage("RasterCache", true);
+        return storage == null ? null : storage.findFile("osm.db", true);
     }
 
     @Override

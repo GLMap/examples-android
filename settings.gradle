@@ -1,2 +1,18 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://maven.globus.software/artifactory/libs' }
+        maven { url 'https://maven.globus.software/artifactory/snapshots' }
+    }
+}
+
 include ':javaDemo'
 include ':kotlinDemo'

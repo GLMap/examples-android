@@ -1,24 +1,22 @@
 package globus.kotlinDemo
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Criteria
 import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.multidex.MultiDexApplication
+import com.google.android.gms.location.*
 import globus.glmap.GLMapManager
 
-/** Created by destman on 10/18/17.  */
 class DemoApp : MultiDexApplication(), LocationListener {
     interface LocationCallback {
         fun onLocationChanged(location: Location)
     }
 
-    private lateinit var locationManager: LocationManager
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationRequest: LocationRequest
     var lastLocation: Location? = null
     var locationListeners = ArrayList<LocationCallback>()
 
@@ -28,10 +26,12 @@ class DemoApp : MultiDexApplication(), LocationListener {
         if (!GLMapManager.Initialize(this, this.getString(R.string.api_key), null)) {
             // Error caching resources. Check free space for world database (~25MB)
         }
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     }
 
     fun initLocationManager(): Boolean {
-        if (::locationManager.isInitialized) {
+        if (::fusedLocationClient.isInitialized) {
             return true
         }
 
@@ -42,53 +42,26 @@ class DemoApp : MultiDexApplication(), LocationListener {
         ) {
             return false
         }
-        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        try {
-            // Setup get location service
-            // Configure criteria
-            val criteria = Criteria()
-            criteria.accuracy = Criteria.ACCURACY_FINE
-            criteria.isSpeedRequired = true
-            criteria.isAltitudeRequired = true
-            criteria.isBearingRequired = true
-            criteria.bearingAccuracy = Criteria.ACCURACY_HIGH
 
-            // Find the best location that currently have all location providers
-            var bestAccuracy = Float.MAX_VALUE
-            var bestTime = Long.MAX_VALUE
-            lastLocation = null
-            val matchingProviders = lm.allProviders
-            for (provider in matchingProviders) {
-                var location: Location? = null
-                try {
-                    location = lm.getLastKnownLocation(provider)
-                } catch (e: Exception) {
-                    Log.e("CurLocationHelper", e.localizedMessage ?: "No message")
-                }
-                if (location != null) {
-                    val accuracy = location.accuracy
-                    val time = location.time
-                    if (time >= bestTime && accuracy < bestAccuracy) {
-                        lastLocation = location
-                        bestAccuracy = accuracy
-                        bestTime = time
-                    } else if (time < bestTime && bestAccuracy == Float.MAX_VALUE) {
-                        lastLocation = location
-                        bestTime = time
-                        bestAccuracy = accuracy
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
+
+        try {
+            // Get the last known location
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        lastLocation = it
+                        onLocationChanged(it)
                     }
                 }
-            }
-            // Update location to current best
-            val lastLocation = lastLocation
-            if (lastLocation != null) {
-                onLocationChanged(lastLocation)
-            }
+                .addOnFailureListener { e ->
+                    Log.e("CurLocationHelper", e.localizedMessage ?: "No message")
+                }
+
             // Request location updates
-            lm.requestLocationUpdates(1000, 1.0f, criteria, this, mainLooper)
+            fusedLocationClient.requestLocationUpdates(locationRequest, this, Looper.getMainLooper())
         } catch (e: Exception) {
-        } finally {
-            locationManager = lm
+            Log.e("CurLocationHelper", e.localizedMessage ?: "No message")
         }
         return true
     }

@@ -3,11 +3,13 @@ package globus.kotlinDemo
 import android.app.Activity
 import android.util.DisplayMetrics
 import android.util.Log
+import globus.glmap.GLMapFileStorage
 import globus.glmap.GLMapRasterTileSource
-import java.io.File
+import globus.glmap.GLMapStorage
+import globus.glmap.GLMapStorageFile
 
 /** Created by destman on 11/11/15.  */
-internal class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cachePath(activity)) {
+internal class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cacheStorage(activity)) {
     private val mirrors: Array<String> = arrayOf(
         "https://a.tile.openstreetmap.org/%d/%d/%d.png",
         "https://b.tile.openstreetmap.org/%d/%d/%d.png",
@@ -33,10 +35,8 @@ internal class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cachePa
     }
 
     companion object {
-        private fun cachePath(activity: Activity): String {
-            val filesDir = File(activity.filesDir.absolutePath, "RasterCache")
-            filesDir.mkdir()
-            return File(filesDir.absolutePath, "osm.db").absolutePath
+        private fun cacheStorage(activity: Activity): GLMapStorageFile? {
+            return GLMapFileStorage(activity.filesDir).findStorage("RasterCache", true)?.findFile("osm.db", true)
         }
     }
 }
