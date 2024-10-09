@@ -112,7 +112,6 @@ open class MapViewActivity :
             }
         }
     }
-
     private val localeSettings = GLMapLocaleSettings()
     private var image: GLMapImage? = null
     private var imageGroup: GLMapImageGroup? = null
@@ -180,7 +179,7 @@ open class MapViewActivity :
 
         renderer.setCenterTileStateChangedCallback { updateMapDownloadButton() }
         renderer.setMapDidMoveCallback { updateMapDownloadButtonText() }
-        run(Samples.values()[intent.extras?.getInt("example") ?: 0])
+        run(Samples.entries[intent.extras?.getInt("example") ?: 0])
     }
 
     protected open fun run(test: Samples) {
@@ -629,6 +628,7 @@ node[count>=128]{
                     renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight)
                 }
             } catch (e: Exception) {
+                Log.e(TAG, e.toString())
             }
         }
     }
@@ -718,6 +718,7 @@ node[count>=128]{
                     renderer.mapZoom = renderer.mapZoomForBBox(bbox, renderer.surfaceWidth, renderer.surfaceHeight)
                 }
             } catch (e: Exception) {
+                Log.e(TAG, e.toString())
             }
         }
     }
@@ -890,30 +891,31 @@ node[count>=128]{
                 )
             } else {
                 val request = GLRouteRequest()
-                request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true))
-                request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true))
+                request.addPoint(GLRoutePoint(MapGeoPoint(53.2328, 27.2699), Double.NaN, GLRoutePoint.Type.BREAK))
+                request.addPoint(GLRoutePoint(MapGeoPoint(53.1533, 27.0909), Double.NaN, GLRoutePoint.Type.BREAK))
                 request.setAutoWithOptions(CostingOptions.Auto())
                 request.locale = "en"
-                request.setOfflineWithConfig(RoutingActivity.getValhallaConfig(resources))
+                request.startOffline(
+                    RoutingActivity.getValhallaConfig(resources),
+                    object : GLRouteRequest.ResultsCallback {
+                        override fun onResult(route: GLRoute) {
+                            Log.i("Route", "Success")
+                            val trackData = route.getTrackData(Color.RED)
 
-                request.start(object : GLRouteRequest.ResultsCallback {
-                    override fun onResult(route: GLRoute) {
-                        Log.i("Route", "Success")
-                        val trackData = route.getTrackData(Color.RED)
-
-                        var trk = track
-                        if (trk == null) {
-                            trk = GLMapTrack(5)
-                            mapView.renderer.add(trk)
+                            var trk = track
+                            if (trk == null) {
+                                trk = GLMapTrack(5)
+                                mapView.renderer.add(trk)
+                            }
+                            trk.setData(trackData, trackStyle, null)
+                            track = trk
                         }
-                        trk.setData(trackData, trackStyle, null)
-                        track = trk
-                    }
 
-                    override fun onError(error: GLMapError) {
-                        Log.i("Route", "Error: $error")
+                        override fun onError(error: GLMapError) {
+                            Log.i("Route", "Error: $error")
+                        }
                     }
-                })
+                )
             }
         }
     }
@@ -1180,6 +1182,7 @@ area {
     }
 
     companion object {
+        private const val TAG = "MapViewActivity"
         private val unionColours = intArrayOf(
             Color.argb(255, 33, 0, 255),
             Color.argb(255, 68, 195, 255),

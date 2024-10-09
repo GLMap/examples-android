@@ -19,7 +19,7 @@ class DemoApp :
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
-    var lastLocation: Location? = null
+    private var lastLocation: Location? = null
     var locationListeners = ArrayList<LocationCallback>()
 
     override fun onCreate() {

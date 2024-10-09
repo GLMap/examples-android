@@ -35,7 +35,7 @@ android {
     // This will take some time and space on device.
     // You can disable compression for them in resulting apk file to speedup loading time.
     androidResources {
-        noCompress 'vm', 'ttf', 'otf'
+        noCompress = ['vm', 'ttf', 'otf']
     }
 }
 

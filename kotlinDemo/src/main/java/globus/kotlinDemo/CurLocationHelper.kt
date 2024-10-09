@@ -12,7 +12,7 @@ internal class CurLocationHelper(private val renderer: GLMapViewRenderer) : Demo
     private var userLocationImage: GLMapImage
     private var accuracyCircle: GLMapVectorLayer
     private var lastLocation: Location? = null
-    var isFollowLocationEnabled = false
+    private var isFollowLocationEnabled = false
 
     init {
         val manager = renderer.attachedView.context.assets

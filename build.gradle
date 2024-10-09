@@ -3,15 +3,15 @@
 buildscript {
     ext {
         build_tools_version = '33.0.2'
-        agp_version = '8.4.1'
+        agp_version = '8.5.2'
         kotlin_version = '1.9.22'
-        glmap_version = '1.8.0'
+        glmap_version = '1.10.0'
     }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.4.1'
+        classpath 'com.android.tools.build:gradle:8.5.2'
     }
 }
 

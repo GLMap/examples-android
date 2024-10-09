@@ -102,8 +102,8 @@ class RoutingActivity : MapViewActivity() {
 
     private fun updateRoute() {
         val request = GLRouteRequest()
-        request.addPoint(GLRoutePoint(departure, Double.NaN, true, true))
-        request.addPoint(GLRoutePoint(destination, Double.NaN, true, true))
+        request.addPoint(GLRoutePoint(departure, Double.NaN, GLRoutePoint.Type.BREAK))
+        request.addPoint(GLRoutePoint(destination, Double.NaN, GLRoutePoint.Type.BREAK))
         request.locale = "en"
         request.unitSystem = GLMapLocaleSettings.UnitSystem.International
         when (routingMode) {
@@ -111,10 +111,7 @@ class RoutingActivity : MapViewActivity() {
             GLRoute.Mode.BICYCLE -> request.setBicycleWithOptions(CostingOptions.Bicycle())
             GLRoute.Mode.PEDESTRIAN -> request.setPedestrianWithOptions(CostingOptions.Pedestrian())
         }
-        if (networkMode == NetworkMode.Offline) {
-            request.setOfflineWithConfig(getValhallaConfig(resources))
-        }
-        request.start(object : GLRouteRequest.ResultsCallback {
+        val callback = object : GLRouteRequest.ResultsCallback {
             override fun onResult(route: GLRoute) {
                 val trackData = route.getTrackData(Color.RED)
                 var track = track
@@ -128,9 +125,14 @@ class RoutingActivity : MapViewActivity() {
             }
 
             override fun onError(error: GLMapError) {
-                Toast.makeText(this@RoutingActivity, error.message, Toast.LENGTH_LONG).show()
+                Toast.makeText(this@RoutingActivity, error.message ?: error.toString(), Toast.LENGTH_LONG).show()
             }
-        })
+        }
+        if (networkMode == NetworkMode.Offline) {
+            request.startOffline(getValhallaConfig(resources), callback)
+        } else {
+            request.startOnline(callback)
+        }
     }
 
     private fun setSwitchesValues() {

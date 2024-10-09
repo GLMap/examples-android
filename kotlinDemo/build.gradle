@@ -40,12 +40,13 @@ android {
             res.srcDirs = ["../../Examples/javaDemo/src/main/res"]
         }
     }
-    androidResources {
-        noCompress 'vm', 'ttf', 'otf'
-    }
+
     //If world and font files are compressed - GLMap will decompress and cache them while initialization.
     //This will take some time and space on device.
     //You can disable compression for them in resulting apk file to speedup loading time.
+    androidResources {
+        noCompress = ['vm', 'ttf', 'otf']
+    }
 }
 
 dependencies {
