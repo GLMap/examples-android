@@ -3,29 +3,22 @@ package globus.javaDemo;
 import android.app.Activity;
 import android.util.DisplayMetrics;
 import android.util.Log;
-
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import globus.glmap.GLMapFileStorage;
 import globus.glmap.GLMapRasterTileSource;
 import globus.glmap.GLMapStorage;
 import globus.glmap.GLMapStorageFile;
 
-import java.io.File;
-
 /** Created by destman on 11/11/15. */
 class OSMTileSource extends GLMapRasterTileSource {
-    private String[] mirrors;
+    private final String[] mirrors = {
+        "https://a.tile.openstreetmap.org/%d/%d/%d.png",
+        "https://b.tile.openstreetmap.org/%d/%d/%d.png",
+        "https://c.tile.openstreetmap.org/%d/%d/%d.png"};
 
     OSMTileSource(Activity activity) throws OutOfMemoryError
     {
         super(CachePath(activity));
-
-        mirrors = new String[3];
-        mirrors[0] = "https://a.tile.openstreetmap.org/%d/%d/%d.png";
-        mirrors[1] = "https://b.tile.openstreetmap.org/%d/%d/%d.png";
-        mirrors[2] = "https://c.tile.openstreetmap.org/%d/%d/%d.png";
 
         setValidZoomMask((1 << 20) - 1); // Set as valid zooms all levels from 0 to 19
 

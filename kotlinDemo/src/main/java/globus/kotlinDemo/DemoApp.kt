@@ -10,7 +10,9 @@ import androidx.multidex.MultiDexApplication
 import com.google.android.gms.location.*
 import globus.glmap.GLMapManager
 
-class DemoApp : MultiDexApplication(), LocationListener {
+class DemoApp :
+    MultiDexApplication(),
+    LocationListener {
     interface LocationCallback {
         fun onLocationChanged(location: Location)
     }

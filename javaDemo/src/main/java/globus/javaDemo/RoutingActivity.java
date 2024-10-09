@@ -3,6 +3,7 @@ package globus.javaDemo;
 import android.annotation.SuppressLint;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.widget.Toast;
@@ -33,6 +34,7 @@ public class RoutingActivity extends MapViewActivity {
 
     private static final int ID_DEPARTURE = 0;
     private static final int ID_DESTINATION = 1;
+    private static final String TAG = "MapViewActivity";
 
     private QuickAction quickAction;
     private int routingMode = GLRoute.Mode.AUTO;
@@ -55,14 +57,14 @@ public class RoutingActivity extends MapViewActivity {
     {
         GestureDetector gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public boolean onSingleTapConfirmed(MotionEvent e)
+            public boolean onSingleTapConfirmed(@NonNull MotionEvent e)
             {
                 showDefaultPopupMenu(e.getX(), e.getY());
                 return true;
             }
 
             @Override
-            public void onLongPress(MotionEvent e)
+            public void onLongPress(@NonNull MotionEvent e)
             {}
         });
         mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
@@ -95,8 +97,8 @@ public class RoutingActivity extends MapViewActivity {
     private void updateRoute()
     {
         GLRouteRequest request = new GLRouteRequest();
-        request.addPoint(new GLRoutePoint(departure, Float.NaN, true, true));
-        request.addPoint(new GLRoutePoint(destination, Float.NaN, true, true));
+        request.addPoint(new GLRoutePoint(departure, Float.NaN, GLRoutePoint.Type.BREAK));
+        request.addPoint(new GLRoutePoint(destination, Float.NaN, GLRoutePoint.Type.BREAK));
         request.setLocale("en");
         request.setUnitSystem(GLMapLocaleSettings.UnitSystem.International);
         switch (routingMode) {
@@ -110,11 +112,7 @@ public class RoutingActivity extends MapViewActivity {
             request.setPedestrianWithOptions(new CostingOptions.Pedestrian());
             break;
         }
-        if (networkMode == NetworkMode.Offline) {
-            request.setOfflineWithConfig(getValhallaConfig(getResources()));
-        }
-
-        request.start(new GLRouteRequest.ResultsCallback() {
+        GLRouteRequest.ResultsCallback callback = new GLRouteRequest.ResultsCallback() {
             @Override
             public void onResult(@NonNull GLRoute route)
             {
@@ -131,14 +129,16 @@ public class RoutingActivity extends MapViewActivity {
             @Override
             public void onError(@NonNull GLMapError error)
             {
-                String message;
-                if (error.message != null)
-                    message = error.message;
-                else
-                    message = error.toString();
+                String message = error.message != null ? error.message : error.toString();
                 Toast.makeText(RoutingActivity.this, message, Toast.LENGTH_LONG).show();
             }
-        });
+        };
+
+        if (networkMode == NetworkMode.Offline) {
+            request.startOffline(getValhallaConfig(getResources()), callback);
+        } else {
+            request.startOnline(callback);
+        }
     }
 
     public static String getValhallaConfig(Resources resources)
@@ -152,7 +152,7 @@ public class RoutingActivity extends MapViewActivity {
                 stream.read(raw);
                 stream.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, e.toString());
             }
             // Construct categories
             valhallaConfig = new String(raw, Charset.defaultCharset());

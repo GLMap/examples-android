@@ -7,10 +7,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** Created by destman on 6/1/17.  */
-internal class CurLocationHelper(
-    private val renderer: GLMapViewRenderer
-) :
-    DemoApp.LocationCallback {
+internal class CurLocationHelper(private val renderer: GLMapViewRenderer) : DemoApp.LocationCallback {
     private var userMovementImage: GLMapImage
     private var userLocationImage: GLMapImage
     private var accuracyCircle: GLMapVectorLayer

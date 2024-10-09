@@ -29,12 +29,10 @@ class DisplayImageActivity : Activity() {
         }
     }
 
-    private fun getBitmapFromPath(path: String): Bitmap? {
-        return try {
-            BitmapFactory.decodeStream(openFileInput(path))
-        } catch (ignored: FileNotFoundException) {
-            null
-        }
+    private fun getBitmapFromPath(path: String): Bitmap? = try {
+        BitmapFactory.decodeStream(openFileInput(path))
+    } catch (ignored: FileNotFoundException) {
+        null
     }
 
     private fun getSvgBitmap(): Bitmap? {

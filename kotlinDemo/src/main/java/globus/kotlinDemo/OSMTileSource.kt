@@ -5,7 +5,6 @@ import android.util.DisplayMetrics
 import android.util.Log
 import globus.glmap.GLMapFileStorage
 import globus.glmap.GLMapRasterTileSource
-import globus.glmap.GLMapStorage
 import globus.glmap.GLMapStorageFile
 
 /** Created by destman on 11/11/15.  */
@@ -35,8 +34,7 @@ internal class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cacheSt
     }
 
     companion object {
-        private fun cacheStorage(activity: Activity): GLMapStorageFile? {
-            return GLMapFileStorage(activity.filesDir).findStorage("RasterCache", true)?.findFile("osm.db", true)
-        }
+        private fun cacheStorage(activity: Activity): GLMapStorageFile? =
+            GLMapFileStorage(activity.filesDir).findStorage("RasterCache", true)?.findFile("osm.db", true)
     }
 }

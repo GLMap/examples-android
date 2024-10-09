@@ -23,7 +23,8 @@ public class DemoApp extends MultiDexApplication implements LocationListener {
     public Location lastLocation;
 
     @Override
-    public void onCreate() {
+    public void onCreate()
+    {
         super.onCreate();
         // Uncomment and insert your API key into api_key in res/values/strings.xml
         String apiKey = this.getString(R.string.api_key);
@@ -34,9 +35,10 @@ public class DemoApp extends MultiDexApplication implements LocationListener {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
-    public boolean initLocationManager() {
+    public boolean initLocationManager()
+    {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return false;
         }
 
@@ -45,13 +47,13 @@ public class DemoApp extends MultiDexApplication implements LocationListener {
         try {
             // Get the last known location
             fusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(location -> {
-                        if (location != null) {
-                            lastLocation = location;
-                            onLocationChanged(location);
-                        }
-                    })
-                    .addOnFailureListener(e -> Log.e("CurLocationHelper", getErrorMessage(e)));
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        lastLocation = location;
+                        onLocationChanged(location);
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("CurLocationHelper", getErrorMessage(e)));
 
             // Request location updates
             fusedLocationClient.requestLocationUpdates(locationRequest, this, Looper.getMainLooper());
@@ -61,11 +63,10 @@ public class DemoApp extends MultiDexApplication implements LocationListener {
         return true;
     }
 
-    private String getErrorMessage(Exception e) {
-        return e.getLocalizedMessage() != null ? e.getLocalizedMessage() : "";
-    }
+    private String getErrorMessage(Exception e) { return e.getLocalizedMessage() != null ? e.getLocalizedMessage() : ""; }
 
-    public void onLocationChanged(@NonNull Location location) {
+    public void onLocationChanged(@NonNull Location location)
+    {
         for (LocationCallback listener : locationListeners) {
             listener.onLocationChanged(location);
         }

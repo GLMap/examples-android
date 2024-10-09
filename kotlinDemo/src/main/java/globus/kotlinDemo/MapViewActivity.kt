@@ -44,12 +44,12 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
-open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback, GLMapManager.StateListener {
+open class MapViewActivity :
+    Activity(),
+    GLMapViewRenderer.ScreenCaptureCallback,
+    GLMapManager.StateListener {
 
-    private data class Pin(
-        val pos: MapPoint,
-        val imageVariant: Int
-    )
+    private data class Pin(val pos: MapPoint, val imageVariant: Int)
 
     private class Pins(private val renderer: GLMapViewRenderer) : GLMapImageGroupCallback {
         private val lock = ReentrantLock()
@@ -104,13 +104,11 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
 
         fun remove(pin: Pin) = lock.withLock { pins.remove(pin) }
 
-        fun findPin(renderer: GLMapViewRenderer, touchX: Float, touchY: Float): Pin? {
-            return lock.withLock {
-                pins.find { pin ->
-                    val screenPos = renderer.convertInternalToDisplay(pin.pos)
-                    val rt = Rect(-40, -40, 40, 40).apply { offset(screenPos.x.toInt(), screenPos.y.toInt()) }
-                    rt.contains(touchX.toInt(), touchY.toInt())
-                }
+        fun findPin(renderer: GLMapViewRenderer, touchX: Float, touchY: Float): Pin? = lock.withLock {
+            pins.find { pin ->
+                val screenPos = renderer.convertInternalToDisplay(pin.pos)
+                val rt = Rect(-40, -40, 40, 40).apply { offset(screenPos.x.toInt(), screenPos.y.toInt()) }
+                rt.contains(touchX.toInt(), touchY.toInt())
             }
         }
     }
@@ -446,9 +444,8 @@ open class MapViewActivity : Activity(), GLMapViewRenderer.ScreenCaptureCallback
     }
 
     internal class SearchStyle : GLMapMarkerStyleCollectionDataCallback() {
-        override fun getLocation(marker: Any): MapPoint {
-            return if (marker is GLMapVectorObject) marker.point() else MapPoint(0.0, 0.0)
-        }
+        override fun getLocation(marker: Any): MapPoint =
+            if (marker is GLMapVectorObject) marker.point() else MapPoint(0.0, 0.0)
 
         override fun fillUnionData(markersCount: Int, nativeMarker: Long) {
             // Not called if clustering is off
@@ -847,11 +844,7 @@ node[count>=128]{
         mapView.renderer.drawHillshades = true
         mapView.renderer.reloadTiles()
 
-        class ActionInfo(
-            val title: String,
-            @GLMapInfo.DataSet val dataSet: Int?,
-            val file: File?
-        )
+        class ActionInfo(val title: String, @GLMapInfo.DataSet val dataSet: Int?, val file: File?)
 
         val action = when {
             !mapPath.exists() ->

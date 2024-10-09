@@ -82,7 +82,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressLint({"ClickableViewAccessibility", "StaticFieldLeak", "SetTextI18n"})
 public class MapViewActivity extends Activity implements GLMapViewRenderer.ScreenCaptureCallback, GLMapManager.StateListener {
-
+    private static final String TAG = "MapViewActivity";
     private static class Pin {
         MapPoint pos;
         int imageVariant;
@@ -291,7 +291,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
         case ZOOM_BBOX:
             zoomToBBox();
             break;
-        case FLY_TO:
+        case FLY_TO: {
             mapView.renderer.setMapCenter(MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353));
             mapView.renderer.setMapZoom(14);
 
@@ -315,6 +315,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             });
             GLMapManager.SetTileDownloadingAllowed(true);
             break;
+        }
         case OFFLINE_SEARCH:
             GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", getAssets(), null);
             zoomToPoint();
@@ -325,14 +326,14 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
 
             gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
                 @Override
-                public boolean onSingleTapConfirmed(MotionEvent e)
+                public boolean onSingleTapConfirmed(@NonNull MotionEvent e)
                 {
                     deleteMarker(e.getX(), e.getY());
                     return true;
                 }
 
                 @Override
-                public void onLongPress(MotionEvent e)
+                public void onLongPress(@NonNull MotionEvent e)
                 {
                     addMarker(e.getX(), e.getY());
                 }
@@ -348,14 +349,14 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
 
             gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
                 @Override
-                public boolean onSingleTapConfirmed(MotionEvent e)
+                public boolean onSingleTapConfirmed(@NonNull MotionEvent e)
                 {
                     deleteMarker(e.getX(), e.getY());
                     return true;
                 }
 
                 @Override
-                public void onLongPress(MotionEvent e)
+                public void onLongPress(@NonNull MotionEvent e)
                 {
                     addMarkerAsVectorObject(e.getX(), e.getY());
                 }
@@ -375,24 +376,25 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             zoomToPoint();
             captureScreen();
             break;
-        case IMAGE_SINGLE:
-            btn = this.findViewById(R.id.button_action);
+        case IMAGE_SINGLE: {
+            Button btn = this.findViewById(R.id.button_action);
             btn.setVisibility(View.VISIBLE);
             delImage(btn);
             break;
+        }
         case IMAGE_MULTI:
             mapView.setLongClickable(true);
 
             gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
                 @Override
-                public boolean onSingleTapConfirmed(MotionEvent e)
+                public boolean onSingleTapConfirmed(@NonNull MotionEvent e)
                 {
                     deletePin(e.getX(), e.getY());
                     return true;
                 }
 
                 @Override
-                public void onLongPress(MotionEvent e)
+                public void onLongPress(@NonNull MotionEvent e)
                 {
                     addPin(e.getX(), e.getY());
                 }
@@ -1030,59 +1032,54 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             action.title = "Calc route";
         }
 
-        if (action != null) {
-            btn.setVisibility(View.VISIBLE);
-            btn.setText(action.title);
-            btn.setOnClickListener(view -> {
-                if (action.path != null) {
-                    GLMapManager.DownloadDataSet(action.dataSet, action.path.getAbsolutePath(), bbox, new GLMapManager.DownloadCallback() {
-                        @Override
-                        public void onProgress(long totalSize, long downloadedSize, double downloadSpeed)
-                        {
-                            Log.i("BulkDownload", String.format("Download %d stats: %d, %f", action.dataSet, downloadedSize, downloadSpeed));
-                        }
+        btn.setVisibility(View.VISIBLE);
+        btn.setText(action.title);
+        btn.setOnClickListener(view -> {
+            if (action.path != null) {
+                GLMapManager.DownloadDataSet(action.dataSet, action.path.getAbsolutePath(), bbox, new GLMapManager.DownloadCallback() {
+                    @Override
+                    public void onProgress(long totalSize, long downloadedSize, double downloadSpeed)
+                    {
+                        Log.i("BulkDownload", String.format("Download %d stats: %d, %f", action.dataSet, downloadedSize, downloadSpeed));
+                    }
 
-                        @Override
-                        public void onFinished(@Nullable GLMapError error)
-                        {
-                            if (error == null) {
-                                downloadInBBox();
-                            }
+                    @Override
+                    public void onFinished(@Nullable GLMapError error)
+                    {
+                        if (error == null) {
+                            downloadInBBox();
                         }
-                    });
-                } else {
-                    GLRouteRequest request = new GLRouteRequest();
-                    request.addPoint(new GLRoutePoint(new MapGeoPoint(53.2328, 27.2699), Double.NaN, true, true));
-                    request.addPoint(new GLRoutePoint(new MapGeoPoint(53.1533, 27.0909), Double.NaN, true, true));
-                    request.setLocale("en");
-                    request.setAutoWithOptions(new CostingOptions.Auto());
-                    request.setOfflineWithConfig(getValhallaConfig(getResources()));
-                    request.start(new GLRouteRequest.ResultsCallback() {
-                        @Override
-                        public void onResult(@NonNull GLRoute route)
-                        {
-                            Log.i("Route", "Success");
-                            GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
-                            if (track != null) {
-                                track.setData(trackData, trackStyle, null);
-                            } else {
-                                track = new GLMapTrack(5);
-                                track.setData(trackData, trackStyle, null);
-                                mapView.renderer.add(track);
-                            }
+                    }
+                });
+            } else {
+                GLRouteRequest request = new GLRouteRequest();
+                request.addPoint(new GLRoutePoint(new MapGeoPoint(53.2328, 27.2699), Double.NaN, GLRoutePoint.Type.BREAK));
+                request.addPoint(new GLRoutePoint(new MapGeoPoint(53.1533, 27.0909), Double.NaN, GLRoutePoint.Type.BREAK));
+                request.setLocale("en");
+                request.setAutoWithOptions(new CostingOptions.Auto());
+                request.startOffline(getValhallaConfig(getResources()), new GLRouteRequest.ResultsCallback() {
+                    @Override
+                    public void onResult(@NonNull GLRoute route)
+                    {
+                        Log.i("Route", "Success");
+                        GLMapTrackData trackData = route.getTrackData(Color.argb(255, 255, 0, 0));
+                        if (track != null) {
+                            track.setData(trackData, trackStyle, null);
+                        } else {
+                            track = new GLMapTrack(5);
+                            track.setData(trackData, trackStyle, null);
+                            mapView.renderer.add(track);
                         }
+                    }
 
-                        @Override
-                        public void onError(@NonNull GLMapError error)
-                        {
-                            Log.i("Route", "Error: " + error);
-                        }
-                    });
-                }
-            });
-        } else {
-            btn.setVisibility(View.GONE);
-        }
+                    @Override
+                    public void onError(@NonNull GLMapError error)
+                    {
+                        Log.i("Route", "Error: " + error);
+                    }
+                });
+            }
+        });
     }
 
     private void loadDarkTheme()
@@ -1226,7 +1223,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             zoomToObjects(objects);
             gestureDetector = new GestureDetector(this, new SimpleOnGestureListener() {
                 @Override
-                public boolean onSingleTapConfirmed(MotionEvent e)
+                public boolean onSingleTapConfirmed(@NonNull MotionEvent e)
                 {
                     for (int i = 0; i < objects.size(); i++) {
                         GLMapVectorObject obj = objects.get(i);
@@ -1245,13 +1242,13 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                 }
 
                 @Override
-                public void onLongPress(MotionEvent e)
+                public void onLongPress(@NonNull MotionEvent e)
                 {}
             });
 
             mapView.setOnTouchListener((arg0, ev) -> gestureDetector.onTouchEvent(ev));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, e.toString());
         }
     }
 
@@ -1273,13 +1270,13 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                 + " [ 8.0, 12.0], [ 8.0, 18.0], [2.0, 18.0] ]]}]");
         } catch (Exception e) {
             objects = null;
-            e.printStackTrace();
+            Log.e(TAG, e.toString());
         }
 
         GLMapVectorCascadeStyle style = Objects.requireNonNull(GLMapVectorCascadeStyle.createStyle(
             "node[id=1]{icon-image:\"bus.svgpb\";icon-scale:0.5;icon-tint:green;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
-            +
-            "node|z-9[id=2]{icon-image:\"bus.svgpb\";icon-scale:0.7;icon-tint:blue;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}line{linecap:"
+            + "node|z-9[id=2]{icon-image:\"bus.svgpb\";icon-scale:0.7;icon-tint:blue;text:eval(tag('text'));text-color:red;font-size:12;text-priority:100;}"
+            + "line{linecap:"
             + " round; width: 5pt; color:blue;}area{fill-color:green;"
             + " width:1pt; color:red;}"));
 
@@ -1319,7 +1316,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                 fo.write(bytes.toByteArray());
                 fo.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, e.toString());
             }
 
             Intent intent = new Intent(MapViewActivity.this, DisplayImageActivity.class);

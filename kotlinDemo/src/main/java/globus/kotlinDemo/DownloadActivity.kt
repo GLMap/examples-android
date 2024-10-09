@@ -15,7 +15,9 @@ import globus.glmap.GLMapManager
 import java.util.*
 
 @SuppressLint("SetTextI18n")
-class DownloadActivity : ListActivity(), GLMapManager.StateListener {
+class DownloadActivity :
+    ListActivity(),
+    GLMapManager.StateListener {
     private enum class ContextItems {
         DELETE
     }
@@ -46,10 +48,9 @@ class DownloadActivity : ListActivity(), GLMapManager.StateListener {
         super.onDestroy()
     }
 
-    private inner class MapsAdapter internal constructor(
-        val maps: Array<GLMapInfo>,
-        private val context: Context
-    ) : BaseAdapter(), ListAdapter {
+    private inner class MapsAdapter internal constructor(val maps: Array<GLMapInfo>, private val context: Context) :
+        BaseAdapter(),
+        ListAdapter {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val map = maps[position]
             val convertViewFinal = convertView ?: LayoutInflater.from(context).inflate(R.layout.map_name, parent, false)
@@ -157,14 +158,12 @@ class DownloadActivity : ListActivity(), GLMapManager.StateListener {
             }
             return false
         }
-        fun isOnDevice(info: GLMapInfo): Boolean {
-            return (
-                anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS) ||
-                    anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED) ||
-                    anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME) ||
-                    anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE) ||
-                    anyDataSetHaveState(info, GLMapInfo.State.REMOVED)
-                )
-        }
+        fun isOnDevice(info: GLMapInfo): Boolean = (
+            anyDataSetHaveState(info, GLMapInfo.State.IN_PROGRESS) ||
+                anyDataSetHaveState(info, GLMapInfo.State.DOWNLOADED) ||
+                anyDataSetHaveState(info, GLMapInfo.State.NEED_RESUME) ||
+                anyDataSetHaveState(info, GLMapInfo.State.NEED_UPDATE) ||
+                anyDataSetHaveState(info, GLMapInfo.State.REMOVED)
+            )
     }
 }
