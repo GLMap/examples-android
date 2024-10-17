@@ -1171,7 +1171,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                     colorForTrack(rDelta * index)),
             trackPointIndex);
 
-        track = new GLMapTrack(2);
+        track = new GLMapTrack(2); // Create track with no draw order to draw track with map data.
         // To use files from style, (e.g. track-arrow.svgpb) you should create DefaultStyle.bundle
         // inside assets and put all additional resources inside.
         track.setData(trackData, trackStyle, null);
