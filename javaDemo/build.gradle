@@ -12,9 +12,9 @@ android {
 
     defaultConfig {
         applicationId "globus.javaDemo"
-        minSdkVersion 21
-        compileSdkVersion = 35
-        targetSdkVersion 35
+        minSdkVersion min_sdk_version
+        compileSdkVersion = sdk_version
+        targetSdkVersion sdk_version
         versionCode version_code
         versionName glmap_version
         multiDexEnabled true
@@ -34,18 +34,16 @@ android {
     // If world and font files are compressed - GLMap will decompress and cache them during initialization.
     // This will take some time and space on device.
     // You can disable compression for them in resulting apk file to speedup loading time.
-    androidResources {
+    aaptOptions {
         noCompress = ['vm', 'ttf', 'otf']
     }
 }
 
 dependencies {
-//    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'com.google.android.material:material:1.12.0'
-    implementation 'com.google.android.gms:play-services-location:21.3.0'
+    implementation "androidx.appcompat:appcompat:$app_compat_version"
+    implementation "androidx.multidex:multidex:$multidex_version"
+    implementation "com.google.android.material:material:$material_version"
+    implementation "com.google.android.gms:play-services-location:$gms_location_version"
 
     implementation "globus:glmap:$glmap_version"
     implementation "globus:glroute:$glmap_version"

@@ -30,6 +30,7 @@ public class DisplayImageActivity extends Activity {
             SVGRender.Transform transform = SVGRender.transform(8, 0xFF800000);
             // Bitmap bmp = SVGRender.render(getAssets(), "DefaultStyle.bundle/poi_theme_park.svg", transform);
             Bitmap bmp = SVGRender.render(getAssets(), "DefaultStyle.bundle/poi_playground.svg", transform);
+            assert bmp != null;
             ImageView imageView = findViewById(R.id.image_view);
             imageView.setMinimumWidth(bmp.getWidth() * 2);
             imageView.setMinimumHeight(bmp.getHeight() * 2);

@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
@@ -183,7 +184,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             lock.lock();
             for (int i = 0; i < pins.size(); ++i) {
                 Pin pin = pins.get(i);
-                MapPoint screenPos = mapView.renderer.convertInternalToDisplay(new MapPoint(pin.pos));
+                PointF screenPos = mapView.renderer.convertInternalToDisplay(new MapPoint(pin.pos));
                 Rect rt = new Rect(-40, -40, 40, 40);
                 rt.offset((int)screenPos.x, (int)screenPos.y);
                 if (rt.contains((int)touchX, (int)touchY)) {
@@ -710,7 +711,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             mapView.renderer.add(imageGroup);
         }
 
-        MapPoint pt = mapView.renderer.convertDisplayToInternal(new MapPoint(touchX, touchY));
+        MapPoint pt = mapView.renderer.convertDisplayToInternal(touchX, touchY);
         Pin pin = new Pin();
         pin.pos = pt;
         pin.imageVariant = pins.size() % 3;
@@ -731,7 +732,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
     {
         if (markerLayer != null) {
             GLMapViewRenderer renderer = mapView.renderer;
-            Object[] markersToRemove = markerLayer.objectsNearPoint(renderer, renderer.convertDisplayToInternal(new MapPoint(x, y)), 30);
+            Object[] markersToRemove = markerLayer.objectsNearPoint(renderer, renderer.convertDisplayToInternal(x, y), 30);
             if (markersToRemove != null && markersToRemove.length == 1) {
                 markerLayer.modify(null, Collections.singleton(markersToRemove[0]), true, () -> Log.d("MarkerLayer", "Marker deleted"));
             }
@@ -742,7 +743,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
     {
         if (markerLayer != null) {
             MapPoint[] newMarkers = new MapPoint[1];
-            newMarkers[0] = mapView.renderer.convertDisplayToInternal(new MapPoint(x, y));
+            newMarkers[0] = mapView.renderer.convertDisplayToInternal(x, y);
 
             markerLayer.modify(newMarkers, null, true, () -> Log.d("MarkerLayer", "Marker added"));
         }
@@ -752,7 +753,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
     {
         if (markerLayer != null) {
             GLMapVectorObject[] newMarkers = new GLMapVectorObject[1];
-            newMarkers[0] = GLMapVectorObject.createPoint(mapView.renderer.convertDisplayToInternal(new MapPoint(x, y)));
+            newMarkers[0] = GLMapVectorObject.createPoint(mapView.renderer.convertDisplayToInternal(x, y));
             markerLayer.modify(newMarkers, null, true, () -> Log.d("MarkerLayer", "Marker added"));
         }
     }
@@ -1227,8 +1228,7 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
                 {
                     for (int i = 0; i < objects.size(); i++) {
                         GLMapVectorObject obj = objects.get(i);
-                        MapPoint mapPoint = new MapPoint(e.getX(), e.getY());
-                        mapPoint = mapView.renderer.convertDisplayToInternal(mapPoint);
+                        MapPoint mapPoint = mapView.renderer.convertDisplayToInternal(e.getX(), e.getY());
                         // When checking polygons it will check if point is inside
                         // polygon.
                         // For lines and points it will check if distance is less

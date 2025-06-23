@@ -42,6 +42,8 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.math.cos
 import kotlin.math.sin
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
 
 @SuppressLint("ClickableViewAccessibility", "SetTextI18n")
 open class MapViewActivity :
@@ -366,7 +368,7 @@ open class MapViewActivity :
     }
 
     private fun updateMapDownloadButtonText() {
-        if (btnDownloadMap.visibility == View.VISIBLE) {
+        if (btnDownloadMap.isVisible) {
             val center = renderer.mapCenter
             val maps = GLMapManager.MapsAtPoint(center)
             mapToDownload = if (maps.isNullOrEmpty()) null else maps[0]
@@ -518,7 +520,7 @@ open class MapViewActivity :
             this.imageGroup = imageGroup
             renderer.add(imageGroup)
         }
-        val pt = renderer.convertDisplayToInternal(MapPoint(touchX.toDouble(), touchY.toDouble()))
+        val pt = renderer.convertDisplayToInternal(touchX.toDouble(), touchY.toDouble())
         val pin = Pin(pt, pins.size() % 3)
         pins.add(pin)
         imageGroup.setNeedsUpdate(false)
@@ -533,7 +535,7 @@ open class MapViewActivity :
     }
 
     private fun deleteMarker(x: Double, y: Double) {
-        val pt = renderer.convertDisplayToInternal(MapPoint(x, y))
+        val pt = renderer.convertDisplayToInternal(x, y)
         val markersToRemove = markerLayer?.objectsNearPoint(renderer, pt, 30.0)
         if (!markersToRemove.isNullOrEmpty()) {
             markerLayer?.modify(null, setOf(markersToRemove[0]), true) {
@@ -544,14 +546,14 @@ open class MapViewActivity :
 
     private fun addMarker(x: Double, y: Double) {
         val newMarkers = arrayOfNulls<MapPoint>(1)
-        newMarkers[0] = renderer.convertDisplayToInternal(MapPoint(x, y))
+        newMarkers[0] = renderer.convertDisplayToInternal(x, y)
         markerLayer?.modify(newMarkers, null, true) {
             Log.d("MarkerLayer", "Marker added")
         }
     }
 
     fun addMarkerAsVectorObject(x: Double, y: Double) {
-        val newMarkers = arrayOf(GLMapVectorObject.createPoint(renderer.convertDisplayToInternal(MapPoint(x, y))))
+        val newMarkers = arrayOf(GLMapVectorObject.createPoint(renderer.convertDisplayToInternal(x, y)))
         markerLayer?.modify(newMarkers, null, true) {
             Log.d("MarkerLayer", "Marker added")
         }
@@ -960,7 +962,7 @@ node[count>=128]{
                                     result = null
                                 }
                                 stream.close()
-                            } catch (ignore: IOException) {
+                            } catch (_: IOException) {
                                 result = null
                             }
                             result
@@ -970,7 +972,7 @@ node[count>=128]{
                     if (style != null) {
                         handler.post { renderer.setStyle(style) }
                     }
-                } catch (ignore: Exception) {
+                } catch (_: Exception) {
                 }
             }
         }
@@ -1057,7 +1059,7 @@ node[count>=128]{
                     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                         for (index in 0 until objects.size()) {
                             val obj = objects[index]
-                            val mapPoint = renderer.convertDisplayToInternal(MapPoint(e.x.toDouble(), e.y.toDouble()))
+                            val mapPoint = renderer.convertDisplayToInternal(e.x.toDouble(), e.y.toDouble())
                             // When checking polygons it will check if point is inside polygon.
                             // For lines and points it will check if distance is less then maxDistance.
                             if (obj.findNearestPoint(renderer, mapPoint, 10.0) != null) {
@@ -1165,14 +1167,14 @@ area {
     private fun updateMapDownloadButton() {
         when (renderer.centerTileState) {
             GLMapViewRenderer.GLMapTileState.NoData -> {
-                if (btnDownloadMap.visibility == View.INVISIBLE) {
+                if (btnDownloadMap.isInvisible) {
                     btnDownloadMap.visibility = View.VISIBLE
                     btnDownloadMap.parent.requestLayout()
                     updateMapDownloadButtonText()
                 }
             }
             GLMapViewRenderer.GLMapTileState.Loaded -> {
-                if (btnDownloadMap.visibility == View.VISIBLE) {
+                if (btnDownloadMap.isVisible) {
                     btnDownloadMap.visibility = View.INVISIBLE
                 }
             }

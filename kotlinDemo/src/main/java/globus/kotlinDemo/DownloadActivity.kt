@@ -65,8 +65,7 @@ class DownloadActivity :
                     total += task.total.toLong()
                     downloaded += task.downloaded.toLong()
                 }
-                val progress: Float
-                progress = if (total != 0L) 100.0f * downloaded / total else 0f
+                val progress = if (total != 0L) 100.0f * downloaded / total else 0f
                 txtDescription.text = String.format(Locale.ENGLISH, "Download %.2f%%", progress)
             } else if (map.isCollection) {
                 txtDescription.text = "Collection"
@@ -108,7 +107,7 @@ class DownloadActivity :
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
         val selectedMap = selectedMap ?: return false
-        when (ContextItems.values()[item.itemId]) {
+        when (ContextItems.entries[item.itemId]) {
             ContextItems.DELETE -> {
                 GLMapManager.DeleteDataSets(selectedMap, GLMapInfo.DataSetMask.ALL)
                 (listView.adapter as MapsAdapter).notifyDataSetChanged()

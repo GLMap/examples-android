@@ -31,7 +31,7 @@ class DisplayImageActivity : Activity() {
 
     private fun getBitmapFromPath(path: String): Bitmap? = try {
         BitmapFactory.decodeStream(openFileInput(path))
-    } catch (ignored: FileNotFoundException) {
+    } catch (_: FileNotFoundException) {
         null
     }
 

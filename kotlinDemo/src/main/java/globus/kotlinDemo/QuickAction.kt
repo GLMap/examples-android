@@ -12,6 +12,8 @@ import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.core.view.isNotEmpty
+import androidx.core.graphics.drawable.toDrawable
 
 typealias OnActionItemClickListener = (Int) -> Unit
 
@@ -49,7 +51,7 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
             callback(actionID)
             popupWindow.dismiss()
         }
-        if (track.childCount != 0) {
+        if (track.isNotEmpty()) {
             val separator = inflater.inflate(R.layout.horiz_separator, track, false)
             separator.layoutParams = RelativeLayout.LayoutParams(2, ViewGroup.LayoutParams.MATCH_PARENT)
             track.addView(separator)
@@ -65,7 +67,7 @@ class QuickAction(context: Context, private val callback: OnActionItemClickListe
     fun show(parent: View, screenX: Float, screenY: Float) {
         var finalScreenX = screenX
         var finalScreenY = screenY
-        popupWindow.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        popupWindow.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
         popupWindow.isTouchable = true
         popupWindow.isFocusable = true
         popupWindow.isOutsideTouchable = true

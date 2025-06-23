@@ -3,19 +3,26 @@
 buildscript {
     ext {
         build_tools_version = '33.0.2'
+        agp_version = '8.11.0'
         kotlin_version = '1.9.22'
-        glmap_version = '1.11.0'
+        glmap_version = '1.12.0-SNAPSHOT'
+        app_compat_version = '1.7.1'
+        multidex_version = '2.0.1'
+        material_version = '1.12.0'
+        gms_location_version = '21.3.0'
+        min_sdk_version = 21
+        sdk_version = 36
         version_code = 11100
     }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.8.0'
+        classpath "com.android.tools.build:gradle:$agp_version"
     }
 }
 
 plugins {
-    id 'com.android.application' version "8.8.0" apply false
+    id 'com.android.application' version "$agp_version" apply false
     id 'org.jetbrains.kotlin.android' version "$kotlin_version" apply false
 }

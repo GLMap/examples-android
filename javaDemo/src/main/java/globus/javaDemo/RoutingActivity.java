@@ -179,13 +179,12 @@ public class RoutingActivity extends MapViewActivity {
         quickAction.addActionItem(new ActionItem(ID_DESTINATION, "Destination"));
 
         quickAction.setonActionItemClickListener((source, actionId) -> {
-            final MapPoint mapPoint = new MapPoint(x, y);
             switch (actionId) {
             case ID_DEPARTURE:
-                departure = new MapGeoPoint(mapView.renderer.convertDisplayToInternal(mapPoint));
+                departure = new MapGeoPoint(mapView.renderer.convertDisplayToInternal(x, y));
                 break;
             case ID_DESTINATION:
-                destination = new MapGeoPoint(mapView.renderer.convertDisplayToInternal(mapPoint));
+                destination = new MapGeoPoint(mapView.renderer.convertDisplayToInternal(x, y));
                 break;
             }
             if (departure != null && destination != null)

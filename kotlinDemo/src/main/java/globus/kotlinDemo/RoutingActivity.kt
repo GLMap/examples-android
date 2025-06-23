@@ -143,10 +143,10 @@ class RoutingActivity : MapViewActivity() {
     private fun showDefaultPopupMenu(x: Float, y: Float) {
         quickAction?.dismiss()
         val quickAction = QuickAction(this) { actionId ->
-            val mapPoint = MapPoint(x.toDouble(), y.toDouble())
+            val geoPoint = MapGeoPoint(renderer.convertDisplayToInternal(x.toDouble(), y.toDouble()))
             when (actionId) {
-                ID_DEPARTURE -> departure = MapGeoPoint(renderer.convertDisplayToInternal(mapPoint))
-                ID_DESTINATION -> destination = MapGeoPoint(renderer.convertDisplayToInternal(mapPoint))
+                ID_DEPARTURE -> departure = geoPoint
+                ID_DESTINATION -> destination = geoPoint
             }
             updateRoute()
         }
