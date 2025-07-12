@@ -3,16 +3,16 @@
 buildscript {
     ext {
         build_tools_version = '33.0.2'
-        agp_version = '8.11.0'
+        agp_version = '8.11.1'
         kotlin_version = '1.9.22'
-        glmap_version = '1.12.0-SNAPSHOT'
+        glmap_version = '1.12.0'
         app_compat_version = '1.7.1'
         multidex_version = '2.0.1'
         material_version = '1.12.0'
         gms_location_version = '21.3.0'
         min_sdk_version = 21
         sdk_version = 36
-        version_code = 11100
+        version_code = 11200
     }
     repositories {
         mavenCentral()
