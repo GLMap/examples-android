@@ -188,13 +188,20 @@ open class MapViewActivity :
         when (test) {
             Samples.MAP, Samples.OPEN_ROUTING, Samples.MAP_TEXTURE_VIEW, Samples.SVG_TEST -> {
             }
+
             Samples.CALLBACK_TEST, Samples.DOWNLOAD_MAP -> {
             }
+
             Samples.DARK_THEME -> loadDarkTheme()
+
             Samples.MAP_EMBEDDED -> showEmbedded()
+
             Samples.MAP_ONLINE -> GLMapManager.SetTileDownloadingAllowed(true)
+
             Samples.MAP_ONLINE_RASTER -> renderer.setBase(OSMTileSource(this))
+
             Samples.ZOOM_BBOX -> zoomToBBox()
+
             Samples.FLY_TO -> {
                 renderer.mapCenter = MapPoint.CreateFromGeoCoordinates(37.3257, -122.0353)
                 renderer.mapZoom = 14.0
@@ -215,11 +222,13 @@ open class MapViewActivity :
                 }
                 GLMapManager.SetTileDownloadingAllowed(true)
             }
+
             Samples.OFFLINE_SEARCH -> {
                 GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)
                 zoomToPoint()
                 offlineSearch()
             }
+
             Samples.MARKERS -> {
                 mapView.isLongClickable = true
                 val gestureDetector = GestureDetector(
@@ -239,6 +248,7 @@ open class MapViewActivity :
                 addMarkers()
                 GLMapManager.SetTileDownloadingAllowed(true)
             }
+
             Samples.MARKERS_MAPCSS -> {
                 addMarkersWithMapcss()
                 val gestureDetector = GestureDetector(
@@ -257,16 +267,21 @@ open class MapViewActivity :
                 mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
                 GLMapManager.SetTileDownloadingAllowed(true)
             }
+
             Samples.MULTILINE -> addMultiline()
+
             Samples.POLYGON -> addPolygon()
+
             Samples.CAPTURE_SCREEN -> {
                 zoomToPoint()
                 captureScreen()
             }
+
             Samples.IMAGE_SINGLE -> {
                 actionButton.visibility = View.VISIBLE
                 delImage()
             }
+
             Samples.IMAGE_MULTI -> {
                 mapView.isLongClickable = true
                 val gestureDetector = GestureDetector(
@@ -284,9 +299,13 @@ open class MapViewActivity :
                 )
                 mapView.setOnTouchListener { _, ev -> gestureDetector.onTouchEvent(ev) }
             }
+
             Samples.GEO_JSON -> loadGeoJSON()
+
             Samples.DOWNLOAD_IN_BBOX -> downloadInBBox()
+
             Samples.STYLE_LIVE_RELOAD -> styleLiveReload()
+
             Samples.RECORD_TRACK -> recordTrack()
         }
         renderer.setMapDidMoveCallback {
@@ -322,6 +341,7 @@ open class MapViewActivity :
             0 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 (application as DemoApp).initLocationManager()
             }
+
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
@@ -852,10 +872,13 @@ node[count>=128]{
         val action = when {
             !mapPath.exists() ->
                 ActionInfo("Download map", GLMapInfo.DataSet.MAP, mapPath)
+
             !navigationPath.exists() ->
                 ActionInfo("Download navigation", GLMapInfo.DataSet.NAVIGATION, navigationPath)
+
             !elevationPath.exists() ->
                 ActionInfo("Download elevation", GLMapInfo.DataSet.ELEVATION, elevationPath)
+
             else ->
                 ActionInfo("Calc route", null, null)
         }
@@ -1173,11 +1196,13 @@ area {
                     updateMapDownloadButtonText()
                 }
             }
+
             GLMapViewRenderer.GLMapTileState.Loaded -> {
                 if (btnDownloadMap.isVisible) {
                     btnDownloadMap.visibility = View.INVISIBLE
                 }
             }
+
             GLMapViewRenderer.GLMapTileState.Unknown -> {
             }
         }

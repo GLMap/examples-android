@@ -143,7 +143,7 @@ public class DownloadActivity extends ListActivity implements GLMapManager.State
             }
         } else {
             updateAllItems(GLMapManager.GetMaps());
-            GLMapManager.UpdateMapList(listUpdated -> updateAllItems(GLMapManager.GetMaps()));
+            GLMapManager.UpdateMapList((listUpdated, error) -> updateAllItems(GLMapManager.GetMaps()));
         }
     }
 

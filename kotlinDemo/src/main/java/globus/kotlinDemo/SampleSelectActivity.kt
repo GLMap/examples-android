@@ -48,22 +48,26 @@ class SampleSelectActivity : ListActivity() {
                 val intent = Intent(this, RoutingActivity::class.java)
                 this.startActivity(intent)
             }
+
             Samples.MAP_TEXTURE_VIEW.ordinal -> {
                 val i = Intent(this, MapTextureViewActivity::class.java)
                 i.putExtra("cx", 27.0)
                 i.putExtra("cy", 53.0)
                 this.startActivity(i)
             }
+
             Samples.DOWNLOAD_MAP.ordinal -> {
                 val i = Intent(this, DownloadActivity::class.java)
                 i.putExtra("cx", 27.0)
                 i.putExtra("cy", 53.0)
                 this.startActivity(i)
             }
+
             Samples.SVG_TEST.ordinal -> {
                 val intent = Intent(this, DisplayImageActivity::class.java)
                 this.startActivity(intent)
             }
+
             else -> {
                 val intent = Intent(this, MapViewActivity::class.java)
                 val b = Bundle()
