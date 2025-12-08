@@ -28,7 +28,10 @@ class CurLocationHelper implements DemoApp.LocationCallback {
     {
         final MapPoint position = MapPoint.CreateFromGeoCoordinates(location.getLatitude(), location.getLongitude());
         if (isFollowLocationEnabled) {
-            renderer.animate(animation -> animation.flyToPoint(position));
+            renderer.animate(animation -> {
+                animation.setFlyToMode(GLMapAnimation.FlyToMode.Enabled);
+                renderer.setMapCenter(position);
+            });
         }
 
         // Create drawables if not exist and set initial positions.

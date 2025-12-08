@@ -28,6 +28,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import globus.glmap.GLMapAnimation;
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapDownloadTask;
 import globus.glmap.GLMapError;
@@ -310,8 +311,9 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
 
                 final MapPoint point = MapPoint.CreateFromGeoCoordinates(lat, lon);
                 mapView.renderer.animate(animation -> {
+                    animation.setFlyToMode(GLMapAnimation.FlyToMode.Enabled);
                     mapView.renderer.setMapZoom(15);
-                    animation.flyToPoint(point);
+                    mapView.renderer.setMapCenter(point);
                 });
             });
             GLMapManager.SetTileDownloadingAllowed(true);
