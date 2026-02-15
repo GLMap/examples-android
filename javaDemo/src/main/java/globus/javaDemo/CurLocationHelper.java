@@ -29,7 +29,7 @@ class CurLocationHelper implements DemoApp.LocationCallback {
         final MapPoint position = MapPoint.CreateFromGeoCoordinates(location.getLatitude(), location.getLongitude());
         if (isFollowLocationEnabled) {
             renderer.animate(animation -> {
-                animation.setFlyToMode(GLMapAnimation.FlyToMode.Enabled);
+                animation.setContinueFlyTo(true);
                 renderer.setMapCenter(position);
             });
         }

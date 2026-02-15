@@ -38,7 +38,9 @@ class DownloadActivity :
             updateAllItems(GLMapManager.GetMapWithID(collectionID)?.maps)
         } else {
             updateAllItems(GLMapManager.GetMaps())
-            GLMapManager.UpdateMapList { updateAllItems(GLMapManager.GetMaps()) }
+            GLMapManager.UpdateMapList { _, _ ->
+                updateAllItems(GLMapManager.GetMaps())
+            }
         }
     }
 

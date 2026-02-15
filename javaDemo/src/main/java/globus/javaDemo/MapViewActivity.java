@@ -311,9 +311,8 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
 
                 final MapPoint point = MapPoint.CreateFromGeoCoordinates(lat, lon);
                 mapView.renderer.animate(animation -> {
-                    animation.setFlyToMode(GLMapAnimation.FlyToMode.Enabled);
                     mapView.renderer.setMapZoom(15);
-                    mapView.renderer.setMapCenter(point);
+                    animation.flyToPoint(point);
                 });
             });
             GLMapManager.SetTileDownloadingAllowed(true);
