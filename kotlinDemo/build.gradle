@@ -18,7 +18,6 @@ android {
         targetSdkVersion sdk_version
         versionCode version_code
         versionName glmap_version
-        multiDexEnabled true
     }
 
     buildTypes {

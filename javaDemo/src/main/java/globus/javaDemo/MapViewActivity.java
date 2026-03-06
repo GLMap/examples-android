@@ -28,6 +28,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import globus.glmap.GLMapAnimation;
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapDownloadTask;
@@ -220,8 +223,8 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
     {
         super.onCreate(savedInstanceState);
         setContentView(getLayoutID());
-
         mapView = this.findViewById(R.id.map_view);
+
         screenScale = mapView.renderer.screenScale;
 
         // Map list is updated, because download button depends on available map list and during
@@ -257,12 +260,20 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
         checkAndRequestLocationPermission();
 
         GLMapScaleRuler ruler = new GLMapScaleRuler(Integer.MAX_VALUE);
-        ruler.setPlacement(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, 10, 200);
         mapView.renderer.add(ruler);
         mapView.renderer.setAttributionPosition(GLMapViewRenderer.GLMapPlacement.TopCenter);
 
         mapView.renderer.setCenterTileStateChangedCallback(this::updateMapDownloadButton);
         mapView.renderer.setMapDidMoveCallback(this::updateMapDownloadButtonText);
+
+        ViewCompat.setOnApplyWindowInsetsListener(mapView, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            int topPadding = (int)(systemBars.top / mapView.renderer.screenScale);
+            int bottomPadding = (int)(systemBars.bottom / mapView.renderer.screenScale);
+            mapView.renderer.setSafeArea(0, topPadding, 0, bottomPadding);
+            ruler.setPlacement(GLMapViewRenderer.GLMapPlacement.BottomCenter, 10, bottomPadding + 10, 200);
+            return insets;
+        });
 
         runTest();
     }
@@ -311,8 +322,9 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
 
                 final MapPoint point = MapPoint.CreateFromGeoCoordinates(lat, lon);
                 mapView.renderer.animate(animation -> {
+                    animation.setFlyToMode(GLMapAnimation.FlyToMode.Enabled);
                     mapView.renderer.setMapZoom(15);
-                    animation.flyToPoint(point);
+                    mapView.renderer.setMapCenter(point);
                 });
             });
             GLMapManager.SetTileDownloadingAllowed(true);

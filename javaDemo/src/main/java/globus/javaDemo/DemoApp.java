@@ -1,19 +1,19 @@
 package globus.javaDemo;
 
 import android.Manifest;
+import android.app.Application;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import androidx.multidex.MultiDexApplication;
 import com.google.android.gms.location.*;
 import globus.glmap.GLMapManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DemoApp extends MultiDexApplication implements LocationListener {
+public class DemoApp extends Application implements LocationListener {
     public interface LocationCallback {
         void onLocationChanged(@NonNull Location location);
     }
