@@ -12,6 +12,7 @@ import com.google.android.material.tabs.TabLayout;
 import globus.glmap.GLMapBBox;
 import globus.glmap.GLMapError;
 import globus.glmap.GLMapLocaleSettings;
+import globus.glmap.GLMapUtils;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
 import globus.glmap.GLMapVectorStyle;
@@ -145,16 +146,11 @@ public class RoutingActivity extends MapViewActivity {
     {
         if (valhallaConfig == null) {
             byte[] raw = null;
-            try {
-                // Read prepared categories
-                InputStream stream = resources.openRawResource(R.raw.valhalla);
-                raw = new byte[stream.available()];
-                stream.read(raw);
-                stream.close();
+            try (InputStream stream = resources.openRawResource(R.raw.valhalla)) {
+                raw = GLMapUtils.readAllBytes(stream);
             } catch (IOException e) {
                 Log.e(TAG, e.toString());
             }
-            // Construct categories
             valhallaConfig = new String(raw, Charset.defaultCharset());
         }
         return valhallaConfig;

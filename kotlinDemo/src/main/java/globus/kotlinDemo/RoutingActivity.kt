@@ -163,15 +163,12 @@ class RoutingActivity : MapViewActivity() {
         fun getValhallaConfig(resources: Resources): String {
             var raw: ByteArray? = null
             try {
-                // Read prepared categories
-                val stream = resources.openRawResource(R.raw.valhalla)
-                raw = ByteArray(stream.available())
-                stream.read(raw)
-                stream.close()
+                resources.openRawResource(R.raw.valhalla).use { stream ->
+                    raw = GLMapUtils.readAllBytes(stream)
+                }
             } catch (e: IOException) {
                 e.printStackTrace()
             }
-            // Construct categories
             return String(raw!!, Charset.defaultCharset())
         }
     }

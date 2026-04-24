@@ -979,12 +979,9 @@ node[count>=128]{
                         } else {
                             var result: ByteArray?
                             try {
-                                val stream = assets.open("DefaultStyle.bundle/$name")
-                                result = ByteArray(stream.available())
-                                if (stream.read(result) == result.size) {
-                                    result = null
+                                assets.open("DefaultStyle.bundle/$name").use { stream ->
+                                    result = GLMapUtils.readAllBytes(stream)
                                 }
-                                stream.close()
                             } catch (_: IOException) {
                                 result = null
                             }

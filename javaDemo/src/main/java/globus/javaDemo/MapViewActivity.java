@@ -1,4 +1,4 @@
-package globus.javaDemo;
+!package globus.javaDemo;
 
 import static globus.javaDemo.RoutingActivity.getValhallaConfig;
 
@@ -47,6 +47,7 @@ import globus.glmap.GLMapMarkerStyleCollection;
 import globus.glmap.GLMapMarkerStyleCollectionDataCallback;
 import globus.glmap.GLMapScaleRuler;
 import globus.glmap.GLMapStyleParser;
+import globus.glmap.GLMapUtils;
 import globus.glmap.GLMapTextAlignment;
 import globus.glmap.GLMapTrack;
 import globus.glmap.GLMapTrackData;
@@ -1110,13 +1111,8 @@ public class MapViewActivity extends Activity implements GLMapViewRenderer.Scree
             if (name.equals("Style.mapcss")) {
                 rv = newStyleData;
             } else {
-                try {
-                    InputStream stream = getAssets().open("DefaultStyle.bundle/" + name);
-                    rv = new byte[stream.available()];
-                    if (stream.read(rv) < rv.length) {
-                        rv = null;
-                    }
-                    stream.close();
+                try (InputStream stream = getAssets().open("DefaultStyle.bundle/" + name)) {
+                    rv = GLMapUtils.readAllBytes(stream);
                 } catch (IOException ignore) {
                     rv = null;
                 }
