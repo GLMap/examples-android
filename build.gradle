@@ -15,6 +15,7 @@ buildscript {
         version_code = 11300
     }
     repositories {
+        google()
         mavenCentral()
     }
     dependencies {
