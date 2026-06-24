@@ -30,6 +30,7 @@ class RoutingActivity : MapViewActivity() {
     private var destination = MapGeoPoint(53.931935, 27.583995)
     private var track: GLMapTrack? = null
     private val trackStyle = GLMapVectorStyle.createStyle("{width: 7pt;}")
+        ?: error("Invalid route track style")
 
     private inline val onlineOfflineSwitch: TabLayout
         get() = findViewById(R.id.tab_layout_left)

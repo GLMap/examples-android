@@ -1,5 +1,8 @@
 pluginManagement {
     repositories {
+        mavenLocal()
+        maven { url 'https://maven.globus.software/artifactory/libs' }
+        maven { url 'https://maven.globus.software/artifactory/snapshots' }
         google()
         mavenCentral()
     }
@@ -7,11 +10,36 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven { url 'https://maven.globus.software/artifactory/libs' }
         maven { url 'https://maven.globus.software/artifactory/snapshots' }
     }
+    versionCatalogs {
+        libs {
+            from(files('../Framework/gradle/libs.versions.toml'))
+        }
+    }
+}
+
+def useLocalGLMap = providers.gradleProperty('useLocalGLMap')
+        .map { it.toBoolean() }
+        .orElse(false)
+        .get()
+
+if (useLocalGLMap) {
+    include ':glmap'
+    project(':glmap').projectDir = file('../Framework/glmap')
+
+    include ':glsearch'
+    project(':glsearch').projectDir = file('../Framework/glsearch')
+
+    include ':glroute'
+    project(':glroute').projectDir = file('../Framework/glroute')
+
+    include ':res-defaultstyle'
+    project(':res-defaultstyle').projectDir = file('../Framework/res-defaultstyle')
 }
 
 include ':javaDemo'

@@ -17,6 +17,7 @@ enum class Samples(val tableName: String) {
     MAP_TEXTURE_VIEW("GLMapView in TextureView"),
     ZOOM_BBOX("Zoom to bbox"),
     OFFLINE_SEARCH("Offline Search"),
+    ONLINE_SEARCH("Online Search"),
     MARKERS("Markers"),
     MARKERS_MAPCSS("Markers using mapcss"),
     IMAGE_SINGLE("Display single image"),

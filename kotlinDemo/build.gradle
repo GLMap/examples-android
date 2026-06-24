@@ -48,13 +48,25 @@ android {
     }
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        jvmTarget = '21'
+    }
+}
+
 dependencies {
     implementation "androidx.appcompat:appcompat:$app_compat_version"
     implementation "androidx.multidex:multidex:$multidex_version"
     implementation "com.google.android.material:material:$material_version"
     implementation "com.google.android.gms:play-services-location:$gms_location_version"
 
-    implementation "globus:glmap:$glmap_version"
-    implementation "globus:glroute:$glmap_version"
-    implementation "globus:glsearch:$glmap_version"
+    if (rootProject.ext.useLocalGLMap) {
+        implementation project(':glmap')
+        implementation project(':glroute')
+        implementation project(':glsearch')
+    } else {
+        implementation "globus:glmap:$glmap_version"
+        implementation "globus:glroute:$glmap_version"
+        implementation "globus:glsearch:$glmap_version"
+    }
 }

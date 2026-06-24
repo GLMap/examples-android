@@ -31,6 +31,8 @@ import globus.glroute.GLRouteRequest
 import globus.glsearch.GLSearch
 import globus.glsearch.GLSearchCategories
 import globus.glsearch.GLSearchFilter
+import globus.glsearch.GLSearchRequest
+import globus.glsearch.GLSearchRequestType
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -120,10 +122,12 @@ open class MapViewActivity :
     private val pins: Pins by lazy { Pins(mapView.renderer) }
     private var mapToDownload: GLMapInfo? = null
     private var markerLayer: GLMapMarkerLayer? = null
+    private var onlineSearchRequestID = 0L
     private var curLocationHelper: CurLocationHelper? = null
     private var trackPointIndex = 0
     private var track: GLMapTrack? = null
     private val trackStyle = GLMapVectorStyle.createStyle("{width: 7pt; fill-image:\"track-arrow.svgpb\";}")
+        ?: error("Invalid track style")
 
     private var trackData: GLMapTrackData? = null
     private var trackRecordRunnable: Runnable? = null
@@ -217,7 +221,8 @@ open class MapViewActivity :
                     val point = MapPoint.CreateFromGeoCoordinates(lat, lon)
                     renderer.animate {
                         renderer.mapZoom = 15.0
-                        it.flyToPoint(point)
+                        it.flyToMode = GLMapAnimation.FlyToMode.Enabled
+                        renderer.mapCenter = point
                     }
                 }
                 GLMapManager.SetTileDownloadingAllowed(true)
@@ -227,6 +232,16 @@ open class MapViewActivity :
                 GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)
                 zoomToPoint()
                 offlineSearch()
+            }
+
+            Samples.ONLINE_SEARCH -> {
+                renderer.mapCenter = MapPoint.CreateFromGeoCoordinates(53.9025, 27.5618)
+                renderer.mapZoom = 13.0
+                GLMapManager.SetTileDownloadingAllowed(true)
+                actionButton.visibility = View.VISIBLE
+                actionButton.text = "Autocomplete"
+                actionButton.setOnClickListener { onlineAutocomplete() }
+                onlineSearch()
             }
 
             Samples.MARKERS -> {
@@ -348,6 +363,7 @@ open class MapViewActivity :
 
     override fun onDestroy() {
         GLMapManager.removeStateListener(this)
+        cancelOnlineSearch()
         markerLayer?.dispose()
         markerLayer = null
 
@@ -464,6 +480,69 @@ open class MapViewActivity :
         searchOffline.searchAsync { runOnUiThread { displaySearchResults(it?.toArray()) } }
     }
 
+    private fun onlineSearch() {
+        startOnlineSearch(
+            GLSearchRequest(
+                GLSearchRequestType.Search,
+                "coffee",
+                MapGeoPoint(53.9025, 27.5618),
+                20,
+                arrayOf("en", "native"),
+                arrayOf("cafe")
+            ),
+            "cafes"
+        )
+    }
+
+    private fun onlineAutocomplete() {
+        startOnlineSearch(
+            GLSearchRequest(
+                GLSearchRequestType.Autocomplete,
+                "Mins",
+                MapGeoPoint(53.9025, 27.5618),
+                5,
+                arrayOf("en", "native"),
+                arrayOf("city")
+            ),
+            "suggestions"
+        )
+    }
+
+    private fun startOnlineSearch(request: GLSearchRequest, resultName: String) {
+        cancelOnlineSearch()
+        GLSearch.Initialize(this)
+        onlineSearchRequestID = request.startOnline(object : GLSearchRequest.ResultsCallback {
+            override fun onResult(objects: GLMapVectorObjectList) {
+                runOnUiThread {
+                    onlineSearchRequestID = 0L
+                    displaySearchResults(objects.toArray())
+                    Toast.makeText(
+                        this@MapViewActivity,
+                        "Found ${objects.size()} $resultName",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onError(error: GLMapError) {
+                runOnUiThread {
+                    onlineSearchRequestID = 0L
+                    Toast.makeText(this@MapViewActivity, "Online search failed: $error", Toast.LENGTH_LONG).show()
+                }
+            }
+        })
+
+        if (onlineSearchRequestID == 0L) {
+            Toast.makeText(this, "Online search request was not started", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun cancelOnlineSearch() {
+        if (onlineSearchRequestID == 0L) return
+        GLSearchRequest.cancel(onlineSearchRequestID)
+        onlineSearchRequestID = 0L
+    }
+
     internal class SearchStyle : GLMapMarkerStyleCollectionDataCallback() {
         override fun getLocation(marker: Any): MapPoint =
             if (marker is GLMapVectorObject) marker.point() else MapPoint(0.0, 0.0)
@@ -478,6 +557,9 @@ open class MapViewActivity :
     }
 
     private fun displaySearchResults(objects: Array<GLMapVectorObject>?) {
+        markerLayer?.dispose()
+        markerLayer = null
+
         val style = GLMapMarkerStyleCollection()
 
         val transform = SVGRender.transform((0.2f * renderer.screenScale).toDouble(), Color.argb(0xFF, 0, 0, 0xFF))
@@ -658,7 +740,7 @@ node[count>=128]{
     internal class MarkersStyle : GLMapMarkerStyleCollectionDataCallback() {
         private var textStyle: GLMapVectorStyle = GLMapVectorStyle.createStyle(
             "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}"
-        )
+        ) ?: error("Invalid marker text style")
 
         override fun getLocation(marker: Any) = when (marker) {
             is MapPoint -> marker
@@ -754,7 +836,7 @@ node[count>=128]{
             mapImage.setOffset(bitmap.width, bitmap.height / 2)
         }
         this.image = mapImage
-        mapImage.isRotatesWithMap = true
+        mapImage.rotatesWithMap = true
         mapImage.angle = Math.random().toFloat() * 360
         mapImage.position = renderer.mapCenter
         renderer.add(mapImage)

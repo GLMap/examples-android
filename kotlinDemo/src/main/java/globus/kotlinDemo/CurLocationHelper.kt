@@ -59,7 +59,10 @@ internal class CurLocationHelper(private val renderer: GLMapViewRenderer) : Demo
     override fun onLocationChanged(location: Location) {
         val position = MapPoint.CreateFromGeoCoordinates(location.latitude, location.longitude)
         if (isFollowLocationEnabled) {
-            renderer.animate { it.flyToPoint(position) }
+            renderer.animate {
+                it.flyToMode = GLMapAnimation.FlyToMode.Continue
+                renderer.mapCenter = position
+            }
         }
 
         // Accuracy radius
