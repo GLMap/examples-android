@@ -1,82 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <uses-feature
-        android:glEsVersion="0x00020000"
-        android:required="true" />
-
+    <uses-feature android:glEsVersion="0x00020000" android:required="true" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
-    <uses-feature
-        android:name="android.hardware.location"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.location.network"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.location.gps"
-        android:required="false" />
 
     <application
-        android:name="globus.kotlinDemo.DemoApp"
+        android:name="globus.demo.DemoApp"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
-        android:label="@string/kotlin_app_name"
-        android:theme="@android:style/Theme.Black" >
-        <activity
-            android:name="globus.kotlinDemo.SampleSelectActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="true"
-            android:label="@string/kotlin_app_name"
-            android:theme="@android:style/Theme.Black">
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme">
+        <activity android:name="globus.demo.offline.DownloadBBoxActivity" android:exported="false" />
+        <activity android:name="globus.demo.offline.DownloadMapsActivity" android:exported="false" />
+        <activity android:name="globus.demo.routing.TurnByTurnActivity" android:exported="false" />
+        <activity android:name="globus.demo.routing.RouteBuildingActivity" android:exported="false" />
+        <activity android:name="globus.demo.search.POITapActivity" android:exported="false" />
+        <activity android:name="globus.demo.search.SearchActivity" android:exported="false" />
+        <activity android:name="globus.demo.vector.GeoJSONActivity" android:exported="false" />
+        <activity android:name="globus.demo.vector.LinesPolygonsActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.GPSTrackActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.UserLocationActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.TrackArrowsActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.BalloonActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.MarkerClusteringActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.ImageGroupActivity" android:exported="false" />
+        <activity android:name="globus.demo.draw.ImageActivity" android:exported="false" />
+        <activity android:name="globus.demo.map.TerrainActivity" android:exported="false" />
+        <activity android:name="globus.demo.map.DarkThemeActivity" android:exported="false" />
+        <activity android:name="globus.demo.map.OnlineMapActivity" android:exported="false" />
+        <activity android:name="globus.demo.camera.ZoomToBBoxActivity" android:exported="false" />
+        <activity android:name="globus.demo.camera.FlyToActivity" android:exported="false" />
+        <activity android:name="globus.demo.SampleSelectActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name="globus.kotlinDemo.MapViewActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:label="@string/kotlin_app_name"
-            android:theme="@android:style/Theme.Black" >
-        </activity>
-
-        <activity
-            android:name="globus.kotlinDemo.MapTextureViewActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:label="@string/kotlin_app_name"
-            android:theme="@android:style/Theme.Black" >
-        </activity>
-
-        <activity
-            android:name="globus.kotlinDemo.DownloadActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:label="@string/kotlin_app_name"
-            android:theme="@android:style/Theme.Black" >
-        </activity>
-
-        <activity
-            android:name="globus.kotlinDemo.DisplayImageActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:label="@string/kotlin_app_name"
-            android:theme="@android:style/Theme.Black" >
-        </activity>
-        <activity
-            android:name="globus.kotlinDemo.RoutingActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:exported="false"
-            android:label="@string/kotlin_app_name"
-            android:theme="@style/TabAppTheme" />
     </application>
 </manifest>

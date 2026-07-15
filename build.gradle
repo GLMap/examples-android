@@ -2,17 +2,14 @@
 
 buildscript {
     ext {
-        build_tools_version = '33.0.2'
-        agp_version = '8.11.1'
-        kotlin_version = '1.9.22'
+        agp_version = '9.1.1'
         glmap_version = '2.0.0'
         app_compat_version = '1.7.1'
         multidex_version = '2.0.1'
-        material_version = '1.12.0'
         gms_location_version = '21.3.0'
         min_sdk_version = 21
-        sdk_version = 36
-        version_code = 11300
+        sdk_version = 37
+        version_code = 20000
     }
     repositories {
         google()
@@ -26,7 +23,6 @@ buildscript {
 plugins {
     id 'com.android.application' version "$agp_version" apply false
     id 'com.android.library' version "$agp_version" apply false
-    id 'org.jetbrains.kotlin.android' version "$kotlin_version" apply false
 }
 
 def useLocalGLMap = providers.gradleProperty('useLocalGLMap')

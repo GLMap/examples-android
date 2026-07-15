@@ -1,10 +1,11 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
-    namespace 'globus.kotlinDemo'
+    namespace 'globus.demo'
+    compileSdk sdk_version
+    ndkVersion rootProject.ext.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
@@ -12,9 +13,8 @@ android {
     }
 
     defaultConfig {
-        applicationId "globus.kotlinDemo"
+        applicationId "globus.demo"
         minSdkVersion min_sdk_version
-        compileSdkVersion = sdk_version
         targetSdkVersion sdk_version
         versionCode version_code
         versionName glmap_version
@@ -23,20 +23,12 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    packagingOptions {
-        jniLibs {
-            pickFirsts += ['lib/*/*.so']
         }
     }
 
     sourceSets {
         main {
-            assets.srcDirs = ["../../Examples/javaDemo/src/main/assets", "../../../Resources/framework"]
-            res.srcDirs = ["../../Examples/javaDemo/src/main/res"]
+            assets.srcDirs = ["src/main/assets", "../../../Resources/framework"]
         }
     }
 
@@ -48,16 +40,8 @@ android {
     }
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    kotlinOptions {
-        jvmTarget = '21'
-    }
-}
-
 dependencies {
     implementation "androidx.appcompat:appcompat:$app_compat_version"
-    implementation "androidx.multidex:multidex:$multidex_version"
-    implementation "com.google.android.material:material:$material_version"
     implementation "com.google.android.gms:play-services-location:$gms_location_version"
 
     if (rootProject.ext.useLocalGLMap) {

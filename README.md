@@ -1,29 +1,21 @@
-# examples-android
+# GLMap Android demo
 
-Unlock endless mapping possibilities with GLMap. This repository offers example projects to ease GLMap integration into your Android application.
+One compact Kotlin app demonstrates the GLMap 2.0 API. The catalog mirrors the iOS demo and groups each example by feature: map display, camera, draw objects, vector data, search, routing, and offline data.
 
-## What's Inside
+## Run
 
-- **JavaDemo**: A Java-based example demonstrating how to integrate GLMap.
-- **KotlinDemo**: A Kotlin-based example that also features GLMap integration.
+1. Create an API key at <https://user.globus.software/apps/>.
+2. Replace `YOUR_API_KEY` in `kotlinDemo/src/main/res/values/strings.xml` locally. Do not commit a real key.
+3. Open this directory in Android Studio and run `kotlinDemo`.
 
-## Features
+To build against the GLMap sources in the parent repository:
 
-- **Offline**: Engineered for robust offline functionality, utilizing optimized map data.
-- **Vector**: Delivers real-time OpenGL ES rendering, and supports adding your own GeoJSON layers.
-- **Fast**: Efficiently leverages both CPU and GPU for quick map rendering.
-- **Customizable**: Easily style your map using MapCSS.
+```shell
+./gradlew :kotlinDemo:assembleDebug -PuseLocalGLMap=true
+```
 
-## 📚 Documentation
+Without `useLocalGLMap`, Gradle resolves the published `globus:glmap`, `globus:glsearch`, and `globus:glroute` artifacts for the version declared in `build.gradle`.
 
-- **Getting Started**: [GLMap Documentation](https://globus.software/docs)
+The demo targets Android SDK 37. Most screens construct their UI in Kotlin so the GLMap calls stay visible in one short feature file under `kotlinDemo/src/main/java/globus/demo`.
 
-## 🙋‍♂️ Need Assistance?
-
-Hit a snag? We're here to help. Reach out to [support@globus.software](mailto:support@globus.software).
-
-## 💌 Feedback
-
-If you like what you see, we'd love to hear from you. Share your experience at [hi@globus.software](mailto:hi@globus.software).
-
-Begin your mapping adventure with GLMap today. Start exploring now! 🌍🚀
+API documentation: <https://globus.software/docs>

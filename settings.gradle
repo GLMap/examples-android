@@ -42,5 +42,4 @@ if (useLocalGLMap) {
     project(':res-defaultstyle').projectDir = file('../Framework/res-defaultstyle')
 }
 
-include ':javaDemo'
 include ':kotlinDemo'
