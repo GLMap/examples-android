@@ -98,7 +98,7 @@ class RouteBuildingActivity : MapDemoActivity() {
             override fun onError(error: GLMapError) = runOnUiThread {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
-                showError(error.message ?: error.toString())
+                showError(error.toString())
             }
         }
         requestID = if (offline.isChecked) {
@@ -173,7 +173,7 @@ class TurnByTurnActivity : LocationMapActivity() {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
                 routeInfo.text = "Route failed"
-                showError(error.message ?: error.toString())
+                showError(error.toString())
             }
         })
     }

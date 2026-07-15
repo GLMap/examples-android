@@ -205,14 +205,16 @@ private class ClusterStyle(private val styleCount: Int) : GLMapMarkerStyleCollec
 
     override fun fillData(marker: Any, nativeMarker: Long) {
         GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0)
-        (marker as GLMapVectorObject).valueForKey("name")?.string?.let {
-            GLMapMarkerStyleCollection.setMarkerText(
-                nativeMarker,
-                it,
-                GLMapTextAlignment.Undefined,
-                Point(0, 8),
-                textStyle,
-            )
+        (marker as GLMapVectorObject).valueForKey("name")?.use { name ->
+            name.string?.let {
+                GLMapMarkerStyleCollection.setMarkerText(
+                    nativeMarker,
+                    it,
+                    GLMapTextAlignment.Undefined,
+                    Point(0, 8),
+                    textStyle,
+                )
+            }
         }
     }
 }
@@ -316,7 +318,7 @@ class TrackArrowsActivity : MapDemoActivity() {
             override fun onError(error: globus.glmap.GLMapError) = runOnUiThread {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
-                showError(error.message ?: error.toString())
+                showError(error.toString())
             }
         })
     }

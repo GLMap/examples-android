@@ -132,7 +132,7 @@ abstract class MapDemoActivity : AppCompatActivity() {
                         downloadTaskIDs.remove(taskID)
                         if (error != null) {
                             file.delete()
-                            finished(error.message ?: error.toString())
+                            finished(error.toString())
                         } else if (!GLMapManager.AddDataSet(dataSet, bbox, file.absolutePath, null, null)) {
                             file.delete()
                             finished("Cannot open ${file.name}")

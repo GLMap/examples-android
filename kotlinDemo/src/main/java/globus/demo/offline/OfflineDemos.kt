@@ -77,7 +77,7 @@ class DownloadMapsActivity : AppCompatActivity(), GLMapManager.StateListener {
         reloadMaps()
         GLMapManager.UpdateMapList callback@{ _, error ->
             if (isDestroyed) return@callback
-            if (error != null) Toast.makeText(this, error.message ?: error.toString(), Toast.LENGTH_LONG).show()
+            if (error != null) Toast.makeText(this, error.toString(), Toast.LENGTH_LONG).show()
             reloadMaps()
         }
     }

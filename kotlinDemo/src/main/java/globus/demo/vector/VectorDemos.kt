@@ -94,8 +94,9 @@ class GeoJSONActivity : MapDemoActivity() {
                     fit(loaded.bBox)
                     setGestures(onTap = { touch ->
                         val point = renderer.convertDisplayToInternal(touch.x.toDouble(), touch.y.toDouble())
-                        val objectAtPoint = loaded.findNearPoint(loaded.size() - 1, 0, renderer, point, 10.0)
-                        if (objectAtPoint != null) showError("Tapped: ${objectAtPoint.asGeoJSON()}")
+                        loaded.findNearPoint(loaded.size() - 1, 0, renderer, point, 10.0)?.use {
+                            showError("Tapped: ${it.asGeoJSON()}")
+                        }
                     })
                 }
             } catch (error: Exception) {

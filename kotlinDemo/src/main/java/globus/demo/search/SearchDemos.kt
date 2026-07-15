@@ -42,7 +42,9 @@ class SearchActivity : MapDemoActivity() {
 
     override fun onMapReady() {
         title = "Search"
-        GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)
+        if (!GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)) {
+            showError("Cannot open bundled Montenegro map")
+        }
         renderer.mapGeoCenter = center
         renderer.mapZoom = 12.0
 
@@ -130,7 +132,7 @@ class SearchActivity : MapDemoActivity() {
             override fun onError(error: GLMapError) = runOnUiThread {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
-                showError(error.message ?: error.toString())
+                showError(error.toString())
             }
         }
         requestID = if (offline) request.startOffline(callback) else request.startOnline(callback)
@@ -147,7 +149,7 @@ class SearchActivity : MapDemoActivity() {
             assets,
             "cluster.svg",
             SVGRender.transform(renderer.screenScale * 0.2, Color.rgb(0, 102, 204)),
-        ) ?: return
+        ) ?: return showError("Cannot render result marker SVG")
         val styles = GLMapMarkerStyleCollection().apply {
             addStyle(GLMapMarkerImage("result", bitmap))
             setDataCallback(SearchMarkerStyle(renderer.localeSettings))
@@ -191,8 +193,7 @@ class SearchActivity : MapDemoActivity() {
             val info = GLSearch.GetDisplayInfo(getItem(position), renderer.localeSettings)
             val title = info?.title?.string ?: "Unnamed"
             val secondaryText = info?.secondaryText?.string
-            info?.title?.dispose()
-            info?.secondaryText?.dispose()
+            info?.close()
             view.findViewById<TextView>(android.R.id.text1).apply {
                 text = title
                 setTextColor(Color.BLACK)
@@ -213,14 +214,16 @@ private class SearchMarkerStyle(private val locale: GLMapLocaleSettings) : GLMap
     override fun fillUnionData(markersCount: Int, nativeMarker: Long) = Unit
     override fun fillData(marker: Any, nativeMarker: Long) {
         GLMapMarkerStyleCollection.setMarkerStyle(nativeMarker, 0)
-        (marker as GLMapVectorObject).localizedName(locale)?.string?.let {
-            GLMapMarkerStyleCollection.setMarkerText(
-                nativeMarker,
-                it,
-                GLMapTextAlignment.Undefined,
-                Point(0, 10),
-                textStyle,
-            )
+        (marker as GLMapVectorObject).localizedName(locale)?.use { name ->
+            name.string?.let {
+                GLMapMarkerStyleCollection.setMarkerText(
+                    nativeMarker,
+                    it,
+                    GLMapTextAlignment.Undefined,
+                    Point(0, 10),
+                    textStyle,
+                )
+            }
         }
     }
 }
@@ -235,11 +238,13 @@ class POITapActivity : MapDemoActivity() {
             if (objectAtPoint == null) {
                 title = "No POI here"
             } else {
-                val name = objectAtPoint.localizedName(renderer.localeSettings)?.string
-                val point = MapGeoPoint(objectAtPoint.point())
-                val text = name?.takeIf(String::isNotBlank) ?: "%.4f, %.4f".format(point.lat, point.lon)
-                title = text
-                showError(text)
+                objectAtPoint.use { objectOnMap ->
+                    val name = objectOnMap.localizedName(renderer.localeSettings)?.use { it.string }
+                    val point = MapGeoPoint(objectOnMap.point())
+                    val text = name?.takeIf(String::isNotBlank) ?: "%.4f, %.4f".format(point.lat, point.lon)
+                    title = text
+                    showError(text)
+                }
             }
         })
     }

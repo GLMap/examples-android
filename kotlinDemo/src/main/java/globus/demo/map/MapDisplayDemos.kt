@@ -68,7 +68,8 @@ class DarkThemeActivity : MapDemoActivity() {
     private fun applyTheme() {
         val parser = GLMapStyleParser(assets, "DefaultStyle.bundle")
         parser.setOptions(if (dark) mapOf("Theme" to "Dark") else emptyMap(), true)
-        renderer.setStyle(parser.parseFromResources() ?: return)
+        val style = parser.parseFromResources() ?: return showError("Cannot parse default map style")
+        renderer.setStyle(style)
         renderer.reloadTiles()
     }
 }
