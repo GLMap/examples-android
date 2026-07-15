@@ -18,6 +18,7 @@ android {
         targetSdkVersion sdk_version
         versionCode version_code
         versionName glmap_version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -43,6 +44,8 @@ android {
 dependencies {
     implementation "androidx.appcompat:appcompat:$app_compat_version"
     implementation "com.google.android.gms:play-services-location:$gms_location_version"
+    androidTestImplementation "androidx.test.ext:junit:1.3.0"
+    androidTestImplementation "androidx.test:runner:1.7.0"
 
     if (rootProject.ext.useLocalGLMap) {
         implementation project(':glmap')

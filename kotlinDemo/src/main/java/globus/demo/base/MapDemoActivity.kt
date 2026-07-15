@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 abstract class MapDemoActivity : AppCompatActivity() {
     protected lateinit var mapView: GLMapView
     protected val renderer: GLMapViewRenderer get() = mapView.renderer
-    private lateinit var container: FrameLayout
+    protected lateinit var container: FrameLayout
     private val downloadTaskIDs = ConcurrentHashMap<Long, Unit>()
     private var active = true
 

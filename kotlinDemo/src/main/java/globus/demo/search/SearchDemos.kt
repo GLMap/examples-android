@@ -2,9 +2,15 @@ package globus.demo.search
 
 import android.graphics.Color
 import android.graphics.Point
+import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.BaseAdapter
+import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ListView
+import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import globus.demo.base.MapDemoActivity
 import globus.glmap.GLMapError
@@ -31,6 +37,8 @@ class SearchActivity : MapDemoActivity() {
     private var requestID = 0L
     private var generation = 0
     private var markerLayer: GLMapMarkerLayer? = null
+    private var results = emptyArray<GLMapVectorObject>()
+    private val resultsAdapter = ResultsAdapter()
 
     override fun onMapReady() {
         title = "Search"
@@ -42,15 +50,45 @@ class SearchActivity : MapDemoActivity() {
             hint = "Place or empty for restaurants"
             setSingleLine()
             imeOptions = EditorInfo.IME_ACTION_SEARCH
+            setTextColor(Color.BLACK)
+            setHintTextColor(Color.GRAY)
         }
-        val offline = SwitchCompat(this).apply { text = "Offline" }
+        val offline = SwitchCompat(this).apply {
+            id = android.R.id.checkbox
+            text = "Offline"
+            setTextColor(Color.DKGRAY)
+        }
+        val searchButton = Button(this).apply { text = "Search" }
         addTopView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(4), dp(12), dp(4))
             setBackgroundColor(0xEFFFFFFF.toInt())
-            addView(query)
+            addView(LinearLayout(context).apply {
+                addView(query, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                addView(searchButton)
+            })
             addView(offline)
         })
+
+        val list = ListView(this).apply {
+            id = android.R.id.list
+            adapter = resultsAdapter
+            setBackgroundColor(Color.WHITE)
+            setOnItemClickListener { _, _, position, _ ->
+                renderer.animate {
+                    renderer.mapCenter = results[position].point()
+                    renderer.mapZoom = maxOf(renderer.mapZoom, 15.0)
+                }
+            }
+        }
+        container.removeView(mapView)
+        container.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(mapView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 3f))
+            addView(list, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2f))
+        }, 0, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        mapView.setVisibleMapInsets(dp(16), dp(16), dp(16), dp(16))
+
         query.setOnEditorActionListener { _, action, _ ->
             if (action == EditorInfo.IME_ACTION_SEARCH) {
                 search(query.text.toString(), offline.isChecked)
@@ -60,7 +98,7 @@ class SearchActivity : MapDemoActivity() {
             }
         }
         offline.setOnCheckedChangeListener { _, checked -> search(query.text.toString(), checked) }
-        addButton("Search") { search(query.text.toString(), offline.isChecked) }
+        searchButton.setOnClickListener { search(query.text.toString(), offline.isChecked) }
         search("", false)
     }
 
@@ -99,11 +137,9 @@ class SearchActivity : MapDemoActivity() {
     }
 
     private fun showResults(objects: Array<GLMapVectorObject>, source: String) {
-        markerLayer?.let {
-            renderer.remove(it)
-            it.dispose()
-        }
-        markerLayer = null
+        clearResults()
+        results = objects
+        resultsAdapter.notifyDataSetChanged()
         title = "$source: ${objects.size} results"
         if (objects.isEmpty()) return
 
@@ -123,6 +159,16 @@ class SearchActivity : MapDemoActivity() {
         fit(bbox)
     }
 
+    private fun clearResults() {
+        markerLayer?.let {
+            renderer.remove(it)
+            it.dispose()
+        }
+        markerLayer = null
+        results.forEach(GLMapVectorObject::dispose)
+        results = emptyArray()
+    }
+
     private fun cancelRequest() {
         generation++
         if (requestID != 0L) GLSearchRequest.cancel(requestID)
@@ -131,7 +177,32 @@ class SearchActivity : MapDemoActivity() {
 
     override fun onDestroy() {
         cancelRequest()
+        clearResults()
         super.onDestroy()
+    }
+
+    private inner class ResultsAdapter : BaseAdapter() {
+        override fun getCount() = results.size
+        override fun getItem(position: Int) = results[position]
+        override fun getItemId(position: Int) = position.toLong()
+
+        override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+            val view = convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_2, parent, false)
+            val info = GLSearch.GetDisplayInfo(getItem(position), renderer.localeSettings)
+            val title = info?.title?.string ?: "Unnamed"
+            val secondaryText = info?.secondaryText?.string
+            info?.title?.dispose()
+            info?.secondaryText?.dispose()
+            view.findViewById<TextView>(android.R.id.text1).apply {
+                text = title
+                setTextColor(Color.BLACK)
+            }
+            view.findViewById<TextView>(android.R.id.text2).apply {
+                text = secondaryText
+                setTextColor(Color.DKGRAY)
+            }
+            return view
+        }
     }
 }
 
