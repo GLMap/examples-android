@@ -1,9 +1,7 @@
 package globus.demo.draw
 
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
 import globus.demo.base.MapDemoActivity
@@ -11,6 +9,7 @@ import globus.glmap.GLMapBalloon
 import globus.glmap.GLMapImage
 import globus.glmap.GLMapImageGroup
 import globus.glmap.GLMapImageGroupCallback
+import globus.glmap.GLMapLineArrow
 import globus.glmap.GLMapMarkerImage
 import globus.glmap.GLMapMarkerLayer
 import globus.glmap.GLMapMarkerStyleCollection
@@ -32,39 +31,31 @@ import kotlin.concurrent.withLock
 import kotlin.math.ln
 
 class ImageActivity : MapDemoActivity() {
-    private val destinations = listOf(
-        MapGeoPoint(48.8566, 2.3522),
-        MapGeoPoint(51.5072, -0.1275),
-        MapGeoPoint(52.5037, 13.4102),
-        MapGeoPoint(41.8933, 12.4829),
-        MapGeoPoint(40.4168, -3.7038),
-    )
-    private var index = 0
-
     override fun onMapReady() {
-        title = "Image"
-        renderer.mapGeoCenter = destinations[0]
-        renderer.mapZoom = 5.0
+        title = "Tap map to move the image"
+        renderer.mapGeoCenter = MapGeoPoint(48.8566, 2.3522)
+        renderer.mapZoom = 7.0
 
-        val bitmap = SVGRender.render(assets, "1.svg", SVGRender.transform(renderer.screenScale.toDouble()))
+        val bitmap = SVGRender.render(
+            assets,
+            "pin.svg",
+            SVGRender.transform(renderer.screenScale * 1.6, Color.rgb(230, 60, 60)),
+        )
             ?: return showError("Cannot render marker SVG")
         val image = GLMapImage(3).apply {
             setBitmap(bitmap)
             setOffset(bitmap.width / 2, 0)
-            position = MapPoint(destinations[0])
+            position = MapPoint(renderer.mapGeoCenter)
         }
         renderer.add(image)
 
-        addButton("Fly to Next") {
-            index = (index + 1) % destinations.size
-            val point = MapPoint(destinations[index])
+        setGestures(onTap = { touch ->
+            val point = renderer.convertDisplayToInternal(touch.x.toDouble(), touch.y.toDouble())
             renderer.animate { animation ->
-                animation.flyToMode = globus.glmap.GLMapAnimation.FlyToMode.Enabled
-                animation.setDuration(1.5)
-                renderer.mapCenter = point
+                animation.setDuration(0.3)
                 animation.setPosition(image, point)
             }
-        }
+        })
     }
 }
 
@@ -105,8 +96,8 @@ class ImageGroupActivity : MapDemoActivity() {
         renderer.mapGeoCenter = MapGeoPoint(48.8566, 2.3522)
         renderer.mapZoom = 13.0
 
-        val variants = listOf("1.svg", "2.svg", "3.svg").mapNotNull {
-            SVGRender.render(assets, it, SVGRender.transform(renderer.screenScale.toDouble()))
+        val variants = listOf(Color.rgb(230, 60, 60), Color.rgb(60, 120, 230), Color.rgb(40, 180, 90)).mapNotNull {
+            SVGRender.render(assets, "pin.svg", SVGRender.transform(renderer.screenScale * 1.6, it))
         }
         if (variants.isEmpty()) return showError("Cannot render marker SVGs")
 
@@ -137,13 +128,13 @@ class ImageGroupActivity : MapDemoActivity() {
 class MarkerClusteringActivity : MapDemoActivity() {
     override fun onMapReady() {
         title = "Markers & Clustering"
-        val styles = markerStyles() ?: return
+        val (styles, clusteringRadius) = markerStyles() ?: return
 
         thread(name = "GLMap demo GeoJSON") {
             try {
                 val objects = assets.open("cluster_data.json").use(GLMapVectorObject::createFromGeoJSONStreamOrThrow)
                 val bbox = objects.bBox
-                val layer = GLMapMarkerLayer(objects.toArray(), styles, 35.0, 3)
+                val layer = GLMapMarkerLayer(objects.toArray(), styles, clusteringRadius, 3)
                 objects.dispose()
                 runOnUiThread {
                     if (isDestroyed) {
@@ -161,12 +152,13 @@ class MarkerClusteringActivity : MapDemoActivity() {
         }
     }
 
-    private fun markerStyles(): GLMapMarkerStyleCollection? {
+    private fun markerStyles(): Pair<GLMapMarkerStyleCollection, Double>? {
         val colors = intArrayOf(
             0xFF2100FF.toInt(), 0xFF44C3FF.toInt(), 0xFF3FEDC6.toInt(), 0xFF0FE424.toInt(),
             0xFFA8EE19.toInt(), 0xFFD6EA19.toInt(), 0xFFDFB413.toInt(), 0xFFFF0000.toInt(),
         )
         val styles = GLMapMarkerStyleCollection()
+        var maxWidth = 0
         colors.forEachIndexed { index, color ->
             val bitmap = SVGRender.render(
                 assets,
@@ -177,10 +169,11 @@ class MarkerClusteringActivity : MapDemoActivity() {
                 styles.dispose()
                 return null
             }
+            maxWidth = maxOf(maxWidth, bitmap.width)
             styles.addStyle(GLMapMarkerImage("cluster$index", bitmap))
         }
         styles.setDataCallback(ClusterStyle(colors.size))
-        return styles
+        return styles to maxWidth.toDouble() / renderer.screenScale / 2
     }
 }
 
@@ -235,19 +228,13 @@ class BalloonActivity : MapDemoActivity() {
         renderer.mapGeoCenter = MapGeoPoint(48.0, 8.0)
         renderer.mapZoom = 5.0
 
-        val pinBitmap = SVGRender.render(assets, "1.svg", SVGRender.transform(renderer.screenScale.toDouble()))
+        val pinBitmap = SVGRender.render(
+            assets,
+            "pin.svg",
+            SVGRender.transform(renderer.screenScale * 1.6, Color.rgb(230, 60, 60)),
+        )
             ?: return showError("Cannot render marker SVG")
-        background = Bitmap.createBitmap(dp(180), dp(64), Bitmap.Config.ARGB_8888).also {
-            Canvas(it).drawRoundRect(
-                0f,
-                0f,
-                it.width.toFloat(),
-                it.height.toFloat(),
-                dp(12).toFloat(),
-                dp(12).toFloat(),
-                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE },
-            )
-        }
+        background = createBalloonBackground()
         landmarks.forEach { (_, position) ->
             renderer.add(GLMapImage(3).apply {
                 setBitmap(pinBitmap)
@@ -298,6 +285,21 @@ class TrackArrowsActivity : MapDemoActivity() {
         renderer.mapGeoCenter = MapGeoPoint(40.640, 14.610)
         renderer.mapZoom = 12.0
 
+        val blue = Color.rgb(66, 133, 244)
+        val head = SVGRender.render(
+            assets,
+            "route-maneuver-head.svg",
+            SVGRender.transform(renderer.screenScale.toDouble(), blue),
+        ) ?: return showError("Cannot render maneuver arrow SVG")
+        val arrowStyle = GLMapVectorStyle.createStyle(
+            "{casing-width:2pt;casing-color:#4285F4FF;width:14pt;color:white;linecap:round;}",
+        )!!
+        val maneuverArrow = GLMapLineArrow(6).apply {
+            setLineStyle(arrowStyle, head)
+            isHidden = true
+            renderer.add(this)
+        }
+
         val currentGeneration = ++generation
         val request = GLRouteRequest().apply {
             setAutoWithOptions(CostingOptions.Auto())
@@ -308,16 +310,28 @@ class TrackArrowsActivity : MapDemoActivity() {
             override fun onResult(route: GLRoute) = runOnUiThread {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
+                // fill-image repeats small arrows over the entire route track.
                 val style = GLMapVectorStyle.createStyle("{width:14pt; fill-image:\"track-arrow.svg\";}")!!
                 val trackData = route.getTrackData(0xDC4285F4.toInt())
                 renderer.add(GLMapTrack(5).apply { setData(trackData, style, null) })
-                fit(trackData.bBox)
+
+                // GLMapLineArrow highlights one concrete maneuver independently of the track fill.
+                val maneuver = route.maneuvers.getOrNull(1) ?: return@runOnUiThread
+                maneuverArrow.setLine(maneuver.line, maneuver.lineStartIndex)
+                maneuverArrow.isHidden = false
                 title = "Track Arrows"
+                renderer.animate { animation ->
+                    animation.flyToMode = globus.glmap.GLMapAnimation.FlyToMode.Enabled
+                    animation.setDuration(1.5)
+                    renderer.mapCenter = maneuver.startPoint
+                    renderer.mapZoom = 17.0
+                }
             }
 
             override fun onError(error: globus.glmap.GLMapError) = runOnUiThread {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
+                title = "Route failed — check network"
                 showError(error.toString())
             }
         })

@@ -56,6 +56,7 @@ abstract class LocationMapActivity : MapDemoActivity() {
 
     protected abstract fun setupDemo()
     protected open fun didUpdateLocation(location: Location) = Unit
+    protected open fun updateCameraForLocation(location: Location) = Unit
 
     private fun setupLocationObjects(): Boolean {
         val bitmap = SVGRender.render(assets, "circle_new.svg", SVGRender.transform(renderer.screenScale.toDouble()))
@@ -99,6 +100,7 @@ abstract class LocationMapActivity : MapDemoActivity() {
             accuracyCircle.scale = accuracyScale
             accuracyCircle.isHidden = false
             renderer.mapCenter = position
+            updateCameraForLocation(location)
         } else {
             renderer.animate { animation ->
                 animation.setTransition(GLMapAnimation.Linear)
@@ -107,6 +109,7 @@ abstract class LocationMapActivity : MapDemoActivity() {
                 animation.setPosition(accuracyCircle, position)
                 animation.setScale(accuracyCircle, accuracyScale)
                 renderer.mapCenter = position
+                updateCameraForLocation(location)
             }
         }
         didUpdateLocation(location)
@@ -164,5 +167,9 @@ class GPSTrackActivity : LocationMapActivity() {
         trackData = updated
         pointCount++
         previous?.dispose()
+    }
+
+    override fun updateCameraForLocation(location: Location) {
+        if (location.hasBearing()) renderer.mapAngle = -Math.toRadians(location.bearing.toDouble()).toFloat()
     }
 }

@@ -61,8 +61,9 @@ class ZoomToBBoxActivity : MapDemoActivity() {
         addButton("Zoom to Fit") {
             renderer.animate { animation ->
                 animation.flyToMode = GLMapAnimation.FlyToMode.Enabled
-                renderer.mapCenter = bbox.center()
+                animation.setDuration(2.0)
                 renderer.mapZoom = renderer.mapZoomForBBox(bbox)
+                centerMapOn(bbox.center())
             }
         }
     }

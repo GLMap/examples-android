@@ -2,6 +2,8 @@
 
 One compact Kotlin app demonstrates the GLMap 2.0 API. The catalog mirrors the iOS demo and groups each example by feature: map display, camera, draw objects, vector data, search, routing, and offline data.
 
+The **Demo Mode** button above the catalog runs the same automatic SDK tour as the iOS app. The individual catalog screens remain the compact API examples to learn from.
+
 ## Run
 
 1. Create an API key at <https://user.globus.software/apps/>.
