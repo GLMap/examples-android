@@ -80,7 +80,7 @@ abstract class LocationMapActivity : MapDemoActivity() {
         accuracyCircle = GLMapVectorLayer(99).apply {
             setTransformMode(GLMapDrawable.TransformMode.Custom)
             setVectorObject(
-                GLMapVectorObject.createPolygon(arrayOf(points), null),
+                GLMapVectorObject.createPolygon(arrayOf(points)),
                 GLMapVectorCascadeStyle.createStyle("area{width:1pt;fill-color:#3D99FA26;color:#3D99FA66;}")!!,
                 null
             )

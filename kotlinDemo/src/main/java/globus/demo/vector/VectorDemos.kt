@@ -5,11 +5,14 @@ import globus.glmap.GLMapVectorCascadeStyle
 import globus.glmap.GLMapVectorLayer
 import globus.glmap.GLMapVectorObject
 import globus.glmap.GLMapVectorObjectList
+import globus.glmap.GeometryBuilder
 import globus.glmap.MapGeoPoint
 import globus.glmap.MapPoint
 import kotlin.concurrent.thread
+import kotlin.div
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.times
 
 class LinesPolygonsActivity : MapDemoActivity() {
     override fun onMapReady() {
@@ -17,72 +20,63 @@ class LinesPolygonsActivity : MapDemoActivity() {
         renderer.mapGeoCenter = MapGeoPoint(48.8566, 2.3522)
         renderer.mapZoom = 5.0
 
-        addLine(
-            arrayOf(
-                point(51.5072, -0.1275),
-                point(48.8566, 2.3522),
-                point(46.2044, 6.1432),
-                point(41.8933, 12.4829)
-            ),
-            "line{width:4pt;color:#E74C3C;}"
-        )
-        addLine(
-            arrayOf(
-                point(52.5037, 13.4102),
-                point(50.0755, 14.4378),
-                point(48.2082, 16.3738),
-                point(47.4979, 19.0402)
-            ),
-            "line{width:4pt;color:#3498DB;}"
-        )
-        addLine(
-            arrayOf(
-                point(52.3690, 4.9021),
-                point(50.8263, 4.3458),
-                point(49.6072, 6.1296),
-                point(48.8566, 2.3522)
-            ),
-            "line{width:3pt;color:#2ECC71;linecap:round;}"
-        )
+        val builder = GeometryBuilder()
 
-        val star = Array(11) { index ->
+        builder.addPointLatLon(51.5072, -0.1275)
+        builder.addPointLatLon(48.8566, 2.3522)
+        builder.addPointLatLon(46.2044, 6.1432)
+        builder.addPointLatLon(41.8933, 12.4829)
+        addVectorObject(builder, 3, "line{width:4pt;color:#E74C3C;}")
+
+        builder.addPointLatLon(52.5037, 13.4102)
+        builder.addPointLatLon(50.0755, 14.4378)
+        builder.addPointLatLon(48.2082, 16.3738)
+        builder.addPointLatLon(47.4979, 19.0402)
+        addVectorObject(builder, 3, "line{width:4pt;color:#3498DB;}")
+
+        builder.addPointLatLon(52.3690, 4.9021)
+        builder.addPointLatLon(50.8263, 4.3458)
+        builder.addPointLatLon(49.6072, 6.1296)
+        builder.addPointLatLon(48.8566, 2.3522)
+        addVectorObject(builder, 3, "line{width:3pt;color:#2ECC71;linecap:round;}")
+
+        builder.beginPolygon()
+        val tmpPoint = MapPoint()
+        builder.addLineCb(11) { index ->
             val angle = index * Math.PI / 5 - Math.PI / 2
             val radius = if (index % 2 == 0) 3.0 else 1.2
-            point(48.8566 + radius * sin(angle), 2.3522 + radius * cos(angle) / cos(Math.toRadians(48.8566)))
+            tmpPoint.setLatLon(
+                48.8566 + radius * sin(angle),
+                2.3522 + radius * cos(angle) / cos(Math.toRadians(48.8566))
+            )
+            tmpPoint
         }
-        addPolygon(arrayOf(star), null, "area{fill-color:#F39C1230;width:2pt;color:#F39C12;}")
+        addVectorObject(builder, 2, "area{fill-color:#F39C1230;width:2pt;color:#F39C12;}")
 
-        val outer = hexagon(52.5037, 13.4102, 1.5)
-        val inner = hexagon(52.5037, 13.4102, 0.6)
-        addPolygon(arrayOf(outer), arrayOf(inner), "area{fill-color:#9B59B630;width:2pt;color:#9B59B6;}")
+        builder.beginPolygon()
+        addHexagon(builder, 52.5037, 13.4102, 1.5)
+        addHexagon(builder, 52.5037, 13.4102, 0.6)
+        addVectorObject(builder, 2, "area{fill-color:#9B59B630;width:2pt;color:#9B59B6;}")
     }
 
-    private fun addLine(points: Array<MapPoint>, css: String) {
-        val layer = GLMapVectorLayer(3)
+    private fun addVectorObject(builder: GeometryBuilder, order: Int, css: String) {
+        val layer = GLMapVectorLayer(order)
         layer.setVectorObject(
-            GLMapVectorObject.createMultiline(arrayOf(points)),
+            builder.build()!!,
             GLMapVectorCascadeStyle.createStyle(css)!!,
             null
         )
         renderer.add(layer)
     }
 
-    private fun addPolygon(outer: Array<Array<MapPoint>>, inner: Array<Array<MapPoint>>?, css: String) {
-        val layer = GLMapVectorLayer(2)
-        layer.setVectorObject(
-            GLMapVectorObject.createPolygon(outer, inner),
-            GLMapVectorCascadeStyle.createStyle(css)!!,
-            null
-        )
-        renderer.add(layer)
+    private fun addHexagon(builder: GeometryBuilder, lat: Double, lon: Double, radius: Double) {
+        val tmpPoint = MapPoint()
+        builder.addLineCb(7) { index ->
+            val angle = index * Math.PI / 3
+            tmpPoint.setLatLon(lat + radius * sin(angle), lon + radius * cos(angle) / cos(Math.toRadians(lat)))
+            tmpPoint
+        }
     }
-
-    private fun hexagon(lat: Double, lon: Double, radius: Double) = Array(7) { index ->
-        val angle = index * Math.PI / 3
-        point(lat + radius * sin(angle), lon + radius * cos(angle) / cos(Math.toRadians(lat)))
-    }
-
-    private fun point(lat: Double, lon: Double) = MapPoint.CreateFromGeoCoordinates(lat, lon)
 }
 
 class GeoJSONActivity : MapDemoActivity() {
