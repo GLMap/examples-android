@@ -19,24 +19,30 @@ class LinesPolygonsActivity : MapDemoActivity() {
 
         addLine(
             arrayOf(
-                point(51.5072, -0.1275), point(48.8566, 2.3522),
-                point(46.2044, 6.1432), point(41.8933, 12.4829),
+                point(51.5072, -0.1275),
+                point(48.8566, 2.3522),
+                point(46.2044, 6.1432),
+                point(41.8933, 12.4829)
             ),
-            "line{width:4pt;color:#E74C3C;}",
+            "line{width:4pt;color:#E74C3C;}"
         )
         addLine(
             arrayOf(
-                point(52.5037, 13.4102), point(50.0755, 14.4378),
-                point(48.2082, 16.3738), point(47.4979, 19.0402),
+                point(52.5037, 13.4102),
+                point(50.0755, 14.4378),
+                point(48.2082, 16.3738),
+                point(47.4979, 19.0402)
             ),
-            "line{width:4pt;color:#3498DB;}",
+            "line{width:4pt;color:#3498DB;}"
         )
         addLine(
             arrayOf(
-                point(52.3690, 4.9021), point(50.8263, 4.3458),
-                point(49.6072, 6.1296), point(48.8566, 2.3522),
+                point(52.3690, 4.9021),
+                point(50.8263, 4.3458),
+                point(49.6072, 6.1296),
+                point(48.8566, 2.3522)
             ),
-            "line{width:3pt;color:#2ECC71;linecap:round;}",
+            "line{width:3pt;color:#2ECC71;linecap:round;}"
         )
 
         val star = Array(11) { index ->
@@ -53,13 +59,21 @@ class LinesPolygonsActivity : MapDemoActivity() {
 
     private fun addLine(points: Array<MapPoint>, css: String) {
         val layer = GLMapVectorLayer(3)
-        layer.setVectorObject(GLMapVectorObject.createMultiline(arrayOf(points)), GLMapVectorCascadeStyle.createStyle(css)!!, null)
+        layer.setVectorObject(
+            GLMapVectorObject.createMultiline(arrayOf(points)),
+            GLMapVectorCascadeStyle.createStyle(css)!!,
+            null
+        )
         renderer.add(layer)
     }
 
     private fun addPolygon(outer: Array<Array<MapPoint>>, inner: Array<Array<MapPoint>>?, css: String) {
         val layer = GLMapVectorLayer(2)
-        layer.setVectorObject(GLMapVectorObject.createPolygon(outer, inner), GLMapVectorCascadeStyle.createStyle(css)!!, null)
+        layer.setVectorObject(
+            GLMapVectorObject.createPolygon(outer, inner),
+            GLMapVectorCascadeStyle.createStyle(css)!!,
+            null
+        )
         renderer.add(layer)
     }
 
@@ -87,7 +101,7 @@ class GeoJSONActivity : MapDemoActivity() {
                     objects = loaded
                     val layer = GLMapVectorLayer()
                     val style = GLMapVectorCascadeStyle.createStyle(
-                        "area{fill-color:#3498DB40;width:1.5pt;color:#2C3E50;}",
+                        "area{fill-color:#3498DB40;width:1.5pt;color:#2C3E50;}"
                     )!!
                     layer.setVectorObjects(loaded, style, null)
                     renderer.add(layer)

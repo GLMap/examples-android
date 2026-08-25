@@ -50,7 +50,9 @@ abstract class LocationMapActivity : MapDemoActivity() {
         if (hasLocationPermission()) {
             startLocations()
         } else {
-            permissionRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            permissionRequest.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
         }
     }
 
@@ -80,7 +82,7 @@ abstract class LocationMapActivity : MapDemoActivity() {
             setVectorObject(
                 GLMapVectorObject.createPolygon(arrayOf(points), null),
                 GLMapVectorCascadeStyle.createStyle("area{width:1pt;fill-color:#3D99FA26;color:#3D99FA66;}")!!,
-                null,
+                null
             )
             isHidden = true
             renderer.add(this)
@@ -116,8 +118,10 @@ abstract class LocationMapActivity : MapDemoActivity() {
     }
 
     private fun hasLocationPermission() =
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
 
     @SuppressLint("MissingPermission")
     private fun startLocations() {
@@ -158,10 +162,10 @@ class GPSTrackActivity : LocationMapActivity() {
             location.latitude,
             location.longitude,
             Color.YELLOW,
-            pointCount > 0 && pointCount % 100 == 0,
+            pointCount > 0 && pointCount % 100 == 0
         ) ?: GLMapTrackData(
             { _, point -> GLMapTrackData.setPointDataGeo(point, location.latitude, location.longitude, Color.YELLOW) },
-            1,
+            1
         )
         track.setData(updated, style, null)
         trackData = updated

@@ -54,7 +54,7 @@ class OnlineMapActivity : MapDemoActivity() {
                 "%.4f, %.4f".format(point.lat, point.lon),
                 GLMapVectorStyle.createStyle("{text-color:#2C3E50;font-size:14;}")!!,
                 Rect(dp(12), dp(8), dp(12), dp(8)),
-                null,
+                null
             )
             current.position = position
         })
@@ -125,8 +125,8 @@ class TerrainActivity : MapDemoActivity() {
             bbox,
             listOf(
                 GLMapInfo.DataSet.MAP to "terrain_map.vmtar",
-                GLMapInfo.DataSet.ELEVATION to "terrain_ele.eletar",
-            ),
+                GLMapInfo.DataSet.ELEVATION to "terrain_ele.eletar"
+            )
         ) { error ->
             if (error != null) showError(error) else renderer.reloadTiles()
         }
@@ -193,10 +193,13 @@ class TerrainActivity : MapDemoActivity() {
         }
         container.addView(
             controls,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.BOTTOM
                 setMargins(dp(16), 0, dp(16), dp(16))
-            },
+            }
         )
     }
 }
@@ -205,7 +208,7 @@ private class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cacheSto
     private val mirrors = arrayOf(
         "https://a.tile.openstreetmap.org/%d/%d/%d.png",
         "https://b.tile.openstreetmap.org/%d/%d/%d.png",
-        "https://c.tile.openstreetmap.org/%d/%d/%d.png",
+        "https://c.tile.openstreetmap.org/%d/%d/%d.png"
     )
 
     init {

@@ -18,7 +18,10 @@ class SearchActivityTest {
             lateinit var list: ListView
             scenario.onActivity { activity ->
                 assertNotNull("Search results list is missing", activity.findViewById<ListView>(android.R.id.list))
-                assertNotNull("Offline search switch is missing", activity.findViewById<SwitchCompat>(android.R.id.checkbox))
+                assertNotNull(
+                    "Offline search switch is missing",
+                    activity.findViewById<SwitchCompat>(android.R.id.checkbox)
+                )
                 list = activity.findViewById(android.R.id.list)
                 activity.findViewById<SwitchCompat>(android.R.id.checkbox).isChecked = true
             }

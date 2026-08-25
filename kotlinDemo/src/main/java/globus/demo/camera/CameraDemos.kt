@@ -16,7 +16,7 @@ class FlyToActivity : MapDemoActivity() {
         "Lucerne" to MapPoint.CreateFromGeoCoordinates(47.0502, 8.3093),
         "Bruges" to MapPoint.CreateFromGeoCoordinates(51.2093, 3.2247),
         "Dubrovnik" to MapPoint.CreateFromGeoCoordinates(42.6507, 18.0944),
-        "Tallinn" to MapPoint.CreateFromGeoCoordinates(59.4370, 24.7536),
+        "Tallinn" to MapPoint.CreateFromGeoCoordinates(59.4370, 24.7536)
     )
     private var index = 0
 
@@ -47,7 +47,7 @@ class ZoomToBBoxActivity : MapDemoActivity() {
         MapPoint.CreateFromGeoCoordinates(40.4168, -3.7038),
         MapPoint.CreateFromGeoCoordinates(52.2251, 21.0103),
         MapPoint.CreateFromGeoCoordinates(48.2082, 16.3738),
-        MapPoint.CreateFromGeoCoordinates(50.0755, 14.4378),
+        MapPoint.CreateFromGeoCoordinates(50.0755, 14.4378)
     )
     private val bbox = GLMapBBox().apply { cityPoints.forEach(::addPoint) }
 

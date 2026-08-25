@@ -94,7 +94,7 @@ class DemoModeActivity : AppCompatActivity() {
             24,
             48,
             1,
-            TypedValue.COMPLEX_UNIT_SP,
+            TypedValue.COMPLEX_UNIT_SP
         )
         subtitleLabel = TextView(context).apply {
             alpha = 0f
@@ -104,18 +104,21 @@ class DemoModeActivity : AppCompatActivity() {
         }
         titleGroup.addView(
             titleLabel,
-            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT),
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         )
         titleGroup.addView(
             subtitleLabel,
-            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT),
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         )
         addView(
             titleGroup,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.CENTER
                 setMargins(dp(32), 0, dp(32), 0)
-            },
+            }
         )
 
         captionLabel = TextView(context).apply {
@@ -132,10 +135,13 @@ class DemoModeActivity : AppCompatActivity() {
         }
         addView(
             captionLabel,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
                 topMargin = dp(16)
-            },
+            }
         )
 
         addView(
@@ -151,7 +157,7 @@ class DemoModeActivity : AppCompatActivity() {
                 gravity = Gravity.TOP or Gravity.END
                 topMargin = dp(16)
                 marginEnd = dp(16)
-            },
+            }
         )
     }
 
@@ -172,6 +178,7 @@ class DemoModeActivity : AppCompatActivity() {
                     nextScene()
                 }, 3_000)
             }
+
             1 -> {
                 renderer.animate {
                     it.flyToMode = GLMapAnimation.FlyToMode.Enabled
@@ -181,6 +188,7 @@ class DemoModeActivity : AppCompatActivity() {
                 }
                 nextAfter(5_000)
             }
+
             2 -> {
                 showCaption("3D Terrain")
                 renderer.animate {
@@ -192,6 +200,7 @@ class DemoModeActivity : AppCompatActivity() {
                 renderer.drawElevationLines = true
                 nextAfter(6_000)
             }
+
             3 -> {
                 showCaption("3D Terrain")
                 renderer.animate {
@@ -202,11 +211,13 @@ class DemoModeActivity : AppCompatActivity() {
                 }
                 nextAfter(10_000)
             }
+
             4 -> {
                 showCaption("Dark Theme")
                 loadStyle(mapOf("Theme" to "Dark"))
                 nextAfter(4_000)
             }
+
             5 -> {
                 showCaption("Dark Theme")
                 renderer.animate {
@@ -217,6 +228,7 @@ class DemoModeActivity : AppCompatActivity() {
                 }
                 nextAfter(8_000)
             }
+
             6 -> {
                 showCaption(null)
                 loadStyle(emptyMap())
@@ -230,6 +242,7 @@ class DemoModeActivity : AppCompatActivity() {
                 renderer.drawElevationLines = false
                 nextAfter(3_000)
             }
+
             7 -> {
                 showCaption("Marker Clustering")
                 showMarkerClusters()
@@ -243,6 +256,7 @@ class DemoModeActivity : AppCompatActivity() {
                 }, 2_000)
                 nextAfter(6_000)
             }
+
             8 -> {
                 showCaption("Routing")
                 clearOverlays()
@@ -259,6 +273,7 @@ class DemoModeActivity : AppCompatActivity() {
                 handler.postDelayed({ if (running) buildDemoRoute() }, 2_500)
                 nextAfter(8_000)
             }
+
             9 -> {
                 showCaption("Routing")
                 renderer.animate {
@@ -276,6 +291,7 @@ class DemoModeActivity : AppCompatActivity() {
                 }, 2_500)
                 nextAfter(15_000)
             }
+
             10 -> {
                 showCaption("Search")
                 clearOverlays()
@@ -286,6 +302,7 @@ class DemoModeActivity : AppCompatActivity() {
                 showOnlineSearchResults()
                 nextAfter(6_000)
             }
+
             11 -> {
                 showCaption(null)
                 clearOverlays()
@@ -309,14 +326,14 @@ class DemoModeActivity : AppCompatActivity() {
             val image = SVGRender.render(
                 assets,
                 "cluster.svg",
-                SVGRender.transform(renderer.screenScale * (0.2 + index * 0.1), color),
+                SVGRender.transform(renderer.screenScale * (0.2 + index * 0.1), color)
             ) ?: return
             maxWidth = maxOf(maxWidth, image.width)
             styles.addStyle(GLMapMarkerImage("demo-cluster-$index", image))
         }
         styles.setDataCallback(object : GLMapMarkerStyleCollectionDataCallback() {
             private val textStyle = GLMapVectorStyle.createStyle(
-                "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}",
+                "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}"
             )!!
 
             override fun getLocation(marker: Any) = (marker as GLMapVectorObject).point()
@@ -331,7 +348,7 @@ class DemoModeActivity : AppCompatActivity() {
                     markersCount.toString(),
                     globus.glmap.GLMapTextAlignment.Undefined,
                     Point(),
-                    textStyle,
+                    textStyle
                 )
             }
         })
@@ -345,7 +362,7 @@ class DemoModeActivity : AppCompatActivity() {
                     objects.toArray(),
                     styles,
                     maxWidth.toDouble() / renderer.screenScale / 2,
-                    2,
+                    2
                 )
                 objects.dispose()
                 runOnUiThread {
@@ -381,7 +398,7 @@ class DemoModeActivity : AppCompatActivity() {
                     setData(
                         route.getTrackData(0xC832C800.toInt()),
                         GLMapVectorStyle.createStyle("{width:7pt;fill-image:\"track-arrow.svg\";}")!!,
-                        null,
+                        null
                     )
                     renderer.add(this)
                 }
@@ -402,7 +419,7 @@ class DemoModeActivity : AppCompatActivity() {
             SCENIC_CENTER,
             30,
             arrayOf("en", "native"),
-            arrayOf("restaurant"),
+            arrayOf("restaurant")
         )
         searchRequestID = request.startOnline(object : GLSearchRequest.ResultsCallback {
             override fun onResult(objects: GLMapVectorObjectList) = runOnUiThread {
@@ -422,7 +439,7 @@ class DemoModeActivity : AppCompatActivity() {
                 val bitmap = SVGRender.render(
                     assets,
                     "cluster.svg",
-                    SVGRender.transform(renderer.screenScale * 0.2, Color.rgb(0, 102, 204)),
+                    SVGRender.transform(renderer.screenScale * 0.2, Color.rgb(0, 102, 204))
                 )
                 if (bitmap == null) {
                     results.forEach(GLMapVectorObject::dispose)

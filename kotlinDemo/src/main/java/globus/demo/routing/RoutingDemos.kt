@@ -47,16 +47,23 @@ class RouteBuildingActivity : MapDemoActivity() {
         title = "Route Building"
         supportActionBar?.subtitle = "Tap map to set departure and destination"
         mode = Spinner(this).apply {
-            adapter = ArrayAdapter(this@RouteBuildingActivity, android.R.layout.simple_spinner_dropdown_item, listOf("Auto", "Bike", "Walk"))
+            adapter =
+                ArrayAdapter(
+                    this@RouteBuildingActivity,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    listOf("Auto", "Bike", "Walk")
+                )
         }
         offline = SwitchCompat(this).apply { text = "Offline" }
-        addTopView(LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(12), dp(4), dp(12), dp(4))
-            setBackgroundColor(0xEFFFFFFF.toInt())
-            addView(mode, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            addView(offline)
-        })
+        addTopView(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(dp(12), dp(4), dp(12), dp(4))
+                setBackgroundColor(0xEFFFFFFF.toInt())
+                addView(mode, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                addView(offline)
+            }
+        )
         mode.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             private var selectedMode = mode.selectedItemPosition
 
@@ -114,7 +121,11 @@ class RouteBuildingActivity : MapDemoActivity() {
                     routeTrack = it
                     renderer.add(it)
                 }
-                track.setData(trackData, GLMapVectorStyle.createStyle("{width:7pt;fill-image:\"track-arrow.svg\";}")!!, null)
+                track.setData(
+                    trackData,
+                    GLMapVectorStyle.createStyle("{width:7pt;fill-image:\"track-arrow.svg\";}")!!,
+                    null
+                )
             }
 
             override fun onError(error: GLMapError) = runOnUiThread {
@@ -124,7 +135,12 @@ class RouteBuildingActivity : MapDemoActivity() {
             }
         }
         requestID = if (offline.isChecked) {
-            request.startOffline(resources.openRawResource(R.raw.valhalla).use { String(it.readBytes(), StandardCharsets.UTF_8) }, callback)
+            request.startOffline(
+                resources.openRawResource(R.raw.valhalla).use {
+                    String(it.readBytes(), StandardCharsets.UTF_8)
+                },
+                callback
+            )
         } else {
             request.startOnline(callback)
         }
@@ -150,8 +166,8 @@ class TurnByTurnActivity : LocationMapActivity() {
                 SVGRender.render(
                     assets,
                     "arrow-maphint.svg",
-                    SVGRender.transform(renderer.screenScale.toDouble(), Color.WHITE),
-                ),
+                    SVGRender.transform(renderer.screenScale.toDouble(), Color.WHITE)
+                )
             )
             visibility = android.view.View.INVISIBLE
         }
@@ -192,18 +208,23 @@ class TurnByTurnActivity : LocationMapActivity() {
         val maneuver = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             addView(maneuverIcon, LinearLayout.LayoutParams(dp(40), dp(40)))
-            addView(maneuverDistance, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(12)
-            })
+            addView(
+                maneuverDistance,
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(12)
+                }
+            )
         }
-        addTopView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
-            setBackgroundColor(0xF2262626.toInt())
-            addView(maneuver)
-            addView(maneuverStreet)
-            addView(routeInfo)
-        })
+        addTopView(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(12), dp(16), dp(12))
+                setBackgroundColor(0xF2262626.toInt())
+                addView(maneuver)
+                addView(maneuverStreet)
+                addView(routeInfo)
+            }
+        )
         setupManeuverArrow()
         setGestures(onTap = { touch ->
             val location = lastLocation ?: return@setGestures
@@ -217,10 +238,10 @@ class TurnByTurnActivity : LocationMapActivity() {
         val head = SVGRender.render(
             assets,
             "route-maneuver-head.svg",
-            SVGRender.transform(renderer.screenScale.toDouble(), green),
+            SVGRender.transform(renderer.screenScale.toDouble(), green)
         ) ?: return showError("Cannot render maneuver arrow SVG")
         val style = GLMapVectorStyle.createStyle(
-            "{casing-width:2pt;casing-color:#32C800FF;width:14pt;color:white;linecap:round;}",
+            "{casing-width:2pt;casing-color:#32C800FF;width:14pt;color:white;linecap:round;}"
         )!!
         maneuverArrow = GLMapLineArrow(100).apply {
             setLineStyle(style, head)
@@ -294,7 +315,7 @@ class TurnByTurnActivity : LocationMapActivity() {
         val maneuver = tracker.updateLocation(
             location.latitude,
             location.longitude,
-            if (location.hasBearing()) location.bearing else Float.NaN,
+            if (location.hasBearing()) location.bearing else Float.NaN
         )
         if (maneuver == null) {
             maneuverIcon.visibility = android.view.View.INVISIBLE
@@ -310,7 +331,9 @@ class TurnByTurnActivity : LocationMapActivity() {
         }
         routeInfo.text = "${distance(tracker.remainingDistance)} remaining · ${duration(tracker.remainingDuration)}"
 
-        val userPoint = if (tracker.isOnRoute) tracker.locationOnRoute else MapPoint(MapGeoPoint(location.latitude, location.longitude))
+        val userPoint = if (tracker.isOnRoute) tracker.locationOnRoute else MapPoint(
+            MapGeoPoint(location.latitude, location.longitude)
+        )
         navigationAnimation?.cancel(false)
         navigationAnimation = renderer.animate { animation ->
             animation.setDuration(1.0)
@@ -320,12 +343,11 @@ class TurnByTurnActivity : LocationMapActivity() {
         }
     }
 
-    private fun distance(meters: Double) =
-        when {
-            !meters.isFinite() || meters < 0 -> "—"
-            meters < 1_000 -> "${(meters / 10).roundToInt() * 10} m"
-            else -> "%.1f km".format(meters / 1_000)
-        }
+    private fun distance(meters: Double) = when {
+        !meters.isFinite() || meters < 0 -> "—"
+        meters < 1_000 -> "${(meters / 10).roundToInt() * 10} m"
+        else -> "%.1f km".format(meters / 1_000)
+    }
 
     private fun duration(seconds: Double): String {
         if (!seconds.isFinite() || seconds < 0) return "—"
@@ -338,22 +360,28 @@ class TurnByTurnActivity : LocationMapActivity() {
         GLRouteManeuver.Type.SlightRight,
         GLRouteManeuver.Type.RampRight,
         GLRouteManeuver.Type.ExitRight,
-        GLRouteManeuver.Type.StayRight,
+        GLRouteManeuver.Type.StayRight
         -> -45f
+
         GLRouteManeuver.Type.Right,
-        GLRouteManeuver.Type.SharpRight,
+        GLRouteManeuver.Type.SharpRight
         -> 0f
+
         GLRouteManeuver.Type.StartLeft,
         GLRouteManeuver.Type.SlightLeft,
         GLRouteManeuver.Type.RampLeft,
         GLRouteManeuver.Type.ExitLeft,
-        GLRouteManeuver.Type.StayLeft,
+        GLRouteManeuver.Type.StayLeft
         -> -135f
+
         GLRouteManeuver.Type.Left,
-        GLRouteManeuver.Type.SharpLeft,
+        GLRouteManeuver.Type.SharpLeft
         -> 180f
+
         GLRouteManeuver.Type.UturnRight -> 90f
+
         GLRouteManeuver.Type.UturnLeft -> -270f
+
         else -> -90f
     }
 

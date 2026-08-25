@@ -39,7 +39,7 @@ class ImageActivity : MapDemoActivity() {
         val bitmap = SVGRender.render(
             assets,
             "pin.svg",
-            SVGRender.transform(renderer.screenScale * 1.6, Color.rgb(230, 60, 60)),
+            SVGRender.transform(renderer.screenScale * 1.6, Color.rgb(230, 60, 60))
         )
             ?: return showError("Cannot render marker SVG")
         val image = GLMapImage(3).apply {
@@ -110,7 +110,7 @@ class ImageGroupActivity : MapDemoActivity() {
             48.8738 to 2.2950,
             48.8462 to 2.3464,
             48.8600 to 2.3266,
-            48.8619 to 2.2870,
+            48.8619 to 2.2870
         ).forEach { (lat, lon) -> pins.add(MapPoint.CreateFromGeoCoordinates(lat, lon)) }
 
         val group = GLMapImageGroup(pins, 3)
@@ -120,7 +120,7 @@ class ImageGroupActivity : MapDemoActivity() {
             onLongPress = {
                 pins.add(renderer.convertDisplayToInternal(it.x.toDouble(), it.y.toDouble()))
                 group.setNeedsUpdate(false)
-            },
+            }
         )
     }
 }
@@ -154,8 +154,14 @@ class MarkerClusteringActivity : MapDemoActivity() {
 
     private fun markerStyles(): Pair<GLMapMarkerStyleCollection, Double>? {
         val colors = intArrayOf(
-            0xFF2100FF.toInt(), 0xFF44C3FF.toInt(), 0xFF3FEDC6.toInt(), 0xFF0FE424.toInt(),
-            0xFFA8EE19.toInt(), 0xFFD6EA19.toInt(), 0xFFDFB413.toInt(), 0xFFFF0000.toInt(),
+            0xFF2100FF.toInt(),
+            0xFF44C3FF.toInt(),
+            0xFF3FEDC6.toInt(),
+            0xFF0FE424.toInt(),
+            0xFFA8EE19.toInt(),
+            0xFFD6EA19.toInt(),
+            0xFFDFB413.toInt(),
+            0xFFFF0000.toInt()
         )
         val styles = GLMapMarkerStyleCollection()
         var maxWidth = 0
@@ -163,7 +169,7 @@ class MarkerClusteringActivity : MapDemoActivity() {
             val bitmap = SVGRender.render(
                 assets,
                 "cluster.svg",
-                SVGRender.transform(renderer.screenScale * (0.2 + index * 0.1), color),
+                SVGRender.transform(renderer.screenScale * (0.2 + index * 0.1), color)
             )
             if (bitmap == null) {
                 styles.dispose()
@@ -179,7 +185,7 @@ class MarkerClusteringActivity : MapDemoActivity() {
 
 private class ClusterStyle(private val styleCount: Int) : GLMapMarkerStyleCollectionDataCallback() {
     private val textStyle = GLMapVectorStyle.createStyle(
-        "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}",
+        "{text-color:black;font-size:12;font-stroke-width:1pt;font-stroke-color:#FFFFFFEE;}"
     )!!
 
     override fun getLocation(marker: Any) = (marker as GLMapVectorObject).point()
@@ -192,7 +198,7 @@ private class ClusterStyle(private val styleCount: Int) : GLMapMarkerStyleCollec
             markersCount.toString(),
             GLMapTextAlignment.Undefined,
             Point(0, 0),
-            textStyle,
+            textStyle
         )
     }
 
@@ -205,7 +211,7 @@ private class ClusterStyle(private val styleCount: Int) : GLMapMarkerStyleCollec
                     it,
                     GLMapTextAlignment.Undefined,
                     Point(0, 8),
-                    textStyle,
+                    textStyle
                 )
             }
         }
@@ -217,7 +223,7 @@ class BalloonActivity : MapDemoActivity() {
         "Eiffel Tower" to MapPoint.CreateFromGeoCoordinates(48.8584, 2.2945),
         "Colosseum" to MapPoint.CreateFromGeoCoordinates(41.8902, 12.4922),
         "Big Ben" to MapPoint.CreateFromGeoCoordinates(51.5007, -0.1246),
-        "Brandenburg Gate" to MapPoint.CreateFromGeoCoordinates(52.5163, 13.3777),
+        "Brandenburg Gate" to MapPoint.CreateFromGeoCoordinates(52.5163, 13.3777)
     )
     private var balloon: GLMapBalloon? = null
     private lateinit var background: Bitmap
@@ -231,16 +237,18 @@ class BalloonActivity : MapDemoActivity() {
         val pinBitmap = SVGRender.render(
             assets,
             "pin.svg",
-            SVGRender.transform(renderer.screenScale * 1.6, Color.rgb(230, 60, 60)),
+            SVGRender.transform(renderer.screenScale * 1.6, Color.rgb(230, 60, 60))
         )
             ?: return showError("Cannot render marker SVG")
         background = createBalloonBackground()
         landmarks.forEach { (_, position) ->
-            renderer.add(GLMapImage(3).apply {
-                setBitmap(pinBitmap)
-                setOffset(pinBitmap.width / 2, 0)
-                this.position = position
-            })
+            renderer.add(
+                GLMapImage(3).apply {
+                    setBitmap(pinBitmap)
+                    setOffset(pinBitmap.width / 2, 0)
+                    this.position = position
+                }
+            )
         }
         setGestures(onTap = { touch ->
             val landmark = landmarks.minByOrNull {
@@ -268,7 +276,7 @@ class BalloonActivity : MapDemoActivity() {
                 text,
                 textStyle,
                 Rect(dp(14), dp(10), dp(14), dp(10)),
-                null,
+                null
             )
             this.position = position
             renderer.add(this)
@@ -289,10 +297,10 @@ class TrackArrowsActivity : MapDemoActivity() {
         val head = SVGRender.render(
             assets,
             "route-maneuver-head.svg",
-            SVGRender.transform(renderer.screenScale.toDouble(), blue),
+            SVGRender.transform(renderer.screenScale.toDouble(), blue)
         ) ?: return showError("Cannot render maneuver arrow SVG")
         val arrowStyle = GLMapVectorStyle.createStyle(
-            "{casing-width:2pt;casing-color:#4285F4FF;width:14pt;color:white;linecap:round;}",
+            "{casing-width:2pt;casing-color:#4285F4FF;width:14pt;color:white;linecap:round;}"
         )!!
         val maneuverArrow = GLMapLineArrow(6).apply {
             setLineStyle(arrowStyle, head)

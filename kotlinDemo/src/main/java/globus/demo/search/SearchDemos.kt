@@ -51,7 +51,8 @@ class SearchActivity : MapDemoActivity() {
     private lateinit var resultsList: ListView
     private val resultsAdapter = ResultsAdapter()
     private val searchHandler = Handler(Looper.getMainLooper())
-    private val autocomplete = Runnable { search(query.text.toString(), offline.isChecked, GLSearchRequestType.Autocomplete) }
+    private val autocomplete =
+        Runnable { search(query.text.toString(), offline.isChecked, GLSearchRequestType.Autocomplete) }
 
     override fun onMapReady() {
         title = "Search"
@@ -78,10 +79,12 @@ class SearchActivity : MapDemoActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(4), dp(12), dp(4))
             setBackgroundColor(0xEFFFFFFF.toInt())
-            addView(LinearLayout(context).apply {
-                addView(query, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                addView(searchButton)
-            })
+            addView(
+                LinearLayout(context).apply {
+                    addView(query, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                    addView(searchButton)
+                }
+            )
             addView(offline)
         }
         addTopView(searchPanel)
@@ -96,11 +99,15 @@ class SearchActivity : MapDemoActivity() {
             }
         }
         container.removeView(mapView)
-        container.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(mapView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 3f))
-            addView(resultsList, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2f))
-        }, 0, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        container.addView(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(mapView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 3f))
+                addView(resultsList, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 2f))
+            },
+            0,
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        )
         searchPanel.addOnLayoutChangeListener { panel, _, _, _, _, _, _, _, _ ->
             val panelLocation = IntArray(2).also(panel::getLocationInWindow)
             val mapLocation = IntArray(2).also(mapView::getLocationInWindow)
@@ -110,7 +117,7 @@ class SearchActivity : MapDemoActivity() {
         selectedMarker = SVGRender.render(
             assets,
             "pin.svg",
-            SVGRender.transform(renderer.screenScale * 1.4, Color.rgb(230, 60, 60)),
+            SVGRender.transform(renderer.screenScale * 1.4, Color.rgb(230, 60, 60))
         )?.let { bitmap ->
             GLMapImage(4).apply {
                 setBitmap(bitmap)
@@ -172,7 +179,7 @@ class SearchActivity : MapDemoActivity() {
             center,
             50,
             arrayOf("en", "native"),
-            if (text.isBlank()) arrayOf("restaurant") else null,
+            if (text.isBlank()) arrayOf("restaurant") else null
         )
         val callback = object : GLSearchRequest.ResultsCallback {
             override fun onResult(objects: GLMapVectorObjectList) = runOnUiThread {
@@ -206,7 +213,7 @@ class SearchActivity : MapDemoActivity() {
         val bitmap = SVGRender.render(
             assets,
             "cluster.svg",
-            SVGRender.transform(renderer.screenScale * 0.2, Color.rgb(0, 102, 204)),
+            SVGRender.transform(renderer.screenScale * 0.2, Color.rgb(0, 102, 204))
         ) ?: return showError("Cannot render result marker SVG")
         val styles = GLMapMarkerStyleCollection().apply {
             addStyle(GLMapMarkerImage("result", bitmap))
@@ -271,12 +278,13 @@ class SearchActivity : MapDemoActivity() {
         override fun getItemId(position: Int) = position.toLong()
 
         override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
-            val view = convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_activated_2, parent, false)
+            val view =
+                convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_activated_2, parent, false)
             val info = GLSearch.GetDisplayInfo(getItem(position), renderer.localeSettings)
             val title = info?.title?.getSpanned(
                 ForegroundColorSpan(Color.BLACK),
                 ForegroundColorSpan(Color.rgb(0, 102, 204)),
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             ) ?: "Unnamed"
             val secondaryText = info?.secondaryText?.string
             info?.close()
@@ -331,7 +339,7 @@ class POITapActivity : MapDemoActivity() {
                             text,
                             GLMapVectorStyle.createStyle("{text-color:black;font-size:14;}")!!,
                             Rect(dp(12), dp(8), dp(12), dp(8)),
-                            null,
+                            null
                         )
                         this.position = position
                         renderer.add(this)

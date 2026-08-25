@@ -46,15 +46,15 @@ class DownloadBBoxActivity : MapDemoActivity() {
             FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, dp(36)).apply {
                 gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
                 bottomMargin = dp(16)
-            },
+            }
         )
         downloadBBoxData(
             bbox,
             listOf(
                 GLMapInfo.DataSet.MAP to "bbox_map.vmtar",
                 GLMapInfo.DataSet.NAVIGATION to "bbox_nav.navtar",
-                GLMapInfo.DataSet.ELEVATION to "bbox_ele.eletar",
-            ),
+                GLMapInfo.DataSet.ELEVATION to "bbox_ele.eletar"
+            )
         ) { error ->
             if (error != null) {
                 status.text = "Download failed"
@@ -70,7 +70,9 @@ class DownloadBBoxActivity : MapDemoActivity() {
     }
 }
 
-class DownloadMapsActivity : AppCompatActivity(), GLMapManager.StateListener {
+class DownloadMapsActivity :
+    AppCompatActivity(),
+    GLMapManager.StateListener {
     private val locale = GLMapLocaleSettings(arrayOf("en", "native"), GLMapLocaleSettings.UnitSystem.International)
     private val adapter = MapsAdapter()
     private var mapGroup: GLMapInfo? = null
@@ -235,9 +237,15 @@ class DownloadMapsActivity : AppCompatActivity(), GLMapManager.StateListener {
             val task = GLMapManager.getDownloadTasks(map.mapID, GLMapInfo.DataSetMask.ALL)?.firstOrNull()
             view.findViewById<TextView>(android.R.id.text2).text = when {
                 map.isCollection -> "Browse regions"
+
                 task != null && task.total > 0 -> "Downloading ${task.downloaded.toLong() * 100 / task.total}%"
+
                 task != null -> "Starting download..."
-                map.dataSetsWithState(GLMapInfo.State.DOWNLOADED) != 0 -> "On device · %.1f MB".format(map.getSizeOnDisk(GLMapInfo.DataSetMask.ALL) / 1_000_000.0)
+
+                map.dataSetsWithState(
+                    GLMapInfo.State.DOWNLOADED
+                ) != 0 -> "On device · %.1f MB".format(map.getSizeOnDisk(GLMapInfo.DataSetMask.ALL) / 1_000_000.0)
+
                 else -> "%.1f MB".format(map.getSizeOnServer(GLMapInfo.DataSetMask.ALL) / 1_000_000.0)
             }
             return view

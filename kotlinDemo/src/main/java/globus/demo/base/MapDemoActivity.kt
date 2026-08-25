@@ -53,10 +53,13 @@ abstract class MapDemoActivity : AppCompatActivity() {
         }
         container.addView(
             button,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
                 bottomMargin = dp(12)
-            },
+            }
         )
         return button
     }
@@ -70,21 +73,27 @@ abstract class MapDemoActivity : AppCompatActivity() {
                 it.height.toFloat(),
                 dp(12).toFloat(),
                 dp(12).toFloat(),
-                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE },
+                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
             )
         }
 
     protected fun addTopView(view: View) {
         container.addView(
             view,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.TOP
                 setMargins(dp(12), dp(12), dp(12), 0)
-            },
+            }
         )
     }
 
-    protected fun setGestures(onTap: ((MapPointTouch) -> Unit)? = null, onLongPress: ((MapPointTouch) -> Unit)? = null) {
+    protected fun setGestures(
+        onTap: ((MapPointTouch) -> Unit)? = null,
+        onLongPress: ((MapPointTouch) -> Unit)? = null
+    ) {
         val detector = GestureDetector(
             this,
             object : GestureDetector.SimpleOnGestureListener() {
@@ -96,7 +105,7 @@ abstract class MapDemoActivity : AppCompatActivity() {
                 override fun onLongPress(event: MotionEvent) {
                     onLongPress?.invoke(MapPointTouch(event.x, event.y))
                 }
-            },
+            }
         )
         mapView.setOnTouchListener { _: View, event: MotionEvent ->
             detector.onTouchEvent(event)
@@ -123,16 +132,12 @@ abstract class MapDemoActivity : AppCompatActivity() {
         val origin = renderer.mapOrigin
         val offset = renderer.convertDisplayDeltaToInternal(
             (visibleMapInsets.right - visibleMapInsets.left) * 0.5 + mapView.width * (0.5 - origin.x),
-            (visibleMapInsets.bottom - visibleMapInsets.top) * 0.5 + mapView.height * (0.5 - origin.y),
+            (visibleMapInsets.bottom - visibleMapInsets.top) * 0.5 + mapView.height * (0.5 - origin.y)
         )
         renderer.mapCenter = MapPoint(point).add(offset)
     }
 
-    protected fun downloadBBoxData(
-        bbox: GLMapBBox,
-        files: List<Pair<Int, String>>,
-        completion: (String?) -> Unit,
-    ) {
+    protected fun downloadBBoxData(bbox: GLMapBBox, files: List<Pair<Int, String>>, completion: (String?) -> Unit) {
         if (files.isEmpty()) {
             completion(null)
             return
@@ -164,21 +169,27 @@ abstract class MapDemoActivity : AppCompatActivity() {
                 }
             } else {
                 var taskID = 0L
-                taskID = GLMapManager.DownloadDataSet(dataSet, file.absolutePath, bbox, object : GLMapManager.DownloadCallback {
-                    override fun onProgress(totalSize: Long, downloadedSize: Long, downloadSpeed: Double) = Unit
-                    override fun onFinished(error: GLMapError?) {
-                        downloadTaskIDs.remove(taskID)
-                        if (error != null) {
-                            file.delete()
-                            finished(error.toString())
-                        } else if (!GLMapManager.AddDataSet(dataSet, bbox, file.absolutePath, null, null)) {
-                            file.delete()
-                            finished("Cannot open ${file.name}")
-                        } else {
-                            finished()
+                taskID =
+                    GLMapManager.DownloadDataSet(
+                        dataSet,
+                        file.absolutePath,
+                        bbox,
+                        object : GLMapManager.DownloadCallback {
+                            override fun onProgress(totalSize: Long, downloadedSize: Long, downloadSpeed: Double) = Unit
+                            override fun onFinished(error: GLMapError?) {
+                                downloadTaskIDs.remove(taskID)
+                                if (error != null) {
+                                    file.delete()
+                                    finished(error.toString())
+                                } else if (!GLMapManager.AddDataSet(dataSet, bbox, file.absolutePath, null, null)) {
+                                    file.delete()
+                                    finished("Cannot open ${file.name}")
+                                } else {
+                                    finished()
+                                }
+                            }
                         }
-                    }
-                })
+                    )
                 if (taskID == 0L) {
                     finished("Cannot start download for ${file.name}")
                 } else {
