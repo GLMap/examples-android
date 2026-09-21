@@ -29,6 +29,9 @@ def useLocalGLMap = providers.gradleProperty('useLocalGLMap')
         .get()
 
 if (useLocalGLMap) {
+    include ':glmapcore'
+    project(':glmapcore').projectDir = file('../Framework/glmapcore')
+
     include ':glmap'
     project(':glmap').projectDir = file('../Framework/glmap')
 

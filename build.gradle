@@ -3,7 +3,7 @@
 buildscript {
     ext {
         agp_version = '9.1.1'
-        glmap_version = '2.1.0'
+        glmap_version = '2.2.0'
         app_compat_version = '1.7.1'
         multidex_version = '2.0.1'
         gms_location_version = '21.3.0'
@@ -59,7 +59,7 @@ if (useLocalGLMap) {
         }
     }
 
-    [project(':glmap'), project(':glroute'), project(':glsearch')].each { localProject ->
+    [project(':glmapcore'), project(':glmap'), project(':glroute'), project(':glsearch')].each { localProject ->
         localProject.tasks.configureEach {
             if (name == 'prefabDebugConfigurePackage' || name == 'prefabReleaseConfigurePackage') {
                 outputs.upToDateWhen { false }
@@ -69,21 +69,21 @@ if (useLocalGLMap) {
 
     project(':glroute').tasks.configureEach {
         if (name.startsWith('configureCMakeDebug')) {
-            dependsOn ':glmap:prefabDebugPackage'
+            dependsOn ':glmapcore:prefabDebugPackage'
         }
 
         if (name.startsWith('configureCMakeRelWithDebInfo')) {
-            dependsOn ':glmap:prefabReleasePackage'
+            dependsOn ':glmapcore:prefabReleasePackage'
         }
     }
 
     project(':glsearch').tasks.configureEach {
         if (name.startsWith('configureCMakeDebug')) {
-            dependsOn ':glmap:prefabDebugPackage'
+            dependsOn ':glmapcore:prefabDebugPackage'
         }
 
         if (name.startsWith('configureCMakeRelWithDebInfo')) {
-            dependsOn ':glmap:prefabReleasePackage'
+            dependsOn ':glmapcore:prefabReleasePackage'
         }
     }
 }

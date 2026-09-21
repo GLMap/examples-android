@@ -323,28 +323,30 @@ class POITapActivity : MapDemoActivity() {
             }
             balloon = null
 
-            val objectAtPoint = GLSearch.MapObjectNearPoint(renderer, touch.x, touch.y, 20.0)
-            if (objectAtPoint == null) {
-                title = "No POI here"
-            } else {
-                objectAtPoint.use { objectOnMap ->
-                    val name = objectOnMap.localizedName(renderer.localeSettings)?.use { it.string }
-                    val position = objectOnMap.point()
-                    val point = MapGeoPoint(position)
-                    val text = name?.takeIf(String::isNotBlank)
-                        ?: "%.4f, %.4f".format(point.lat, point.lon)
-                    balloon = GLMapBalloon(10).apply {
-                        setBackgroundBitmap(createBalloonBackground(), Rect(dp(20), dp(20), dp(20), dp(20)))
-                        setText(
-                            text,
-                            GLMapVectorStyle.createStyle("{text-color:black;font-size:14;}")!!,
-                            Rect(dp(12), dp(8), dp(12), dp(8)),
-                            null
-                        )
-                        this.position = position
-                        renderer.add(this)
+            renderer.state?.use { state ->
+                val objectAtPoint = GLSearch.MapObjectNearPoint(state, touch.x, touch.y, 20.0)
+                if (objectAtPoint == null) {
+                    title = "No POI here"
+                } else {
+                    objectAtPoint.use { objectOnMap ->
+                        val name = objectOnMap.localizedName(renderer.localeSettings)?.use { it.string }
+                        val position = objectOnMap.point()
+                        val point = MapGeoPoint(position)
+                        val text = name?.takeIf(String::isNotBlank)
+                            ?: "%.4f, %.4f".format(point.lat, point.lon)
+                        balloon = GLMapBalloon(10).apply {
+                            setBackgroundBitmap(createBalloonBackground(), Rect(dp(20), dp(20), dp(20), dp(20)))
+                            setText(
+                                text,
+                                GLMapVectorStyle.createStyle("{text-color:black;font-size:14;}")!!,
+                                Rect(dp(12), dp(8), dp(12), dp(8)),
+                                null
+                            )
+                            this.position = position
+                            renderer.add(this)
+                        }
+                        title = text
                     }
-                    title = text
                 }
             }
         })
