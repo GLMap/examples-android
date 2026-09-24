@@ -3,7 +3,6 @@ package globus.demo
 import android.app.Application
 import android.util.Log
 import globus.glmap.GLMapManager
-import globus.glsearch.GLSearch
 
 class DemoApp : Application() {
     override fun onCreate() {
@@ -11,8 +10,8 @@ class DemoApp : Application() {
         // Get an API key at https://user.globus.software/apps/ and replace api_key in strings.xml.
         if (!GLMapManager.Initialize(this, getString(R.string.api_key), null)) {
             Log.e("GLMapDemo", "GLMap initialization failed. Check free storage space and that the storage directory is writable.")
+            return
         }
-        GLSearch.Initialize(this)
         GLMapManager.SetTileDownloadingAllowed(true)
     }
 }
