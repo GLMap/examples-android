@@ -83,7 +83,7 @@ class GeoJSONActivity : MapDemoActivity() {
     private var objects: GLMapVectorObjectList? = null
 
     override fun onMapReady() {
-        title = "Tap on any UK region"
+        title = "Loading GeoJSON..."
         thread(name = "GLMap demo GeoJSON") {
             try {
                 val loaded = assets.open("uk_postcodes.geojson").use(GLMapVectorObject::createFromGeoJSONStreamOrThrow)
@@ -97,7 +97,24 @@ class GeoJSONActivity : MapDemoActivity() {
                     val style = GLMapVectorCascadeStyle.createStyle(
                         "area{fill-color:#3498DB40;width:1.5pt;color:#2C3E50;}"
                     )!!
-                    layer.setVectorObjects(loaded, style, null)
+                    // Updates and their completion run on the main thread. Ready means
+                    // geometry is ready to draw, not that a frame has been presented.
+                    layer.setVectorObjects(loaded, style) { result ->
+                        if (!isFinishing && !isDestroyed) {
+                            when (result) {
+                                GLMapVectorLayer.UpdateResult.Ready -> title = "Tap on any UK region"
+                                GLMapVectorLayer.UpdateResult.Failed -> {
+                                    title = "GeoJSON failed"
+                                    showError("Cannot prepare GeoJSON for drawing")
+                                }
+                                GLMapVectorLayer.UpdateResult.Superseded,
+                                GLMapVectorLayer.UpdateResult.Cancelled -> {
+                                    // Normal lifecycle outcomes, not success or a loading error.
+                                    title = "GeoJSON"
+                                }
+                            }
+                        }
+                    }
                     renderer.add(layer)
                     fit(loaded.bBox)
                     setGestures(onTap = { touch ->
@@ -111,7 +128,10 @@ class GeoJSONActivity : MapDemoActivity() {
                 }
             } catch (error: Exception) {
                 runOnUiThread {
-                    if (!isDestroyed) showError(error.message ?: "Cannot load GeoJSON")
+                    if (!isFinishing && !isDestroyed) {
+                        title = "GeoJSON failed"
+                        showError(error.message ?: "Cannot load GeoJSON")
+                    }
                 }
             }
         }

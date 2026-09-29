@@ -282,8 +282,8 @@ class SearchActivity : MapDemoActivity() {
                 convertView ?: layoutInflater.inflate(android.R.layout.simple_list_item_activated_2, parent, false)
             val info = GLSearch.GetDisplayInfo(getItem(position), renderer.localeSettings)
             val title = info?.title?.getSpanned(
-                ForegroundColorSpan(Color.BLACK),
-                ForegroundColorSpan(Color.rgb(0, 102, 204)),
+                SearchColorSpan(Color.BLACK),
+                SearchColorSpan(Color.rgb(0, 102, 204)),
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             ) ?: "Unnamed"
             val secondaryText = info?.secondaryText?.string
@@ -299,6 +299,12 @@ class SearchActivity : MapDemoActivity() {
             return view
         }
     }
+}
+
+// GLMapValue.getSpanned clones spans for each text range. ForegroundColorSpan
+// itself is not Cloneable, so passing it directly fails in the SDK's native bridge.
+private class SearchColorSpan(color: Int) : ForegroundColorSpan(color), Cloneable {
+    public override fun clone() = SearchColorSpan(foregroundColor)
 }
 
 private object SearchMarkerStyle : GLMapMarkerStyleCollectionDataCallback() {

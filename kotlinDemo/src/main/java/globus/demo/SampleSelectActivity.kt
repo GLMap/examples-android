@@ -55,7 +55,7 @@ private data class Demo(
 class SampleSelectActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = "GLMap 2.0"
+        title = getString(R.string.app_name)
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL

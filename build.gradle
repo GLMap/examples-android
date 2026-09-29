@@ -9,7 +9,7 @@ buildscript {
         gms_location_version = '21.3.0'
         min_sdk_version = 21
         sdk_version = 37
-        version_code = 20000
+        version_code = 20200
     }
     repositories {
         google()

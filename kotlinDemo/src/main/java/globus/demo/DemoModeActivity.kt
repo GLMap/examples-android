@@ -172,7 +172,7 @@ class DemoModeActivity : AppCompatActivity() {
 
         when (scene++) {
             0 -> {
-                showTitle("GLMap 2.0", "SDK Demo")
+                showTitle(getString(R.string.app_name), "SDK Demo")
                 handler.postDelayed({
                     hideTitle()
                     nextScene()

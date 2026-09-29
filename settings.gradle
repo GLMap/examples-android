@@ -7,6 +7,11 @@ pluginManagement {
         mavenCentral()
     }
 }
+def useLocalGLMap = providers.gradleProperty('useLocalGLMap')
+        .map { it.toBoolean() }
+        .orElse(false)
+        .get()
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -16,17 +21,15 @@ dependencyResolutionManagement {
         maven { url 'https://maven.globus.software/artifactory/libs' }
         maven { url 'https://maven.globus.software/artifactory/snapshots' }
     }
-    versionCatalogs {
-        libs {
-            from(files('../Framework/gradle/libs.versions.toml'))
+    // Only source builds need the parent SDK's catalog. Published demos also build standalone.
+    if (useLocalGLMap) {
+        versionCatalogs {
+            libs {
+                from(files('../Framework/gradle/libs.versions.toml'))
+            }
         }
     }
 }
-
-def useLocalGLMap = providers.gradleProperty('useLocalGLMap')
-        .map { it.toBoolean() }
-        .orElse(false)
-        .get()
 
 if (useLocalGLMap) {
     include ':glmapcore'

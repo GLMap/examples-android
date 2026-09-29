@@ -3,6 +3,7 @@ build
 
 #Android things
 .gradle
+.kotlin
 .idea
 local.properties
 crashlytics-build.properties
