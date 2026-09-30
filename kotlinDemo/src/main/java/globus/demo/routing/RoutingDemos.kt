@@ -100,6 +100,7 @@ class RouteBuildingActivity : MapDemoActivity() {
 
     private fun updateRoute() {
         cancelRequest()
+        routeTrack?.isHidden = true
         val currentGeneration = generation
         val request = GLRouteRequest().apply {
             when (this@RouteBuildingActivity.mode.selectedItemPosition) {
@@ -126,12 +127,16 @@ class RouteBuildingActivity : MapDemoActivity() {
                     GLMapVectorStyle.createStyle("{width:7pt;fill-image:\"track-arrow.svg\";}")!!,
                     null
                 )
+                track.isHidden = false
             }
 
             override fun onError(error: GLMapError) = runOnUiThread {
                 if (currentGeneration != generation) return@runOnUiThread
                 requestID = 0
-                showError(error.toString())
+                val help = if (offline.isChecked) {
+                    "\nDownload navigation data for this area in Download Maps first (Portugal for the initial route)."
+                } else ""
+                showError(error.toString() + help)
             }
         }
         requestID = if (offline.isChecked) {

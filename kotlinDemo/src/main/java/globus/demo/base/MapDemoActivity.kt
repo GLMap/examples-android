@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
@@ -142,59 +144,60 @@ abstract class MapDemoActivity : AppCompatActivity() {
             completion(null)
             return
         }
+        // All bookkeeping runs on the main thread, including synchronous SDK failure callbacks.
+        val main = Handler(Looper.getMainLooper())
         var remaining = files.size
         var firstError: String? = null
-        val stateLock = Any()
-
         fun finished(error: String? = null) {
-            val (complete, result) = synchronized(stateLock) {
-                if (firstError == null) firstError = error
-                remaining--
-                (remaining == 0) to firstError
-            }
-            if (!complete) return
-            runOnUiThread {
-                if (active) completion(result)
-            }
+            if (firstError == null) firstError = error
+            remaining--
+            if (remaining == 0 && active) completion(firstError)
         }
 
         files.forEach { (dataSet, filename) ->
             val file = File(cacheDir, filename)
             if (file.exists()) {
-                if (!GLMapManager.AddDataSet(dataSet, bbox, file.absolutePath, null, null)) {
-                    file.delete()
-                    finished("Cannot open ${file.name}")
-                } else {
-                    finished()
+                // False may mean duplicate registration, not a corrupt file. Never delete it here.
+                finished(if (DemoDataSets.registerFile(dataSet, bbox, file)) null else "Cannot open ${file.name}")
+                return@forEach
+            }
+            val temporary = try {
+                File.createTempFile("$filename-", ".part", cacheDir)
+            } catch (error: java.io.IOException) {
+                finished(error.localizedMessage ?: "Cannot create download file")
+                return@forEach
+            }
+            var taskID = 0L
+            var completed = false
+            fun finishDownload(error: String?) {
+                if (completed) return
+                completed = true
+                downloadTaskIDs.remove(taskID)
+                val result = when {
+                    error != null -> error
+                    !active -> "Download cancelled"
+                    DemoDataSets.install(dataSet, bbox, temporary, file) -> null
+                    else -> "Cannot open ${file.name}"
                 }
+                // Only this request's unregistered temporary file belongs to the request.
+                temporary.delete()
+                finished(result)
+            }
+            taskID = GLMapManager.DownloadDataSet(
+                dataSet,
+                temporary.absolutePath,
+                bbox,
+                object : GLMapManager.DownloadCallback {
+                    override fun onProgress(totalSize: Long, downloadedSize: Long, downloadSpeed: Double) = Unit
+                    override fun onFinished(error: GLMapError?) {
+                        main.post { finishDownload(error?.toString()) }
+                    }
+                }
+            )
+            if (taskID == 0L) {
+                finishDownload("Cannot start download for ${file.name}")
             } else {
-                var taskID = 0L
-                taskID =
-                    GLMapManager.DownloadDataSet(
-                        dataSet,
-                        file.absolutePath,
-                        bbox,
-                        object : GLMapManager.DownloadCallback {
-                            override fun onProgress(totalSize: Long, downloadedSize: Long, downloadSpeed: Double) = Unit
-                            override fun onFinished(error: GLMapError?) {
-                                downloadTaskIDs.remove(taskID)
-                                if (error != null) {
-                                    file.delete()
-                                    finished(error.toString())
-                                } else if (!GLMapManager.AddDataSet(dataSet, bbox, file.absolutePath, null, null)) {
-                                    file.delete()
-                                    finished("Cannot open ${file.name}")
-                                } else {
-                                    finished()
-                                }
-                            }
-                        }
-                    )
-                if (taskID == 0L) {
-                    finished("Cannot start download for ${file.name}")
-                } else {
-                    downloadTaskIDs[taskID] = Unit
-                }
+                downloadTaskIDs[taskID] = Unit
             }
         }
     }
@@ -206,6 +209,16 @@ abstract class MapDemoActivity : AppCompatActivity() {
     final override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun onStart() {
+        super.onStart()
+        renderer.setRenderingEnabled(true)
+    }
+
+    override fun onStop() {
+        renderer.setRenderingEnabled(false)
+        super.onStop()
     }
 
     override fun onDestroy() {

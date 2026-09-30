@@ -19,11 +19,11 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import globus.demo.base.MapDemoActivity
+import globus.demo.base.DemoDataSets
 import globus.glmap.GLMapError
 import globus.glmap.GLMapBalloon
 import globus.glmap.GLMapImage
 import globus.glmap.GLMapInfo
-import globus.glmap.GLMapManager
 import globus.glmap.GLMapMarkerImage
 import globus.glmap.GLMapMarkerLayer
 import globus.glmap.GLMapMarkerStyleCollection
@@ -56,7 +56,7 @@ class SearchActivity : MapDemoActivity() {
 
     override fun onMapReady() {
         title = "Search"
-        if (!GLMapManager.AddDataSet(GLMapInfo.DataSet.MAP, null, "Montenegro.vm", assets, null)) {
+        if (!DemoDataSets.registerAsset(GLMapInfo.DataSet.MAP, "Montenegro.vm", assets)) {
             showError("Cannot open bundled Montenegro map")
         }
         renderer.mapGeoCenter = center
@@ -303,7 +303,9 @@ class SearchActivity : MapDemoActivity() {
 
 // GLMapValue.getSpanned clones spans for each text range. ForegroundColorSpan
 // itself is not Cloneable, so passing it directly fails in the SDK's native bridge.
-private class SearchColorSpan(color: Int) : ForegroundColorSpan(color), Cloneable {
+private class SearchColorSpan(color: Int) :
+    ForegroundColorSpan(color),
+    Cloneable {
     public override fun clone() = SearchColorSpan(foregroundColor)
 }
 

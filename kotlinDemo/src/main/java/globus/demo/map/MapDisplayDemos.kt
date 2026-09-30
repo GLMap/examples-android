@@ -217,7 +217,7 @@ private class OSMTileSource(activity: Activity) : GLMapRasterTileSource(cacheSto
     }
 
     override fun urlForTilePos(x: Int, y: Int, z: Int): String =
-        mirrors[Math.floorMod(x + y, mirrors.size)].format(z, x, y)
+        mirrors[Math.floorMod(x + y, mirrors.size)].format(java.util.Locale.ROOT, z, x, y)
 
     companion object {
         private fun cacheStorage(activity: Activity): GLMapStorageFile? =

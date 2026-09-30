@@ -43,7 +43,10 @@ class DownloadBBoxActivity : MapDemoActivity() {
         }
         container.addView(
             status,
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, dp(36)).apply {
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
                 gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
                 bottomMargin = dp(16)
             }
@@ -169,22 +172,54 @@ class DownloadMapsActivity :
             tasks.forEach(GLMapDownloadTask::cancel)
             return
         }
-        if (map.dataSetsWithState(GLMapInfo.State.DOWNLOADED) != 0) {
+        val pending = pendingDataSets(map)
+        if (map.getSizeOnDisk(GLMapInfo.DataSetMask.ALL) > 0 || map.getTempSize(GLMapInfo.DataSetMask.ALL) > 0) {
+            val actions = mutableListOf<String>()
+            if (pending != 0) actions += "Download / update missing data"
+            actions += "Delete downloaded data"
             AlertDialog.Builder(this)
-                .setMessage("Delete ${map.getLocalizedName(locale)} from this device?")
+                .setTitle(map.getLocalizedName(locale))
+                .setItems(actions.toTypedArray()) { _, index ->
+                    if (pending != 0 && index == 0) {
+                        GLMapManager.DownloadDataSets(map, pending)
+                    } else {
+                        GLMapManager.DeleteDataSets(map, GLMapInfo.DataSetMask.ALL)
+                    }
+                }
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Delete") { _, _ -> GLMapManager.DeleteDataSets(map, GLMapInfo.DataSetMask.ALL) }
                 .show()
-        } else {
-            GLMapManager.DownloadDataSets(map, GLMapInfo.DataSetMask.ALL)
+        } else if (pending != 0) {
+            GLMapManager.DownloadDataSets(map, pending)
         }
+    }
+
+    @GLMapInfo.DataSetMask
+    private fun pendingDataSets(map: GLMapInfo): Int {
+        var available = 0
+        if (map.getSizeOnServer(GLMapInfo.DataSetMask.MAP) > 0) available = available or GLMapInfo.DataSetMask.MAP
+        if (map.getSizeOnServer(GLMapInfo.DataSetMask.NAVIGATION) > 0) {
+            available = available or GLMapInfo.DataSetMask.NAVIGATION
+        }
+        if (map.getSizeOnServer(GLMapInfo.DataSetMask.ELEVATION) > 0) {
+            available = available or GLMapInfo.DataSetMask.ELEVATION
+        }
+        val pending = map.dataSetsWithState(GLMapInfo.State.NOT_DOWNLOADED) or
+            map.dataSetsWithState(GLMapInfo.State.NEED_RESUME) or map.dataSetsWithState(GLMapInfo.State.NEED_UPDATE)
+        return available and pending
     }
 
     override fun onStartDownloading(task: GLMapDownloadTask) = notifyChanged()
     override fun onDownloadProgress(task: GLMapDownloadTask) {
         if (!isDestroyed) adapter.notifyDataSetChanged()
     }
-    override fun onFinishDownloading(task: GLMapDownloadTask) = notifyChanged()
+    override fun onFinishDownloading(task: GLMapDownloadTask) {
+        notifyChanged()
+        val error = task.error
+        if (!isFinishing && !isDestroyed && error != null && !error.isCancelled) {
+            supportActionBar?.subtitle = "Download failed — tap the map to retry"
+            Toast.makeText(this, error.toString(), Toast.LENGTH_LONG).show()
+        }
+    }
     override fun onStateChanged(map: GLMapInfo?, dataSet: Int) = notifyChanged()
 
     private fun notifyChanged() {
@@ -234,13 +269,15 @@ class DownloadMapsActivity :
             val map = row.map
             view.findViewById<TextView>(android.R.id.text1).text = map.getLocalizedName(locale)
 
-            val task = GLMapManager.getDownloadTasks(map.mapID, GLMapInfo.DataSetMask.ALL)?.firstOrNull()
+            val tasks = GLMapManager.getDownloadTasks(map.mapID, GLMapInfo.DataSetMask.ALL).orEmpty()
+            val total = tasks.sumOf { it.total.toLong() }
+            val downloaded = tasks.sumOf { it.downloaded.toLong() }
             view.findViewById<TextView>(android.R.id.text2).text = when {
                 map.isCollection -> "Browse regions"
 
-                task != null && task.total > 0 -> "Downloading ${task.downloaded.toLong() * 100 / task.total}%"
+                tasks.isNotEmpty() && total > 0 -> "Downloading ${tasks.size} data sets · ${downloaded * 100 / total}%"
 
-                task != null -> "Starting download..."
+                tasks.isNotEmpty() -> "Starting download..."
 
                 map.dataSetsWithState(
                     GLMapInfo.State.DOWNLOADED
