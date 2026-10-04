@@ -19,10 +19,12 @@ import androidx.appcompat.app.AppCompatActivity
 import globus.glmap.GLMapBBox
 import globus.glmap.GLMapError
 import globus.glmap.GLMapManager
+import globus.glmap.GLMapStyleParser
 import globus.glmap.GLMapView
 import globus.glmap.GLMapViewRenderer
 import globus.glmap.MapPoint
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 abstract class MapDemoActivity : AppCompatActivity() {
@@ -42,10 +44,29 @@ abstract class MapDemoActivity : AppCompatActivity() {
         container = FrameLayout(this).apply { addView(mapView) }
         setContentView(container)
         applyContentInsets(container)
+        loadStyle()
         onMapReady()
     }
 
     protected abstract fun onMapReady()
+
+    // Like the iOS demo: style images first, then the demo's own assets such as track-arrow.svg.
+    protected fun loadStyle(options: Map<String, String> = emptyMap()): Boolean {
+        GLMapStyleParser { name -> readAsset("DefaultStyle.bundle/$name") ?: readAsset(name) }.use { parser ->
+            parser.setOptions(options, true)
+            val style = parser.parseFromResources() ?: return false
+            style.use { renderer.setStyle(it) }
+        }
+        renderer.reloadTiles()
+        return true
+    }
+
+    private fun readAsset(path: String): ByteArray? =
+        try {
+            assets.open(path).use { it.readBytes() }
+        } catch (_: IOException) {
+            null
+        }
 
     protected fun addButton(text: String, onClick: () -> Unit): Button {
         setVisibleMapInsets(dp(16), dp(16), dp(16), dp(72))

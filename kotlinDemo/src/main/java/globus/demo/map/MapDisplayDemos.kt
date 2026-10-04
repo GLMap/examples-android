@@ -17,7 +17,6 @@ import globus.glmap.GLMapFileStorage
 import globus.glmap.GLMapInfo
 import globus.glmap.GLMapRasterTileSource
 import globus.glmap.GLMapStorageFile
-import globus.glmap.GLMapStyleParser
 import globus.glmap.GLMapVectorTileSource
 import globus.glmap.GLMapVectorStyle
 import globus.glmap.MapGeoPoint
@@ -33,12 +32,8 @@ class OnlineMapActivity : MapDemoActivity() {
         renderer.mapZoom = 13.0
         renderer.drawElevationLines = true
         renderer.drawHillshades = true
-        val parser = GLMapStyleParser(assets, "DefaultStyle.bundle")
-        parser.setOptions(mapOf("Style" to "Outdoor", "SubStyle" to "Ski"), true)
-        parser.parseFromResources()?.let {
-            renderer.setStyle(it)
-            renderer.reloadTiles()
-        } ?: showError("Cannot parse outdoor map style")
+        if (!loadStyle(mapOf("Style" to "Outdoor", "SubStyle" to "Ski")))
+            showError("Cannot parse outdoor map style")
 
         val button = addButton("OSM Raster") {}
         button.setOnClickListener { toggleSource(button) }
@@ -95,11 +90,8 @@ class DarkThemeActivity : MapDemoActivity() {
     }
 
     private fun applyTheme() {
-        val parser = GLMapStyleParser(assets, "DefaultStyle.bundle")
-        parser.setOptions(if (dark) mapOf("Theme" to "Dark") else emptyMap(), true)
-        val style = parser.parseFromResources() ?: return showError("Cannot parse default map style")
-        renderer.setStyle(style)
-        renderer.reloadTiles()
+        if (!loadStyle(if (dark) mapOf("Theme" to "Dark") else emptyMap()))
+            showError("Cannot parse default map style")
     }
 }
 
