@@ -1,6 +1,7 @@
 package globus.demo.vector
 
 import globus.demo.base.MapDemoActivity
+import globus.glmap.GLMapDrawObject
 import globus.glmap.GLMapVectorCascadeStyle
 import globus.glmap.GLMapVectorLayer
 import globus.glmap.GLMapVectorObject
@@ -102,13 +103,13 @@ class GeoJSONActivity : MapDemoActivity() {
                     layer.setVectorObjects(loaded, style) { result ->
                         if (!isFinishing && !isDestroyed) {
                             when (result) {
-                                GLMapVectorLayer.UpdateResult.Ready -> title = "Tap on any UK region"
-                                GLMapVectorLayer.UpdateResult.Failed -> {
+                                GLMapDrawObject.UpdateResult.Ready -> title = "Tap on any UK region"
+                                GLMapDrawObject.UpdateResult.Failed -> {
                                     title = "GeoJSON failed"
                                     showError("Cannot prepare GeoJSON for drawing")
                                 }
-                                GLMapVectorLayer.UpdateResult.Superseded,
-                                GLMapVectorLayer.UpdateResult.Cancelled -> {
+                                GLMapDrawObject.UpdateResult.Superseded,
+                                GLMapDrawObject.UpdateResult.Cancelled -> {
                                     // Normal lifecycle outcomes, not success or a loading error.
                                     title = "GeoJSON"
                                 }
