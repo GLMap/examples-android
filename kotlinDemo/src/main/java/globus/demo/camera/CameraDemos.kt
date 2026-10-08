@@ -5,7 +5,7 @@ import globus.glmap.GLMapAnimation
 import globus.glmap.GLMapBBox
 import globus.glmap.GLMapVectorCascadeStyle
 import globus.glmap.GLMapVectorLayer
-import globus.glmap.GLMapVectorObject
+import globus.glmap.GeometryBuilder
 import globus.glmap.MapGeoPoint
 import globus.glmap.MapPoint
 
@@ -53,7 +53,10 @@ class ZoomToBBoxActivity : MapDemoActivity() {
 
     override fun onMapReady() {
         title = "Zoom to BBox"
-        val line = GLMapVectorObject.createMultiline(arrayOf(cityPoints))
+        val line = GeometryBuilder().use { builder ->
+            builder.addLine(cityPoints)
+            builder.build()!!
+        }
         val style = GLMapVectorCascadeStyle.createStyle("line{width:4pt; color:#E74C3C;}")!!
         renderer.add(GLMapVectorLayer().apply { setVectorObject(line, style, null) })
         fit(bbox)

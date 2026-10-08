@@ -22,8 +22,8 @@ import globus.glmap.GLMapTrack
 import globus.glmap.GLMapTrackData
 import globus.glmap.GLMapVectorCascadeStyle
 import globus.glmap.GLMapVectorLayer
-import globus.glmap.GLMapVectorObject
 import globus.glmap.GLMapVectorStyle
+import globus.glmap.GeometryBuilder
 import globus.glmap.MapGeoPoint
 import globus.glmap.MapPoint
 import globus.glmap.SVGRender
@@ -114,7 +114,11 @@ abstract class LocationMapActivity : MapDemoActivity() {
         }
         accuracyCircle = GLMapVectorLayer(99).apply {
             setTransformMode(GLMapDrawable.TransformMode.Custom)
-            GLMapVectorObject.createPolygon(arrayOf(points)).use { polygon ->
+            GeometryBuilder().use { builder ->
+                builder.beginPolygon()
+                builder.addLine(points)
+                builder.build()!!
+            }.use { polygon ->
                 GLMapVectorCascadeStyle.createStyle(
                     "area{width:1pt;fill-color:#3D99FA26;color:#3D99FA66;}"
                 )!!.use { style ->
