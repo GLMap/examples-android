@@ -104,10 +104,12 @@ class GeoJSONActivity : MapDemoActivity() {
                         if (!isFinishing && !isDestroyed) {
                             when (result) {
                                 GLMapDrawObject.UpdateResult.Ready -> title = "Tap on any UK region"
+
                                 GLMapDrawObject.UpdateResult.Failed -> {
                                     title = "GeoJSON failed"
                                     showError("Cannot prepare GeoJSON for drawing")
                                 }
+
                                 GLMapDrawObject.UpdateResult.Superseded,
                                 GLMapDrawObject.UpdateResult.Cancelled -> {
                                     // Normal lifecycle outcomes, not success or a loading error.
@@ -120,7 +122,11 @@ class GeoJSONActivity : MapDemoActivity() {
                     fit(loaded.bBox)
                     setGestures(onTap = { touch ->
                         renderer.state?.use { state ->
-                            val point = state.convertDisplayToInternal(touch.x.toDouble(), touch.y.toDouble(), MapPoint())
+                            val point = state.convertDisplayToInternal(
+                                touch.x.toDouble(),
+                                touch.y.toDouble(),
+                                MapPoint()
+                            )
                             state.findNearPoint(loaded, loaded.size() - 1, -1, point, 10.0)?.use {
                                 showError("Tapped: ${it.asGeoJSON()}")
                             }

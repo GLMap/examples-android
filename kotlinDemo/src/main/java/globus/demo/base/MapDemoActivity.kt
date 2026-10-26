@@ -61,12 +61,11 @@ abstract class MapDemoActivity : AppCompatActivity() {
         return true
     }
 
-    private fun readAsset(path: String): ByteArray? =
-        try {
-            assets.open(path).use { it.readBytes() }
-        } catch (_: IOException) {
-            null
-        }
+    private fun readAsset(path: String): ByteArray? = try {
+        assets.open(path).use { it.readBytes() }
+    } catch (_: IOException) {
+        null
+    }
 
     protected fun addButton(text: String, onClick: () -> Unit): Button {
         setVisibleMapInsets(dp(16), dp(16), dp(16), dp(72))
