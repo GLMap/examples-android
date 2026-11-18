@@ -114,6 +114,8 @@ abstract class LocationMapActivity : MapDemoActivity() {
         }
         accuracyCircle = GLMapVectorLayer(99).apply {
             setTransformMode(GLMapDrawable.TransformMode.Custom)
+            // The circle lies on the ground
+            rotatesWithMap = true
             GeometryBuilder().use { builder ->
                 builder.beginPolygon()
                 builder.addLine(points)
