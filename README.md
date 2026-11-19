@@ -1,6 +1,6 @@
 # GLMap Android demo
 
-One compact Kotlin app demonstrates the GLMap 2.3.0 API. The catalog mirrors the iOS demo and groups each example by feature: map display, camera, draw objects, vector data, search, routing, and offline data.
+One compact Kotlin app demonstrates the GLMap 2.3.1 API. The catalog mirrors the iOS demo and groups each example by feature: map display, camera, draw objects, vector data, search, routing, and offline data.
 
 The **Demo Mode** button runs the same 26-second Amalfi Coast walk as the iOS app: explore contour lines, find a restaurant, reveal a walking route, and follow a simulated walker in 3D. Search and routing use real online services and complete before the tour starts. The traversed route turns grey using `GLMapTrack.setProgressIndex` and `setProgressColor`; the camera and marker share a distance-based timeline. All map markers are native `GLMapImage` objects. Android views provide only captions and panels. The walking segment is labeled as an accelerated preview, not GPS navigation. The tour pauses in the background, offers Retry on service errors, and closes when tapped. The individual catalog screens remain the compact API examples to learn from.
 
@@ -10,7 +10,7 @@ The **Demo Mode** button runs the same 26-second Amalfi Coast walk as the iOS ap
 2. Replace `YOUR_API_KEY` in `kotlinDemo/src/main/res/values/strings.xml` locally. Do not commit a real key.
 3. Open this directory in Android Studio and run `kotlinDemo`.
 
-To build against the published SDK 2.3.0 (no parent SDK checkout is required):
+To build against the published SDK 2.3.1 (no parent SDK checkout is required):
 
 ```shell
 ./gradlew :kotlinDemo:assembleDebug
@@ -26,7 +26,7 @@ Without `useLocalGLMap`, Gradle resolves the published `globus:glmap`, `globus:g
 
 The demo targets Android SDK 37. Most screens construct their UI in Kotlin so the GLMap calls stay visible in one short feature file under `kotlinDemo/src/main/java/globus/demo`.
 
-## SDK 2.3.0 API notes
+## SDK 2.3.1 API notes
 
 - `DemoApp` calls `GLMapManager.Initialize` before any native SDK API. This initializes Core, Map, Search, and Route together; no separate `GLSearch.Initialize` call is needed. Its Boolean result reports initialization, not API-key validity.
 - Hit-testing and draw-attribute queries use a captured `GLMapViewState`, closed with Kotlin `use` after each query.
